@@ -8,7 +8,12 @@ require_once __DIR__ . '/AuthController.php';
 
 // Check if user is already logged in
 if (isset($_SESSION['user_id'])) {
-    header('Location: ' . BASE_URL . '/dashboard.php');
+    // Redirect based on user role
+    if ($_SESSION['role'] === 'admin') {
+        header('Location: ' . BASE_URL . '/modules/admin/dashboard.php');
+    } else {
+        header('Location: ' . BASE_URL . '/modules/auth/dashboard.php');
+    }
     exit;
 }
 
@@ -27,7 +32,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = $auth->login($username, $password);
         
         if ($result['success']) {
-            header('Location: ' . BASE_URL . '/dashboard.php');
+            // Redirect based on user role
+            if ($_SESSION['role'] === 'admin') {
+                header('Location: ' . BASE_URL . '/modules/admin/dashboard.php');
+            } else {
+                header('Location: ' . BASE_URL . '/modules/auth/dashboard.php');
+            }
             exit;
         } else {
             $error = $result['message'];

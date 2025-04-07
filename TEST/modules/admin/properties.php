@@ -873,69 +873,102 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         
         function fetchDocuments(propertyId) {
-            fetch(`get_documents.php?property_id=${propertyId}`)
-                .then(response => {
-                    // Verificar el tipo de contenido de la respuesta
-                    const contentType = response.headers.get('content-type');
-                    if (!contentType || !contentType.includes('application/json')) {
-                        throw new Error(`Expected JSON but got ${contentType}`);
-                    }
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
+            // Verificar si hay una sesión activa
+            if (!document.cookie.includes('PHPSESSID')) {
+                window.location.href = '<?php echo BASE_URL; ?>/modules/auth/login.php';
+                return;
+            }
+
+            fetch(`get_documents.php?property_id=${propertyId}`, {
+                credentials: 'same-origin', // Incluir cookies en la petición
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest' // Indicar que es una petición AJAX
+                }
+            })
+            .then(response => {
+                // Verificar si la respuesta es una redirección
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return Promise.reject('Session expired');
+                }
+
+                // Verificar el tipo de contenido de la respuesta
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    // Si no es JSON, intentar obtener el texto para depuración
                     return response.text().then(text => {
-                        try {
-                            return JSON.parse(text);
-                        } catch (e) {
-                            console.error('Response text:', text);
-                            throw new Error('Invalid JSON response');
-                        }
+                        console.error('Unexpected response:', text);
+                        throw new Error(`Expected JSON but got ${contentType}`);
                     });
-                })
-                .then(data => {
-                    const container = document.getElementById('documents_list');
-                    container.innerHTML = '';
-                    
-                    if (!data.success) {
-                        container.innerHTML = `<div class="alert alert-danger">${data.error || 'Error loading documents'}</div>`;
-                        return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error('Response text:', text);
+                        throw new Error('Invalid JSON response');
                     }
-                    
-                    if (!data.documents || !Array.isArray(data.documents)) {
-                        container.innerHTML = '<div class="alert alert-info">No documents available</div>';
-                        return;
-                    }
-                    
-                    data.documents.forEach(doc => {
-                        const docElement = document.createElement('div');
-                        docElement.className = 'document-item';
-                        docElement.innerHTML = `
-                            <div class="document-info">
-                                <div class="document-icon">
-                                    <i class="fas fa-file-${getFileIcon(doc.document_type)}"></i>
-                                </div>
-                                <div>
-                                    <div class="fw-bold">${doc.document_name}</div>
-                                    <div class="small text-muted">${doc.document_type} • ${doc.upload_date}</div>
-                                </div>
+                });
+            })
+            .then(data => {
+                const container = document.getElementById('documents_list');
+                container.innerHTML = '';
+                
+                if (!data.success) {
+                    container.innerHTML = `<div class="alert alert-danger">${data.error || 'Error loading documents'}</div>`;
+                    return;
+                }
+                
+                if (!data.documents || !Array.isArray(data.documents)) {
+                    container.innerHTML = '<div class="alert alert-info">No documents available</div>';
+                    return;
+                }
+                
+                data.documents.forEach(doc => {
+                    const docElement = document.createElement('div');
+                    docElement.className = 'document-item';
+                    docElement.innerHTML = `
+                        <div class="document-info">
+                            <div class="document-icon">
+                                <i class="fas fa-file-${getFileIcon(doc.document_type)}"></i>
                             </div>
-                            <div class="document-actions">
-                                <a href="${BASE_URL}/${doc.file_path}" class="action-button btn-view" target="_blank">
-                                    <i class="fas fa-download"></i>
-                                </a>
-                                <button type="button" class="action-button btn-delete" onclick="deleteDocument(${doc.id})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                            <div>
+                                <div class="fw-bold">${doc.document_name}</div>
+                                <div class="small text-muted">${doc.document_type} • ${doc.upload_date}</div>
                             </div>
-                        `;
-                        container.appendChild(docElement);
-                    });
-                })
-                .catch(error => {
-                    console.error('Error fetching documents:', error);
-                    const container = document.getElementById('documents_list');
+                        </div>
+                        <div class="document-actions">
+                            <a href="${BASE_URL}/${doc.file_path}" class="action-button btn-view" target="_blank">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            <button type="button" class="action-button btn-delete" onclick="deleteDocument(${doc.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(docElement);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching documents:', error);
+                const container = document.getElementById('documents_list');
+                
+                if (error === 'Session expired') {
+                    container.innerHTML = `
+                        <div class="alert alert-warning">
+                            <h6>Session Expired</h6>
+                            <p class="mb-0">Your session has expired. Please log in again.</p>
+                        </div>
+                    `;
+                    setTimeout(() => {
+                        window.location.href = '<?php echo BASE_URL; ?>/modules/auth/login.php';
+                    }, 2000);
+                } else {
                     container.innerHTML = `
                         <div class="alert alert-danger">
                             <h6>Error loading documents</h6>
@@ -943,7 +976,8 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <small>Please try again or contact support if the problem persists.</small>
                         </div>
                     `;
-                });
+                }
+            });
         }
         
         function getFileIcon(type) {

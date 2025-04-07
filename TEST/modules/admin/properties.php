@@ -930,24 +930,27 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             fetch(`get_documents.php?property_id=${propertyId}`, {
                 credentials: 'same-origin',
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
                 }
             })
             .then(response => {
                 log('Documents response status:', response.status);
                 
+                // Verificar si la respuesta es una redirección
                 if (response.redirected) {
                     log('Response was redirected to:', response.url);
-                    return Promise.reject('Session expired');
+                    throw new Error('Session expired');
                 }
                 
+                // Verificar el tipo de contenido
                 const contentType = response.headers.get('content-type');
                 log('Content-Type:', contentType);
                 
                 if (!contentType || !contentType.includes('application/json')) {
                     return response.text().then(text => {
                         log('Unexpected response text:', text);
-                        throw new Error(`Expected JSON but got ${contentType}`);
+                        throw new Error('Invalid response format');
                     });
                 }
                 
@@ -955,15 +958,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
-                return response.text().then(text => {
-                    log('Raw response text:', text);
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        log('JSON parse error:', e);
-                        throw new Error('Invalid JSON response');
-                    }
-                });
+                return response.json();
             })
             .then(data => {
                 log('Documents data:', data);
@@ -971,7 +966,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 container.innerHTML = '';
                 
                 if (!data.success) {
-                    container.innerHTML = `<div class="alert alert-danger">${data.error || 'Error loading documents'}</div>`;
+                    container.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>Error loading documents</h6>
+                            <p class="mb-0">${data.error || 'Error loading documents'}</p>
+                        </div>
+                    `;
                     return;
                 }
                 
@@ -1009,11 +1009,11 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 log('Error fetching documents:', error);
                 const container = document.getElementById('documents_list');
                 
-                if (error === 'Session expired') {
+                if (error.message === 'Session expired') {
                     container.innerHTML = `
                         <div class="alert alert-warning">
                             <h6>Session Expired</h6>
-                            <p class="mb-0">Your session has expired. Please log in again.</p>
+                            <p class="mb-0">Your session has expired. Please refresh the page and log in again.</p>
                         </div>
                     `;
                 } else {

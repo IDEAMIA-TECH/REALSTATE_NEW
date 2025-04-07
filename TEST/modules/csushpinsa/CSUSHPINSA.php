@@ -211,25 +211,64 @@ class CSUSHPINSA {
             if (!$property) {
                 throw new Exception("Property not found or inactive");
             }
+
+            console.log('Property Details:', {
+                initial_valuation: $property['initial_valuation'],
+                effective_date: $property['effective_date'],
+                agreed_pct: $property['agreed_pct'],
+                term: $property['term'],
+                option_price: $property['option_price']
+            });
             
             // Calculate appreciation
             $appreciation = $this->calculatePropertyAppreciation($propertyId, $valuationDate);
             if (!$appreciation) {
                 throw new Exception("Failed to calculate appreciation");
             }
+
+            console.log('Appreciation Calculation:', {
+                appreciation: $appreciation['appreciation'],
+                share_appreciation: $appreciation['share_appreciation'],
+                appreciation_rate: $appreciation['appreciation_rate']
+            });
             
             // Calculate current value
             $currentValue = $property['initial_valuation'] + $appreciation['appreciation'];
+            
+            console.log('Current Value Calculation:', {
+                initial_valuation: $property['initial_valuation'],
+                appreciation: $appreciation['appreciation'],
+                current_value: $currentValue
+            });
             
             // Calculate terminal value (projected value at end of term)
             $yearsRemaining = (strtotime($property['term']) - strtotime($valuationDate)) / (365 * 24 * 60 * 60);
             $terminalValue = $currentValue * pow(1 + ($appreciation['appreciation_rate'] / 100), $yearsRemaining);
             
+            console.log('Terminal Value Calculation:', {
+                current_value: $currentValue,
+                appreciation_rate: $appreciation['appreciation_rate'],
+                years_remaining: $yearsRemaining,
+                terminal_value: $terminalValue
+            });
+            
             // Calculate projected payoff
             $projectedPayoff = $terminalValue * ($property['agreed_pct'] / 100);
             
+            console.log('Projected Payoff Calculation:', {
+                terminal_value: $terminalValue,
+                agreed_pct: $property['agreed_pct'],
+                projected_payoff: $projectedPayoff
+            });
+            
             // Calculate option valuation
             $optionValuation = $projectedPayoff - $property['option_price'];
+            
+            console.log('Option Valuation Calculation:', {
+                projected_payoff: $projectedPayoff,
+                option_price: $property['option_price'],
+                option_valuation: $optionValuation
+            });
             
             // Check if valuation already exists for this date
             $stmt = $this->db->prepare("
@@ -261,6 +300,17 @@ class CSUSHPINSA {
                     $optionValuation,
                     $existingValuation['id']
                 ]);
+
+                console.log('Updated existing valuation:', {
+                    property_id: $propertyId,
+                    valuation_date: $valuationDate,
+                    current_value: $currentValue,
+                    appreciation: $appreciation['appreciation'],
+                    share_appreciation: $appreciation['share_appreciation'],
+                    terminal_value: $terminalValue,
+                    projected_payoff: $projectedPayoff,
+                    option_valuation: $optionValuation
+                });
             } else {
                 // Insert new valuation
                 $stmt = $this->db->prepare("
@@ -279,6 +329,17 @@ class CSUSHPINSA {
                     $projectedPayoff,
                     $optionValuation
                 ]);
+
+                console.log('Inserted new valuation:', {
+                    property_id: $propertyId,
+                    valuation_date: $valuationDate,
+                    current_value: $currentValue,
+                    appreciation: $appreciation['appreciation'],
+                    share_appreciation: $appreciation['share_appreciation'],
+                    terminal_value: $terminalValue,
+                    projected_payoff: $projectedPayoff,
+                    option_valuation: $optionValuation
+                });
             }
             
             // Log the activity

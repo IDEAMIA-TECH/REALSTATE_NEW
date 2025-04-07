@@ -50,12 +50,14 @@ try {
     $stmt = $db->prepare("
         SELECT 
             DATE_FORMAT(valuation_date, '%Y-%m-%d') as date,
-            current_value as value,
-            appreciation as appreciation_rate,
+            initial_valuation,
+            initial_index,
+            index_value,
+            appreciation,
+            agreed_pct,
             share_appreciation,
-            terminal_value,
-            projected_payoff,
-            option_valuation
+            option_price,
+            total_fees
         FROM property_valuations
         WHERE property_id = ?
         ORDER BY valuation_date DESC
@@ -85,8 +87,11 @@ try {
         $stmt = $db->prepare("
             SELECT 
                 initial_valuation,
-                effective_date,
-                agreed_pct
+                initial_index,
+                initial_index_date,
+                agreed_pct,
+                option_price,
+                total_fees
             FROM properties
             WHERE id = ?
         ");
@@ -95,25 +100,29 @@ try {
         
         if ($property) {
             $valuations[] = [
-                'date' => $property['effective_date'],
-                'value' => number_format($property['initial_valuation'], 2, '.', ''),
-                'appreciation_rate' => '0.00',
+                'date' => $property['initial_index_date'],
+                'initial_valuation' => number_format($property['initial_valuation'], 2, '.', ''),
+                'initial_index' => number_format($property['initial_index'], 2, '.', ''),
+                'index_value' => number_format($property['initial_index'], 2, '.', ''),
+                'appreciation' => '0.00',
+                'agreed_pct' => number_format($property['agreed_pct'], 2, '.', ''),
                 'share_appreciation' => '0.00',
-                'terminal_value' => number_format($property['initial_valuation'], 2, '.', ''),
-                'projected_payoff' => '0.00',
-                'option_valuation' => '0.00'
+                'option_price' => number_format($property['option_price'], 2, '.', ''),
+                'total_fees' => number_format($property['total_fees'], 2, '.', '')
             ];
         }
-    } else {
-        // Format the data
-        foreach ($valuations as &$valuation) {
-            $valuation['value'] = number_format($valuation['value'], 2, '.', '');
-            $valuation['appreciation_rate'] = number_format($valuation['appreciation_rate'], 2, '.', '');
-            $valuation['share_appreciation'] = number_format($valuation['share_appreciation'], 2, '.', '');
-            $valuation['terminal_value'] = number_format($valuation['terminal_value'], 2, '.', '');
-            $valuation['projected_payoff'] = number_format($valuation['projected_payoff'], 2, '.', '');
-            $valuation['option_valuation'] = number_format($valuation['option_valuation'], 2, '.', '');
-        }
+    }
+    
+    // Format the data
+    foreach ($valuations as &$valuation) {
+        $valuation['initial_valuation'] = number_format($valuation['initial_valuation'], 2, '.', '');
+        $valuation['initial_index'] = number_format($valuation['initial_index'], 2, '.', '');
+        $valuation['index_value'] = number_format($valuation['index_value'], 2, '.', '');
+        $valuation['appreciation'] = number_format($valuation['appreciation'], 2, '.', '');
+        $valuation['agreed_pct'] = number_format($valuation['agreed_pct'], 2, '.', '');
+        $valuation['share_appreciation'] = number_format($valuation['share_appreciation'], 2, '.', '');
+        $valuation['option_price'] = number_format($valuation['option_price'], 2, '.', '');
+        $valuation['total_fees'] = number_format($valuation['total_fees'], 2, '.', '');
     }
     
     $response['data'] = [

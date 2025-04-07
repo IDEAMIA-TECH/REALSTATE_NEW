@@ -854,13 +854,13 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <tr>
                                             <th>Date</th>
                                             <th>Initial Value</th>
-                                            <th>Current Value</th>
+                                            <th>Beginning Index</th>
+                                            <th>Update Index</th>
+                                            <th>Difference</th>
                                             <th>Appreciation</th>
-                                            <th>User Profit</th>
-                                            <th>Appreciation Rate</th>
-                                            <th>Terminal Value</th>
-                                            <th>Projected Payoff</th>
-                                            <th>Option Value</th>
+                                            <th>Appreciation Participation</th>
+                                            <th>Appreciation Share</th>
+                                            <th>Calculation</th>
                                         </tr>
                                     </thead>
                                     <tbody id="valuationHistoryBody">
@@ -1409,45 +1409,53 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 return;
             }
             
-            // Get the original initial value from property data
+            // Get the original values from property data
             const initialValue = parseFloat(propertyData.initial_valuation);
+            const initialIndex = parseFloat(propertyData.initial_index);
             const agreedPercentage = parseFloat(propertyData.agreed_pct);
+            const optionPrice = parseFloat(propertyData.option_price);
+            const totalFees = parseFloat(propertyData.total_fees);
 
             console.log('Valuation History - Property Data:', {
                 initialValue,
-                agreedPercentage
+                initialIndex,
+                agreedPercentage,
+                optionPrice,
+                totalFees
             });
 
             valuations.forEach((valuation, index) => {
                 const row = document.createElement('tr');
                 
-                // Calculate current value using appreciation rate
-                const appreciationRate = parseFloat(valuation.appreciation_rate);
-                const currentValue = initialValue * (1 + (appreciationRate / 100));
-                const appreciation = currentValue - initialValue;
-                // Calculate user profit: if appreciation > 0, multiply by agreed percentage, otherwise 0
-                const userProfit = appreciation > 0 ? appreciation * (agreedPercentage / 100) : 0;
+                // Calculate values
+                const updateIndex = parseFloat(valuation.index_value);
+                const difference = (updateIndex - initialIndex) / initialIndex;
+                const appreciation = difference * initialValue;
+                const appreciationShare = appreciation * (agreedPercentage / 100);
+                const calculation = optionPrice + appreciationShare + totalFees;
 
                 console.log(`Valuation History - Row ${index + 1} Calculation:`, {
                     date: valuation.date,
                     initialValue,
-                    appreciationRate,
-                    calculation: `Current Value = ${initialValue} * (1 + (${appreciationRate} / 100))`,
-                    result: currentValue,
+                    initialIndex,
+                    updateIndex,
+                    difference,
                     appreciation,
-                    userProfit
+                    agreedPercentage,
+                    appreciationShare,
+                    calculation
                 });
 
                 row.innerHTML = `
                     <td>${new Date(valuation.date).toLocaleDateString()}</td>
                     <td>$${initialValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td>$${currentValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>${initialIndex.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>${updateIndex.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>${(difference * 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
                     <td>$${appreciation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td>$${userProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td>${appreciationRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
-                    <td>$${parseFloat(valuation.terminal_value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td>$${parseFloat(valuation.projected_payoff).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td>$${parseFloat(valuation.option_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>${agreedPercentage.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
+                    <td>$${appreciationShare.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>$${calculation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 `;
                 tbody.appendChild(row);
             });

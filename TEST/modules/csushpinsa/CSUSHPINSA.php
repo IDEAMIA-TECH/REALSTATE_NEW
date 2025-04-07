@@ -201,7 +201,7 @@ class CSUSHPINSA {
         try {
             // Get property details
             $stmt = $this->db->prepare("
-                SELECT initial_valuation, effective_date, agreed_pct, term, option_price
+                SELECT initial_valuation, initial_index, agreed_pct, option_price, total_fees
                 FROM properties
                 WHERE id = ? AND status = 'active'
             ");
@@ -214,60 +214,45 @@ class CSUSHPINSA {
 
             error_log("Property Details: " . print_r([
                 'initial_valuation' => $property['initial_valuation'],
-                'effective_date' => $property['effective_date'],
+                'initial_index' => $property['initial_index'],
                 'agreed_pct' => $property['agreed_pct'],
-                'term' => $property['term'],
-                'option_price' => $property['option_price']
+                'option_price' => $property['option_price'],
+                'total_fees' => $property['total_fees']
             ], true));
             
-            // Calculate appreciation
-            $appreciation = $this->calculatePropertyAppreciation($propertyId, $valuationDate);
-            if (!$appreciation) {
-                throw new Exception("Failed to calculate appreciation");
+            // Get the current index value
+            $stmt = $this->db->prepare("
+                SELECT value 
+                FROM home_price_index 
+                WHERE date <= ?
+                ORDER BY date DESC
+                LIMIT 1
+            ");
+            $stmt->execute([$valuationDate]);
+            $currentIndex = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$currentIndex) {
+                throw new Exception("No index value found for the specified date");
             }
 
-            error_log("Appreciation Calculation: " . print_r([
-                'appreciation' => $appreciation['appreciation'],
-                'share_appreciation' => $appreciation['share_appreciation'],
-                'appreciation_rate' => $appreciation['appreciation_rate']
+            error_log("Index Values: " . print_r([
+                'initial_index' => $property['initial_index'],
+                'current_index' => $currentIndex['value']
             ], true));
             
-            // Calculate current value
-            $currentValue = $property['initial_valuation'] + $appreciation['appreciation'];
+            // Calculate difference
+            $difference = ($currentIndex['value'] - $property['initial_index']) / $property['initial_index'];
             
-            error_log("Current Value Calculation: " . print_r([
-                'initial_valuation' => $property['initial_valuation'],
-                'appreciation' => $appreciation['appreciation'],
-                'current_value' => $currentValue
-            ], true));
+            // Calculate appreciation
+            $appreciation = $difference * $property['initial_valuation'];
             
-            // Calculate terminal value (projected value at end of term)
-            $yearsRemaining = (strtotime($property['term']) - strtotime($valuationDate)) / (365 * 24 * 60 * 60);
-            $terminalValue = $currentValue * pow(1 + ($appreciation['appreciation_rate'] / 100), $yearsRemaining);
+            // Calculate appreciation share
+            $shareAppreciation = $appreciation * ($property['agreed_pct'] / 100);
             
-            error_log("Terminal Value Calculation: " . print_r([
-                'current_value' => $currentValue,
-                'appreciation_rate' => $appreciation['appreciation_rate'],
-                'years_remaining' => $yearsRemaining,
-                'terminal_value' => $terminalValue
-            ], true));
-            
-            // Calculate projected payoff
-            $projectedPayoff = $terminalValue * ($property['agreed_pct'] / 100);
-            
-            error_log("Projected Payoff Calculation: " . print_r([
-                'terminal_value' => $terminalValue,
-                'agreed_pct' => $property['agreed_pct'],
-                'projected_payoff' => $projectedPayoff
-            ], true));
-            
-            // Calculate option valuation
-            $optionValuation = $projectedPayoff - $property['option_price'];
-            
-            error_log("Option Valuation Calculation: " . print_r([
-                'projected_payoff' => $projectedPayoff,
-                'option_price' => $property['option_price'],
-                'option_valuation' => $optionValuation
+            error_log("Calculations: " . print_r([
+                'difference' => $difference,
+                'appreciation' => $appreciation,
+                'share_appreciation' => $shareAppreciation
             ], true));
             
             // Check if valuation already exists for this date
@@ -282,63 +267,74 @@ class CSUSHPINSA {
                 // Update existing valuation
                 $stmt = $this->db->prepare("
                     UPDATE property_valuations 
-                    SET current_value = ?,
+                    SET initial_valuation = ?,
+                        initial_index = ?,
+                        index_value = ?,
                         appreciation = ?,
+                        agreed_pct = ?,
                         share_appreciation = ?,
-                        terminal_value = ?,
-                        projected_payoff = ?,
-                        option_valuation = ?,
+                        option_price = ?,
+                        total_fees = ?,
                         updated_at = NOW()
                     WHERE id = ?
                 ");
                 $stmt->execute([
-                    $currentValue,
-                    $appreciation['appreciation'],
-                    $appreciation['share_appreciation'],
-                    $terminalValue,
-                    $projectedPayoff,
-                    $optionValuation,
+                    $property['initial_valuation'],
+                    $property['initial_index'],
+                    $currentIndex['value'],
+                    $appreciation,
+                    $property['agreed_pct'],
+                    $shareAppreciation,
+                    $property['option_price'],
+                    $property['total_fees'],
                     $existingValuation['id']
                 ]);
 
                 error_log("Updated existing valuation: " . print_r([
                     'property_id' => $propertyId,
                     'valuation_date' => $valuationDate,
-                    'current_value' => $currentValue,
-                    'appreciation' => $appreciation['appreciation'],
-                    'share_appreciation' => $appreciation['share_appreciation'],
-                    'terminal_value' => $terminalValue,
-                    'projected_payoff' => $projectedPayoff,
-                    'option_valuation' => $optionValuation
+                    'initial_valuation' => $property['initial_valuation'],
+                    'initial_index' => $property['initial_index'],
+                    'index_value' => $currentIndex['value'],
+                    'appreciation' => $appreciation,
+                    'agreed_pct' => $property['agreed_pct'],
+                    'share_appreciation' => $shareAppreciation,
+                    'option_price' => $property['option_price'],
+                    'total_fees' => $property['total_fees']
                 ], true));
             } else {
                 // Insert new valuation
                 $stmt = $this->db->prepare("
                     INSERT INTO property_valuations (
-                        property_id, valuation_date, current_value, appreciation,
-                        share_appreciation, terminal_value, projected_payoff, option_valuation
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        property_id, valuation_date, initial_valuation, initial_index,
+                        index_value, appreciation, agreed_pct, share_appreciation,
+                        option_price, total_fees
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
                 $stmt->execute([
                     $propertyId,
                     $valuationDate,
-                    $currentValue,
-                    $appreciation['appreciation'],
-                    $appreciation['share_appreciation'],
-                    $terminalValue,
-                    $projectedPayoff,
-                    $optionValuation
+                    $property['initial_valuation'],
+                    $property['initial_index'],
+                    $currentIndex['value'],
+                    $appreciation,
+                    $property['agreed_pct'],
+                    $shareAppreciation,
+                    $property['option_price'],
+                    $property['total_fees']
                 ]);
 
                 error_log("Inserted new valuation: " . print_r([
                     'property_id' => $propertyId,
                     'valuation_date' => $valuationDate,
-                    'current_value' => $currentValue,
-                    'appreciation' => $appreciation['appreciation'],
-                    'share_appreciation' => $appreciation['share_appreciation'],
-                    'terminal_value' => $terminalValue,
-                    'projected_payoff' => $projectedPayoff,
-                    'option_valuation' => $optionValuation
+                    'initial_valuation' => $property['initial_valuation'],
+                    'initial_index' => $property['initial_index'],
+                    'index_value' => $currentIndex['value'],
+                    'appreciation' => $appreciation,
+                    'agreed_pct' => $property['agreed_pct'],
+                    'share_appreciation' => $shareAppreciation,
+                    'option_price' => $property['option_price'],
+                    'total_fees' => $property['total_fees']
                 ], true));
             }
             
@@ -349,7 +345,7 @@ class CSUSHPINSA {
             ");
             $stmt->execute([
                 $_SESSION['user_id'],
-                "Updated property valuation for property ID {$propertyId} to {$currentValue}"
+                "Updated property valuation for property ID {$propertyId} with appreciation {$appreciation}"
             ]);
             
             return true;

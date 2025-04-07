@@ -20,7 +20,7 @@ $path = parse_url($request_uri, PHP_URL_PATH);
 $path = str_replace($base_path, '', $path);
 $path = trim($path, '/');
 
-// Definir rutas
+// Define routes
 $routes = [
     '' => MODULES_PATH . '/auth/login.php',
     'login' => MODULES_PATH . '/auth/login.php',
@@ -28,10 +28,12 @@ $routes = [
     'dashboard' => MODULES_PATH . '/admin/dashboard.php',
     'properties' => MODULES_PATH . '/properties/list.php',
     'clients' => MODULES_PATH . '/clients/list.php',
-    'reports' => MODULES_PATH . '/reports/generate.php'
+    'reports' => MODULES_PATH . '/reports/generate.php',
+    'client_form.html' => __DIR__ . '/client_form.html',
+    'property_form.html' => __DIR__ . '/property_form.html'
 ];
 
-// Función para verificar autenticación
+// Function to check authentication
 function checkAuth() {
     if (!isset($_SESSION['user_id'])) {
         header('Location: ' . BASE_URL . '/login');
@@ -39,7 +41,7 @@ function checkAuth() {
     }
 }
 
-// Función para verificar permisos
+// Function to check permissions
 function checkPermission($requiredRole) {
     if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== $requiredRole) {
         header('Location: ' . BASE_URL . '/login');
@@ -47,16 +49,19 @@ function checkPermission($requiredRole) {
     }
 }
 
-// Manejar la ruta
+// Include header
+require_once INCLUDES_PATH . '/header.php';
+
+// Handle the route
 if (array_key_exists($path, $routes)) {
     $file = $routes[$path];
     
-    // Verificar autenticación para rutas protegidas
-    if ($path !== '' && $path !== 'login') {
+    // Check authentication for protected routes
+    if ($path !== '' && $path !== 'login' && !str_ends_with($path, '.html')) {
         checkAuth();
     }
     
-    // Verificar permisos específicos
+    // Check specific permissions
     if ($path === 'dashboard' || $path === 'reports') {
         checkPermission(ROLE_ADMIN);
     }
@@ -71,3 +76,6 @@ if (array_key_exists($path, $routes)) {
     header("HTTP/1.0 404 Not Found");
     require_once INCLUDES_PATH . '/404.php';
 }
+
+// Include footer
+require_once INCLUDES_PATH . '/footer.php';

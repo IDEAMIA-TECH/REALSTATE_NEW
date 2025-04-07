@@ -857,6 +857,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <th>Beginning Index</th>
                                             <th>Update Index</th>
                                             <th>Difference</th>
+                                            <th>Option Premium</th>
                                             <th>Appreciation</th>
                                             <th>Appreciation Participation</th>
                                             <th>Appreciation Share</th>

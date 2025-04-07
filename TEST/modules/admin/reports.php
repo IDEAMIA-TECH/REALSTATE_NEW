@@ -142,114 +142,270 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Reports - <?php echo APP_NAME; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="<?php echo BASE_URL; ?>/assets/css/global.css" rel="stylesheet">
     <style>
-        .reports-container {
-            padding: 20px;
+        .page-hero {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+            border-radius: var(--border-radius);
         }
+
         .report-card {
-            margin-bottom: 20px;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+            border-left: 4px solid var(--secondary-color);
         }
+
+        .report-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--box-shadow);
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .report-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .export-button {
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            border: none;
+            font-weight: 500;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .export-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-excel {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: #2ecc71;
+        }
+
+        .btn-pdf {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
         .chart-container {
             height: 300px;
-            margin-bottom: 20px;
+            margin-bottom: 2rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
         }
-        .export-buttons {
-            margin-bottom: 20px;
+
+        .table-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #eee;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+        .form-control, .form-select {
+            border-radius: var(--border-radius);
+            border: 1px solid #ddd;
+            padding: 0.75rem 1rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .report-summary {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            flex: 1;
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-label {
+            color: #666;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
     <?php require_once INCLUDES_PATH . '/header.php'; ?>
     
-    <div class="container reports-container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Reports</h1>
-            <?php if (!empty($reports)): ?>
-                <div class="export-buttons">
-                    <form method="POST" action="" style="display: inline;">
-                        <input type="hidden" name="action" value="generate_report">
-                        <input type="hidden" name="report_type" value="<?php echo htmlspecialchars($_POST['report_type'] ?? ''); ?>">
-                        <input type="hidden" name="start_date" value="<?php echo htmlspecialchars($_POST['start_date'] ?? ''); ?>">
-                        <input type="hidden" name="end_date" value="<?php echo htmlspecialchars($_POST['end_date'] ?? ''); ?>">
-                        <input type="hidden" name="export_type" value="excel">
-                        <button type="submit" class="btn btn-success">
-                            <i class="fas fa-file-excel"></i> Export to Excel
-                        </button>
-                    </form>
-                    <form method="POST" action="" style="display: inline;">
-                        <input type="hidden" name="action" value="generate_report">
-                        <input type="hidden" name="report_type" value="<?php echo htmlspecialchars($_POST['report_type'] ?? ''); ?>">
-                        <input type="hidden" name="start_date" value="<?php echo htmlspecialchars($_POST['start_date'] ?? ''); ?>">
-                        <input type="hidden" name="end_date" value="<?php echo htmlspecialchars($_POST['end_date'] ?? ''); ?>">
-                        <input type="hidden" name="export_type" value="pdf">
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-file-pdf"></i> Export to PDF
-                        </button>
-                    </form>
-                </div>
-            <?php endif; ?>
+    <div class="page-hero">
+        <div class="container">
+            <h1 class="text-white"><i class="fas fa-chart-bar me-2"></i>Reports</h1>
+            <p class="lead text-white">Generate and analyze detailed reports</p>
         </div>
-        
+    </div>
+
+    <div class="container">
         <?php if ($message): ?>
-            <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php echo htmlspecialchars($message); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         <?php endif; ?>
         
         <?php if ($error): ?>
-            <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?php echo htmlspecialchars($error); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         <?php endif; ?>
-        
-        <form method="POST" action="" class="mb-4">
-            <input type="hidden" name="action" value="generate_report">
-            
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label for="report_type" class="form-label">Report Type</label>
-                        <select class="form-select" id="report_type" name="report_type" required>
-                            <option value="">Select a report type</option>
-                            <option value="property_valuation">Property Valuation Report</option>
-                            <option value="client_activity">Client Activity Report</option>
-                            <option value="csushpinsa">CSUSHPINSA Index Report</option>
-                            <option value="user_activity">User Activity Report</option>
-                        </select>
+
+        <div class="report-card">
+            <form method="POST" action="">
+                <input type="hidden" name="action" value="generate_report">
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="report_type" class="form-label">Report Type</label>
+                            <select class="form-select" id="report_type" name="report_type" required>
+                                <option value="">Select a report type</option>
+                                <option value="property_valuation">Property Valuation Report</option>
+                                <option value="client_activity">Client Activity Report</option>
+                                <option value="csushpinsa">CSUSHPINSA Index Report</option>
+                                <option value="user_activity">User Activity Report</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" required>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label for="start_date" class="form-label">Start Date</label>
-                        <input type="date" class="form-control" id="start_date" name="start_date" required>
-                    </div>
+                
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-chart-bar me-2"></i>Generate Report
+                    </button>
                 </div>
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label for="end_date" class="form-label">End Date</label>
-                        <input type="date" class="form-control" id="end_date" name="end_date" required>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="text-end">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-chart-bar"></i> Generate Report
-                </button>
-            </div>
-        </form>
+            </form>
+        </div>
         
         <!-- Report Results -->
         <?php if (!empty($reports)): ?>
             <?php foreach ($reports as $type => $data): ?>
-                <div class="card report-card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><?php echo ucwords(str_replace('_', ' ', $type)); ?> Report</h5>
+                <div class="report-card">
+                    <div class="report-header">
+                        <h5 class="report-title">
+                            <i class="fas fa-file-alt me-2"></i>
+                            <?php echo ucwords(str_replace('_', ' ', $type)); ?> Report
+                        </h5>
+                        <div class="export-buttons">
+                            <form method="POST" action="" style="display: inline;">
+                                <input type="hidden" name="action" value="generate_report">
+                                <input type="hidden" name="report_type" value="<?php echo htmlspecialchars($type); ?>">
+                                <input type="hidden" name="start_date" value="<?php echo htmlspecialchars($_POST['start_date'] ?? ''); ?>">
+                                <input type="hidden" name="end_date" value="<?php echo htmlspecialchars($_POST['end_date'] ?? ''); ?>">
+                                <input type="hidden" name="export_type" value="excel">
+                                <button type="submit" class="export-button btn-excel">
+                                    <i class="fas fa-file-excel"></i> Excel
+                                </button>
+                            </form>
+                            <form method="POST" action="" style="display: inline;">
+                                <input type="hidden" name="action" value="generate_report">
+                                <input type="hidden" name="report_type" value="<?php echo htmlspecialchars($type); ?>">
+                                <input type="hidden" name="start_date" value="<?php echo htmlspecialchars($_POST['start_date'] ?? ''); ?>">
+                                <input type="hidden" name="end_date" value="<?php echo htmlspecialchars($_POST['end_date'] ?? ''); ?>">
+                                <input type="hidden" name="export_type" value="pdf">
+                                <button type="submit" class="export-button btn-pdf">
+                                    <i class="fas fa-file-pdf"></i> PDF
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <?php if ($type === 'property_valuation'): ?>
+
+                    <?php if ($type === 'property_valuation'): ?>
+                        <div class="report-summary">
+                            <div class="summary-card">
+                                <div class="summary-value">
+                                    $<?php echo number_format(array_sum(array_column($data, 'initial_valuation')), 2); ?>
+                                </div>
+                                <div class="summary-label">Total Initial Valuation</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-value">
+                                    $<?php echo number_format(array_sum(array_column($data, 'current_value')), 2); ?>
+                                </div>
+                                <div class="summary-label">Total Current Value</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-value">
+                                    <?php echo number_format((array_sum(array_column($data, 'current_value')) / array_sum(array_column($data, 'initial_valuation')) - 1) * 100, 2); ?>%
+                                </div>
+                                <div class="summary-label">Average Appreciation</div>
+                            </div>
+                        </div>
+                        <div class="table-container">
                             <div class="table-responsive">
-                                <table class="table table-striped">
+                                <table class="table">
                                     <thead>
                                         <tr>
-                                            <th>Property ID</th>
-                                            <th>Address</th>
+                                            <th>Property</th>
                                             <th>Initial Value</th>
                                             <th>Current Value</th>
                                             <th>Appreciation</th>
@@ -262,7 +418,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <tbody>
                                         <?php foreach ($data as $row): ?>
                                             <tr>
-                                                <td><?php echo htmlspecialchars($row['id']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['address']); ?></td>
                                                 <td>$<?php echo number_format($row['initial_valuation'], 2); ?></td>
                                                 <td>$<?php echo number_format($row['current_value'], 2); ?></td>
@@ -276,13 +431,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </tbody>
                                 </table>
                             </div>
-                        <?php elseif ($type === 'client_activity'): ?>
+                        </div>
+                    <?php elseif ($type === 'client_activity'): ?>
+                        <div class="report-summary">
+                            <div class="summary-card">
+                                <div class="summary-value">
+                                    <?php echo count($data); ?>
+                                </div>
+                                <div class="summary-label">Total Clients</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-value">
+                                    <?php echo array_sum(array_column($data, 'property_count')); ?>
+                                </div>
+                                <div class="summary-label">Total Properties</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-value">
+                                    $<?php echo number_format(array_sum(array_column($data, 'total_valuation')), 2); ?>
+                                </div>
+                                <div class="summary-label">Total Valuation</div>
+                            </div>
+                        </div>
+                        <div class="table-container">
                             <div class="table-responsive">
-                                <table class="table table-striped">
+                                <table class="table">
                                     <thead>
                                         <tr>
-                                            <th>Client ID</th>
-                                            <th>Name</th>
+                                            <th>Client</th>
                                             <th>Email</th>
                                             <th>Properties</th>
                                             <th>Total Valuation</th>
@@ -292,7 +468,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <tbody>
                                         <?php foreach ($data as $row): ?>
                                             <tr>
-                                                <td><?php echo htmlspecialchars($row['id']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['name']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['email']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['property_count']); ?></td>
@@ -303,35 +478,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </tbody>
                                 </table>
                             </div>
-                        <?php elseif ($type === 'csushpinsa'): ?>
-                            <div class="chart-container">
-                                <canvas id="csushpinsaChart"></canvas>
-                            </div>
+                        </div>
+                    <?php elseif ($type === 'csushpinsa'): ?>
+                        <div class="chart-container">
+                            <canvas id="csushpinsaChart"></canvas>
+                        </div>
+                        <div class="table-container">
                             <div class="table-responsive">
-                                <table class="table table-striped">
+                                <table class="table">
                                     <thead>
                                         <tr>
                                             <th>Date</th>
                                             <th>Index Value</th>
+                                            <th>Change</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php foreach ($data as $row): ?>
+                                        <?php 
+                                        $previousValue = null;
+                                        foreach ($data as $row): 
+                                            $change = $previousValue !== null ? 
+                                                (($row['value'] - $previousValue) / $previousValue * 100) : 0;
+                                            $previousValue = $row['value'];
+                                        ?>
                                             <tr>
                                                 <td><?php echo htmlspecialchars($row['date']); ?></td>
                                                 <td><?php echo number_format($row['value'], 2); ?></td>
+                                                <td class="<?php echo $change >= 0 ? 'text-success' : 'text-danger'; ?>">
+                                                    <?php echo $change >= 0 ? '+' : ''; ?>
+                                                    <?php echo number_format($change, 2); ?>%
+                                                </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>
                                 </table>
                             </div>
-                        <?php elseif ($type === 'user_activity'): ?>
+                        </div>
+                    <?php elseif ($type === 'user_activity'): ?>
+                        <div class="report-summary">
+                            <div class="summary-card">
+                                <div class="summary-value">
+                                    <?php echo count(array_unique(array_column($data, 'username'))); ?>
+                                </div>
+                                <div class="summary-label">Active Users</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-value">
+                                    <?php echo array_sum(array_column($data, 'action_count')); ?>
+                                </div>
+                                <div class="summary-label">Total Actions</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-value">
+                                    <?php echo count(array_unique(array_column($data, 'action'))); ?>
+                                </div>
+                                <div class="summary-label">Unique Actions</div>
+                            </div>
+                        </div>
+                        <div class="table-container">
                             <div class="table-responsive">
-                                <table class="table table-striped">
+                                <table class="table">
                                     <thead>
                                         <tr>
-                                            <th>Username</th>
-                                            <th>Email</th>
+                                            <th>User</th>
                                             <th>Role</th>
                                             <th>Action</th>
                                             <th>Entity Type</th>
@@ -342,9 +551,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <tbody>
                                         <?php foreach ($data as $row): ?>
                                             <tr>
-                                                <td><?php echo htmlspecialchars($row['username']); ?></td>
-                                                <td><?php echo htmlspecialchars($row['email']); ?></td>
-                                                <td><?php echo htmlspecialchars($row['role']); ?></td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="client-avatar me-2">
+                                                            <i class="fas fa-user"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-bold"><?php echo htmlspecialchars($row['username']); ?></div>
+                                                            <div class="small text-muted"><?php echo htmlspecialchars($row['email']); ?></div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-<?php echo $row['role'] === 'admin' ? 'primary' : 'secondary'; ?>">
+                                                        <?php echo ucfirst(htmlspecialchars($row['role'])); ?>
+                                                    </span>
+                                                </td>
                                                 <td><?php echo htmlspecialchars($row['action']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['entity_type']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['action_count']); ?></td>
@@ -354,14 +576,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </tbody>
                                 </table>
                             </div>
-                        <?php endif; ?>
-                    </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
-    
-    <?php require_once INCLUDES_PATH . '/footer.php'; ?>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -379,13 +599,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     datasets: [{
                         label: 'CSUSHPINSA Index',
                         data: values,
-                        borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1
+                        borderColor: 'rgb(52, 152, 219)',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.4,
+                        fill: true
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
                 }
             });
         <?php endif; ?>

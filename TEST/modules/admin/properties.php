@@ -972,18 +972,23 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         // Handle document upload
         document.getElementById('documentUploadForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            console.log('Document upload form submitted');
             
             // Verificar sesión antes de subir
-            if (!document.cookie.includes('PHPSESSID')) {
+            const hasSession = document.cookie.includes('PHPSESSID');
+            console.log('Session check:', { hasSession, cookies: document.cookie });
+            
+            if (!hasSession) {
+                console.error('No active session found');
                 alert('Your session has expired. Please refresh the page and log in again.');
                 return;
             }
             
             const propertyId = document.getElementById('document_property_id').value;
-            log('Attempting to upload document for property:', propertyId);
+            console.log('Property ID from form:', propertyId);
             
             if (!propertyId) {
-                log('Error: No property ID found');
+                console.error('Error: No property ID found');
                 alert('Error: No property ID found');
                 return;
             }
@@ -991,12 +996,13 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             const formData = new FormData(this);
             formData.append('property_id', propertyId);
             
-            log('Form data:', {
-                property_id: propertyId,
-                document_name: formData.get('document_name'),
-                document_type: formData.get('document_type')
-            });
+            // Log all form data
+            console.log('Form data entries:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}:`, value);
+            }
             
+            console.log('Sending upload request to upload_document.php');
             fetch('upload_document.php', {
                 method: 'POST',
                 body: formData,
@@ -1006,23 +1012,32 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
             })
             .then(response => {
-                log('Upload response status:', response.status);
+                console.log('Upload response received:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
                 
                 if (response.status === 401 || response.status === 403) {
+                    console.error('Session expired - HTTP status:', response.status);
                     throw new Error('Session expired');
                 }
                 
                 if (!response.ok) {
+                    console.error('HTTP error:', response.status);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 return response.text().then(text => {
-                    log('Raw upload response:', text);
+                    console.log('Raw server response:', text);
                     try {
-                        return JSON.parse(text);
+                        const jsonData = JSON.parse(text);
+                        console.log('Parsed JSON response:', jsonData);
+                        return jsonData;
                     } catch (e) {
-                        log('JSON parse error:', e);
+                        console.error('JSON parse error:', e);
                         if (text.includes('dashboard.php')) {
+                            console.error('Redirect detected in response');
                             throw new Error('Session expired - Redirected to dashboard');
                         }
                         throw new Error('Invalid JSON response');
@@ -1030,33 +1045,40 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 });
             })
             .then(data => {
-                log('Upload response data:', data);
+                console.log('Processing upload response:', data);
                 if (data.success) {
+                    console.log('Upload successful, refreshing documents list');
                     // Refresh documents list
                     fetchDocuments(propertyId);
                     alert(data.message);
                     // Reset form
                     this.reset();
                 } else {
+                    console.error('Upload failed:', data.error);
                     alert(data.error || 'Error uploading document');
                 }
             })
             .catch(error => {
-                log('Error uploading document:', error);
+                console.error('Error in upload process:', error);
                 if (error.message.includes('Session expired') || error.message.includes('Redirected to dashboard')) {
+                    console.error('Session expired error');
                     alert('Your session has expired. Please refresh the page and log in again.');
                 } else {
+                    console.error('Other error:', error.message);
                     alert('Error uploading document: ' + error.message);
                 }
             });
         });
 
         function fetchDocuments(propertyId) {
-            log('Fetching documents for property:', propertyId);
+            console.log('Starting fetchDocuments for property:', propertyId);
             
             // Verificar sesión antes de hacer la petición
-            if (!document.cookie.includes('PHPSESSID')) {
-                log('No active session found');
+            const hasSession = document.cookie.includes('PHPSESSID');
+            console.log('Session check in fetchDocuments:', { hasSession, cookies: document.cookie });
+            
+            if (!hasSession) {
+                console.error('No active session found in fetchDocuments');
                 const container = document.getElementById('documents_list');
                 container.innerHTML = `
                     <div class="alert alert-warning">
@@ -1067,6 +1089,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 return;
             }
             
+            console.log('Fetching documents from get_documents.php');
             fetch(`get_documents.php?property_id=${propertyId}`, {
                 credentials: 'same-origin',
                 headers: {
@@ -1077,23 +1100,32 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
             })
             .then(response => {
-                log('Documents response status:', response.status);
+                console.log('Documents response received:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
                 
                 if (response.status === 401 || response.status === 403) {
+                    console.error('Session expired in fetchDocuments - HTTP status:', response.status);
                     throw new Error('Session expired');
                 }
                 
                 if (!response.ok) {
+                    console.error('HTTP error in fetchDocuments:', response.status);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 return response.text().then(text => {
-                    log('Raw response text:', text);
+                    console.log('Raw documents response:', text);
                     try {
-                        return JSON.parse(text);
+                        const jsonData = JSON.parse(text);
+                        console.log('Parsed documents JSON:', jsonData);
+                        return jsonData;
                     } catch (e) {
-                        log('JSON parse error:', e);
+                        console.error('JSON parse error in fetchDocuments:', e);
                         if (text.includes('dashboard.php')) {
+                            console.error('Redirect detected in documents response');
                             throw new Error('Session expired - Redirected to dashboard');
                         }
                         throw new Error('Invalid JSON response');
@@ -1101,11 +1133,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 });
             })
             .then(data => {
-                log('Documents data:', data);
+                console.log('Processing documents data:', data);
                 const container = document.getElementById('documents_list');
                 container.innerHTML = '';
                 
                 if (!data.success) {
+                    console.error('Error in documents data:', data.error);
                     container.innerHTML = `
                         <div class="alert alert-danger">
                             <h6>Error loading documents</h6>
@@ -1116,10 +1149,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
                 
                 if (!data.documents || !Array.isArray(data.documents)) {
+                    console.log('No documents available');
                     container.innerHTML = '<div class="alert alert-info">No documents available</div>';
                     return;
                 }
                 
+                console.log('Rendering documents:', data.documents);
                 data.documents.forEach(doc => {
                     const docElement = document.createElement('div');
                     docElement.className = 'document-item';
@@ -1146,10 +1181,11 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 });
             })
             .catch(error => {
-                log('Error fetching documents:', error);
+                console.error('Error in fetchDocuments:', error);
                 const container = document.getElementById('documents_list');
                 
                 if (error.message.includes('Session expired') || error.message.includes('Redirected to dashboard')) {
+                    console.error('Session expired error in fetchDocuments');
                     container.innerHTML = `
                         <div class="alert alert-warning">
                             <h6>Session Expired</h6>
@@ -1157,6 +1193,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                     `;
                 } else {
+                    console.error('Other error in fetchDocuments:', error.message);
                     container.innerHTML = `
                         <div class="alert alert-danger">
                             <h6>Error loading documents</h6>

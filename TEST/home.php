@@ -5,11 +5,9 @@ require_once __DIR__ . '/config.php';
 // Start session
 session_start();
 
-// If user is logged in, redirect to dashboard
-if (isset($_SESSION['user_id'])) {
-    header('Location: ' . BASE_URL . '/dashboard');
-    exit;
-}
+// Redirect to login page
+header('Location: ' . BASE_URL . '/modules/auth/login.php');
+exit;
 ?>
 
 <!DOCTYPE html>

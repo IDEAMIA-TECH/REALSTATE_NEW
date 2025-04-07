@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
             
             <div class="text-center mt-3">
-                <p>Don't have an account? <a href="<?php echo BASE_URL; ?>/register">Register here</a></p>
+                <p>Don't have an account? <a href="<?php echo BASE_URL; ?>/modules/auth/register.php">Register here</a></p>
             </div>
         </div>
     </div>

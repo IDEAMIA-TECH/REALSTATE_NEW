@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../../config/database.php';
+
 class User {
     private $db;
     private $table = 'users';
@@ -9,38 +11,84 @@ class User {
 
     public function create($data) {
         try {
-            $sql = "INSERT INTO {$this->table} (username, password, email, role) 
-                    VALUES (:username, :password, :email, :role)";
+            // Validate required fields
+            if (empty($data['username']) || empty($data['password']) || empty($data['email'])) {
+                return [
+                    'success' => false,
+                    'message' => 'All fields are required'
+                ];
+            }
             
-            $stmt = $this->db->prepare($sql);
+            // Check if username or email already exists
+            $stmt = $this->db->prepare("SELECT id FROM {$this->table} WHERE username = ? OR email = ?");
+            $stmt->execute([$data['username'], $data['email']]);
+            if ($stmt->rowCount() > 0) {
+                return [
+                    'success' => false,
+                    'message' => 'Username or email already exists'
+                ];
+            }
+            
+            // Hash password
+            $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+            
+            // Insert new user
+            $stmt = $this->db->prepare("
+                INSERT INTO {$this->table} (username, password, email, role, status) 
+                VALUES (?, ?, ?, ?, 'active')
+            ");
+            
             $stmt->execute([
-                'username' => $data['username'],
-                'password' => password_hash($data['password'], PASSWORD_DEFAULT),
-                'email' => $data['email'],
-                'role' => $data['role']
+                $data['username'],
+                $data['password'],
+                $data['email'],
+                $data['role'] ?? 'view_only'
             ]);
-
-            return $this->db->lastInsertId();
+            
+            return [
+                'success' => true,
+                'message' => 'User created successfully',
+                'id' => $this->db->lastInsertId()
+            ];
         } catch (PDOException $e) {
-            throw new Exception("Error creating user: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Database error: ' . $e->getMessage()
+            ];
         }
     }
 
     public function authenticate($username, $password) {
         try {
-            $sql = "SELECT * FROM {$this->table} WHERE username = :username AND status = 'active'";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute(['username' => $username]);
-            $user = $stmt->fetch();
-
+            $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE username = ? AND status = 'active' LIMIT 1");
+            $stmt->execute([$username]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
             if ($user && password_verify($password, $user['password'])) {
-                unset($user['password']);
-                return $user;
+                // Update last login
+                $this->updateLastLogin($user['id']);
+                
+                // Set session variables
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['role'] = $user['role'];
+                
+                return [
+                    'success' => true,
+                    'message' => 'Login successful',
+                    'user' => $user
+                ];
             }
-
-            return false;
+            
+            return [
+                'success' => false,
+                'message' => 'Invalid username or password'
+            ];
         } catch (PDOException $e) {
-            throw new Exception("Authentication error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Database error: ' . $e->getMessage()
+            ];
         }
     }
 
@@ -88,6 +136,16 @@ class User {
             ]);
         } catch (PDOException $e) {
             throw new Exception("Error changing password: " . $e->getMessage());
+        }
+    }
+
+    private function updateLastLogin($userId) {
+        try {
+            $stmt = $this->db->prepare("UPDATE {$this->table} SET last_login = NOW() WHERE id = ?");
+            $stmt->execute([$userId]);
+        } catch (PDOException $e) {
+            // Log error but don't fail the login
+            error_log("Failed to update last login: " . $e->getMessage());
         }
     }
 } 

@@ -1,4 +1,7 @@
 <?php
+// Load required files
+require_once __DIR__ . '/User.php';
+
 class AuthController {
     private $user;
 

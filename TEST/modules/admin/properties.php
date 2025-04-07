@@ -932,14 +932,15 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
-                }
+                },
+                redirect: 'manual' // Evitar el seguimiento automático de redirecciones
             })
             .then(response => {
                 log('Documents response status:', response.status);
                 
-                // Verificar si la respuesta es una redirección
-                if (response.redirected) {
-                    log('Response was redirected to:', response.url);
+                // Si la respuesta es una redirección, lanzar un error
+                if (response.type === 'opaqueredirect') {
+                    log('Response was redirected');
                     throw new Error('Session expired');
                 }
                 

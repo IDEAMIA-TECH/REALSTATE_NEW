@@ -123,84 +123,298 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <title>Property Management - <?php echo APP_NAME; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="<?php echo BASE_URL; ?>/assets/css/global.css" rel="stylesheet">
+    <style>
+        .page-hero {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+            border-radius: var(--border-radius);
+        }
+
+        .property-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .property-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--box-shadow);
+        }
+
+        .property-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+        }
+
+        .property-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .property-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .property-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: #2ecc71;
+        }
+
+        .status-archived {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
+        .property-details {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .property-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .property-meta {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-button {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            border: none;
+        }
+
+        .action-button:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-view {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: #3498db;
+        }
+
+        .btn-edit {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: #2ecc71;
+        }
+
+        .btn-delete {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
+        .modal-content {
+            border-radius: var(--border-radius);
+            border: none;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        .modal-title {
+            font-weight: 600;
+        }
+
+        .form-control, .form-select {
+            border-radius: var(--border-radius);
+            border: 1px solid #ddd;
+            padding: 0.75rem 1rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .input-group-text {
+            border-radius: var(--border-radius);
+        }
+
+        .document-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        .document-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-radius: var(--border-radius);
+            margin-bottom: 0.5rem;
+        }
+
+        .document-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .document-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(52, 152, 219, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #3498db;
+        }
+
+        .document-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+    </style>
 </head>
 <body>
     <?php require_once INCLUDES_PATH . '/header.php'; ?>
     
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Property Management</h1>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPropertyModal">
-                <i class="fas fa-plus"></i> Add Property
-            </button>
+    <div class="page-hero">
+        <div class="container">
+            <h1 class="text-white"><i class="fas fa-home me-2"></i>Property Management</h1>
+            <p class="lead text-white">Manage your real estate properties and valuations</p>
         </div>
-        
+    </div>
+
+    <div class="container">
         <?php if ($message): ?>
-            <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php echo htmlspecialchars($message); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         <?php endif; ?>
         
         <?php if ($error): ?>
-            <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
-        <?php endif; ?>
-        
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Client</th>
-                                <th>Address</th>
-                                <th>Initial Value</th>
-                                <th>Agreed %</th>
-                                <th>Effective Date</th>
-                                <th>Term</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($properties as $property): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($property['id']); ?></td>
-                                    <td><?php echo htmlspecialchars($property['client_name']); ?></td>
-                                    <td><?php echo htmlspecialchars($property['address']); ?></td>
-                                    <td>$<?php echo number_format($property['initial_valuation'], 2); ?></td>
-                                    <td><?php echo number_format($property['agreed_pct'], 2); ?>%</td>
-                                    <td><?php echo htmlspecialchars($property['effective_date']); ?></td>
-                                    <td><?php echo htmlspecialchars($property['term']); ?> months</td>
-                                    <td>
-                                        <span class="badge bg-<?php echo $property['status'] === 'active' ? 'success' : 'secondary'; ?>">
-                                            <?php echo ucfirst($property['status']); ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-info" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#viewPropertyModal"
-                                                data-property='<?php echo json_encode($property); ?>'>
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-primary" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#editPropertyModal"
-                                                data-property='<?php echo json_encode($property); ?>'>
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-danger"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#deletePropertyModal"
-                                                data-property-id="<?php echo $property['id']; ?>">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?php echo htmlspecialchars($error); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
+        <?php endif; ?>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h4 mb-0">All Properties</h2>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPropertyModal">
+                <i class="fas fa-plus me-2"></i>Add New Property
+            </button>
+        </div>
+
+        <div class="row">
+            <?php foreach ($properties as $property): ?>
+                <div class="col-md-6 col-lg-4">
+                    <div class="property-card">
+                        <img src="https://source.unsplash.com/random/800x600/?house,<?php echo urlencode($property['address']); ?>" 
+                             alt="<?php echo htmlspecialchars($property['address']); ?>" 
+                             class="property-image">
+                        
+                        <div class="property-header">
+                            <h5 class="property-title"><?php echo htmlspecialchars($property['address']); ?></h5>
+                            <span class="property-status status-<?php echo htmlspecialchars($property['status']); ?>">
+                                <?php echo ucfirst(htmlspecialchars($property['status'])); ?>
+                            </span>
+                        </div>
+
+                        <div class="property-details">
+                            <div class="property-value">
+                                $<?php echo number_format($property['initial_valuation'], 2); ?>
+                            </div>
+                            <div class="property-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-user"></i>
+                                    <?php echo htmlspecialchars($property['client_name']); ?>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-percentage"></i>
+                                    <?php echo number_format($property['agreed_pct'], 2); ?>%
+                                </div>
+                            </div>
+                            <div class="property-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <?php echo htmlspecialchars($property['effective_date']); ?>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-clock"></i>
+                                    <?php echo htmlspecialchars($property['term']); ?> months
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-buttons">
+                            <button type="button" class="action-button btn-view" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#viewPropertyModal"
+                                    data-property='<?php echo json_encode($property); ?>'>
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button type="button" class="action-button btn-edit" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#editPropertyModal"
+                                    data-property='<?php echo json_encode($property); ?>'>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button type="button" class="action-button btn-delete"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deletePropertyModal"
+                                    data-property-id="<?php echo $property['id']; ?>">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         </div>
     </div>
     
@@ -419,6 +633,9 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
+                            <img src="https://source.unsplash.com/random/800x600/?house" 
+                                 alt="Property Image" 
+                                 class="property-image mb-3">
                             <h6>Basic Information</h6>
                             <table class="table table-sm">
                                 <tr>
@@ -497,55 +714,36 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                     </div>
                     
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <h6>Documents</h6>
-                            <div class="card">
-                                <div class="card-body">
-                                    <!-- Document Upload Form -->
-                                    <form id="documentUploadForm" class="mb-3" enctype="multipart/form-data">
-                                        <input type="hidden" name="property_id" id="document_property_id">
-                                        <div class="row g-3">
-                                            <div class="col-md-4">
-                                                <input type="text" class="form-control" name="document_name" placeholder="Document Name" required>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <select class="form-select" name="document_type" required>
-                                                    <option value="">Select Type</option>
-                                                    <option value="contract">Contract</option>
-                                                    <option value="valuation">Valuation Report</option>
-                                                    <option value="inspection">Inspection Report</option>
-                                                    <option value="other">Other</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <input type="file" class="form-control" name="document" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
-                                            </div>
-                                            <div class="col-md-2">
-                                                <button type="submit" class="btn btn-primary w-100">
-                                                    <i class="fas fa-upload"></i> Upload
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                    
-                                    <!-- Documents Table -->
-                                    <div class="table-responsive">
-                                        <table class="table table-sm">
-                                            <thead>
-                                                <tr>
-                                                    <th>Name</th>
-                                                    <th>Type</th>
-                                                    <th>Upload Date</th>
-                                                    <th>Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="documents_body">
-                                            </tbody>
-                                        </table>
-                                    </div>
+                    <div class="document-section">
+                        <h6>Documents</h6>
+                        <form id="documentUploadForm" class="mb-3" enctype="multipart/form-data">
+                            <input type="hidden" name="property_id" id="document_property_id">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control" name="document_name" placeholder="Document Name" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" name="document_type" required>
+                                        <option value="">Select Type</option>
+                                        <option value="contract">Contract</option>
+                                        <option value="valuation">Valuation Report</option>
+                                        <option value="inspection">Inspection Report</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="file" class="form-control" name="document" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-upload"></i> Upload
+                                    </button>
                                 </div>
                             </div>
+                        </form>
+                        
+                        <div id="documents_list">
+                            <!-- Documents will be loaded here -->
                         </div>
                     </div>
                 </div>
@@ -555,8 +753,6 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
     </div>
-    
-    <?php require_once INCLUDES_PATH . '/footer.php'; ?>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -686,42 +882,62 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             fetch(`get_valuation_history.php?property_id=${propertyId}`)
                 .then(response => response.json())
                 .then(data => {
-                    const tbody = document.getElementById('documents_body');
-                    tbody.innerHTML = '';
+                    const container = document.getElementById('documents_list');
+                    container.innerHTML = '';
                     
                     if (!data.success) {
-                        tbody.innerHTML = `<tr><td colspan="4" class="text-center">${data.error || 'Error loading documents'}</td></tr>`;
+                        container.innerHTML = `<div class="alert alert-danger">${data.error || 'Error loading documents'}</div>`;
                         return;
                     }
                     
                     if (!data.data.documents || data.data.documents.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" class="text-center">No documents available</td></tr>';
+                        container.innerHTML = '<div class="alert alert-info">No documents available</div>';
                         return;
                     }
                     
                     data.data.documents.forEach(doc => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${doc.document_name}</td>
-                            <td>${doc.document_type}</td>
-                            <td>${doc.upload_date}</td>
-                            <td>
-                                <a href="${BASE_URL}/${doc.file_path}" class="btn btn-sm btn-primary" target="_blank">
+                        const docElement = document.createElement('div');
+                        docElement.className = 'document-item';
+                        docElement.innerHTML = `
+                            <div class="document-info">
+                                <div class="document-icon">
+                                    <i class="fas fa-file-${getFileIcon(doc.document_type)}"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">${doc.document_name}</div>
+                                    <div class="small text-muted">${doc.document_type} • ${doc.upload_date}</div>
+                                </div>
+                            </div>
+                            <div class="document-actions">
+                                <a href="${BASE_URL}/${doc.file_path}" class="action-button btn-view" target="_blank">
                                     <i class="fas fa-download"></i>
                                 </a>
-                                <button type="button" class="btn btn-sm btn-danger" onclick="deleteDocument(${doc.id})">
+                                <button type="button" class="action-button btn-delete" onclick="deleteDocument(${doc.id})">
                                     <i class="fas fa-trash"></i>
                                 </button>
-                            </td>
+                            </div>
                         `;
-                        tbody.appendChild(row);
+                        container.appendChild(docElement);
                     });
                 })
                 .catch(error => {
                     console.error('Error fetching documents:', error);
-                    const tbody = document.getElementById('documents_body');
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">Error loading documents</td></tr>';
+                    const container = document.getElementById('documents_list');
+                    container.innerHTML = '<div class="alert alert-danger">Error loading documents</div>';
                 });
+        }
+        
+        function getFileIcon(type) {
+            switch (type) {
+                case 'contract':
+                    return 'contract';
+                case 'valuation':
+                    return 'chart-line';
+                case 'inspection':
+                    return 'clipboard-check';
+                default:
+                    return 'file';
+            }
         }
         
         function deleteDocument(docId) {

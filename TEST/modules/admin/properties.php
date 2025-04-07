@@ -829,19 +829,34 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 modal.show();
             });
         });
-        
-        // Remove the event listener that prevents modal closing
-        document.getElementById('viewPropertyModal').removeEventListener('hide.bs.modal', function(event) {
-            event.preventDefault();
-            event.stopPropagation();
+
+        // Add event listener for modal hidden event
+        document.getElementById('viewPropertyModal').addEventListener('hidden.bs.modal', function () {
+            // Remove the modal backdrop
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            // Remove the modal-open class from body
+            document.body.classList.remove('modal-open');
+            // Reset the body padding
+            document.body.style.paddingRight = '';
         });
 
-        // Remove the event listeners that prevent button clicks
-        document.querySelectorAll('#viewPropertyModal button').forEach(button => {
-            button.removeEventListener('click', function(event) {
-                event.preventDefault();
-                event.stopPropagation();
-            });
+        // Add event listener for modal close button
+        document.querySelector('#viewPropertyModal .btn-close').addEventListener('click', function() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('viewPropertyModal'));
+            if (modal) {
+                modal.hide();
+            }
+        });
+
+        // Add event listener for modal footer close button
+        document.querySelector('#viewPropertyModal .btn-secondary').addEventListener('click', function() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('viewPropertyModal'));
+            if (modal) {
+                modal.hide();
+            }
         });
 
         function fetchValuationHistory(propertyId) {

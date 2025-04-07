@@ -1,4 +1,7 @@
 <?php
+// Start session at the very beginning
+session_start();
+
 // Load required files
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/AuthController.php';

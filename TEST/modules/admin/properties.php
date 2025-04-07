@@ -1012,8 +1012,8 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 document.getElementById('view_closing_index').textContent = property.closing_index ? parseFloat(property.closing_index).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'N/A';
                 document.getElementById('view_closing_date').textContent = property.closing_date || 'N/A';
                 
-                // Fetch and display valuation history
-                fetchValuationHistory(property.id);
+                // Fetch and display valuation history with property data
+                fetchValuationHistory(property.id, property);
                 
                 // Show the modal
                 const modal = new bootstrap.Modal(document.getElementById('viewPropertyModal'));
@@ -1050,7 +1050,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
         });
 
-        function fetchValuationHistory(propertyId) {
+        function fetchValuationHistory(propertyId, propertyData) {
             console.log('Fetching valuation history for property:', propertyId);
             
             // Show loading state
@@ -1073,7 +1073,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             .then(data => {
                 console.log('Valuation history data:', data);
                 if (data.success && data.data && data.data.valuations) {
-                    updateValuationHistoryTable(data.data.valuations);
+                    updateValuationHistoryTable(data.data.valuations, propertyData);
                 } else {
                     tbody.innerHTML = '<tr><td colspan="9" class="text-center">No valuation history available</td></tr>';
                 }
@@ -1365,7 +1365,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             .then(data => {
                 if (data.success && data.data && data.data.valuations) {
                     // Update the valuation history table with the nested valuations array
-                    updateValuationHistoryTable(data.data.valuations);
+                    updateValuationHistoryTable(data.data.valuations, propertyData);
                     alert('Valuation updated successfully');
                 } else {
                     throw new Error(data.error || 'Error loading valuation history');
@@ -1379,7 +1379,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         });
 
         // Function to update the valuation history table
-        function updateValuationHistoryTable(valuations) {
+        function updateValuationHistoryTable(valuations, propertyData) {
             const tbody = document.getElementById('valuationHistoryBody');
             tbody.innerHTML = '';
             
@@ -1388,13 +1388,15 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 return;
             }
             
+            // Get the original initial value from property data
+            const initialValue = parseFloat(propertyData.initial_valuation);
+            const agreedPercentage = parseFloat(propertyData.agreed_pct);
+
             valuations.forEach(valuation => {
                 const row = document.createElement('tr');
                 
-                // Calculate user profit
-                const initialValue = parseFloat(valuation.initial_value || 0);
+                // Calculate appreciation and user profit
                 const currentValue = parseFloat(valuation.value);
-                const agreedPercentage = parseFloat(valuation.agreed_percentage || 0);
                 const appreciation = currentValue - initialValue;
                 const userProfit = appreciation * (agreedPercentage / 100);
 

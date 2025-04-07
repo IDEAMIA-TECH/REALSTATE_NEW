@@ -1353,14 +1353,14 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 const row = document.createElement('tr');
                 
                 // Calculate user profit
-                const initialValue = parseFloat(valuation.initial_value);
-                const currentValue = parseFloat(valuation.current_value);
-                const agreedPercentage = parseFloat(valuation.agreed_percentage);
+                const initialValue = parseFloat(valuation.initial_value || 0);
+                const currentValue = parseFloat(valuation.value);
+                const agreedPercentage = parseFloat(valuation.agreed_percentage || 0);
                 const appreciation = currentValue - initialValue;
                 const userProfit = appreciation * (agreedPercentage / 100);
 
                 row.innerHTML = `
-                    <td>${new Date(valuation.valuation_date).toLocaleDateString()}</td>
+                    <td>${new Date(valuation.date).toLocaleDateString()}</td>
                     <td>$${initialValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td>$${currentValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td>$${appreciation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
@@ -1368,7 +1368,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <td>${parseFloat(valuation.appreciation_rate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
                     <td>$${parseFloat(valuation.terminal_value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td>$${parseFloat(valuation.projected_payoff).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td>$${parseFloat(valuation.option_value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>$${parseFloat(valuation.option_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 `;
                 tbody.appendChild(row);
             });

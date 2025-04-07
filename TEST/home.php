@@ -60,8 +60,8 @@ if (isset($_SESSION['user_id'])) {
             <h1 class="display-4">Welcome to <?php echo APP_NAME; ?></h1>
             <p class="lead">Your comprehensive property management solution</p>
             <div class="mt-4">
-                <a href="login.php" class="btn btn-light btn-lg me-2">Login</a>
-                <a href="register.php" class="btn btn-outline-light btn-lg">Register</a>
+                <a href="modules/auth/login.php" class="btn btn-light btn-lg me-2">Login</a>
+                <a href="modules/auth/register.php" class="btn btn-outline-light btn-lg">Register</a>
             </div>
         </div>
     </section>

@@ -8,7 +8,7 @@ require_once __DIR__ . '/AuthController.php';
 
 // Check if user is already logged in
 if (isset($_SESSION['user_id'])) {
-    header('Location: ' . BASE_URL . '/dashboard');
+    header('Location: ' . BASE_URL . '/dashboard.php');
     exit;
 }
 
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = $auth->login($username, $password);
         
         if ($result['success']) {
-            header('Location: ' . BASE_URL . '/dashboard');
+            header('Location: ' . BASE_URL . '/dashboard.php');
             exit;
         } else {
             $error = $result['message'];

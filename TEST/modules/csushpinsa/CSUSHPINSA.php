@@ -201,7 +201,12 @@ class CSUSHPINSA {
         try {
             // Get property details
             $stmt = $this->db->prepare("
-                SELECT initial_valuation, initial_index, agreed_pct, option_price, total_fees
+                SELECT 
+                    initial_valuation,
+                    initial_index,
+                    agreed_pct,
+                    option_price,
+                    total_fees
                 FROM properties
                 WHERE id = ? AND status = 'active'
             ");

@@ -790,6 +790,14 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <td id="view_initial_valuation"></td>
                                 </tr>
                                 <tr>
+                                    <th>Initial Index:</th>
+                                    <td id="view_initial_index"></td>
+                                </tr>
+                                <tr>
+                                    <th>Initial Index Date:</th>
+                                    <td id="view_initial_index_date"></td>
+                                </tr>
+                                <tr>
                                     <th>Agreed Percentage:</th>
                                     <td id="view_agreed_pct"></td>
                                 </tr>
@@ -817,6 +825,18 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <tr>
                                     <th>Expiration Date:</th>
                                     <td id="view_expiration_date"></td>
+                                </tr>
+                                <tr>
+                                    <th>Closing Index:</th>
+                                    <td id="view_closing_index"></td>
+                                </tr>
+                                <tr>
+                                    <th>Closing Index Date:</th>
+                                    <td id="view_closing_index_date"></td>
+                                </tr>
+                                <tr>
+                                    <th>Closing Date:</th>
+                                    <td id="view_closing_date"></td>
                                 </tr>
                             </table>
                         </div>
@@ -926,6 +946,8 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 // Financial Information
                 document.getElementById('view_initial_valuation').textContent = '$' + parseFloat(property.initial_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('view_initial_index').textContent = property.initial_index ? parseFloat(property.initial_index).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'N/A';
+                document.getElementById('view_initial_index_date').textContent = property.initial_index_date || 'N/A';
                 document.getElementById('view_agreed_pct').textContent = property.agreed_pct + '%';
                 document.getElementById('view_total_fees').textContent = '$' + parseFloat(property.total_fees).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 document.getElementById('view_option_price').textContent = '$' + parseFloat(property.option_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -943,6 +965,11 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     month: 'long',
                     day: 'numeric'
                 });
+
+                // Closing Information
+                document.getElementById('view_closing_index').textContent = property.closing_index ? parseFloat(property.closing_index).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'N/A';
+                document.getElementById('view_closing_index_date').textContent = property.closing_index_date || 'N/A';
+                document.getElementById('view_closing_date').textContent = property.closing_date || 'N/A';
                 
                 // Fetch and display valuation history
                 fetchValuationHistory(property.id);

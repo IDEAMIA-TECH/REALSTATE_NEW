@@ -121,36 +121,63 @@ class CSUSHPINSA {
             
             error_log("Property details found: " . print_r($property, true));
             
-            // Get index values for both dates
-            $stmt = $this->db->prepare("
-                SELECT date, value 
-                FROM home_price_index 
-                WHERE date IN (?, ?)
-                ORDER BY date ASC
-            ");
-            $stmt->execute([$property['effective_date'], $valuationDate]);
-            $indexValues = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            error_log("Index values found: " . print_r($indexValues, true));
-            
-            if (count($indexValues) !== 2) {
-                error_log("Missing index values. Expected 2, found: " . count($indexValues));
+            // Validate dates
+            if (strtotime($valuationDate) < strtotime($property['effective_date'])) {
+                error_log("Valuation date cannot be before effective date");
                 return false;
             }
             
+            // Get the closest index values for both dates
+            $stmt = $this->db->prepare("
+                SELECT date, value 
+                FROM home_price_index 
+                WHERE date <= ?
+                ORDER BY date DESC
+                LIMIT 1
+            ");
+            $stmt->execute([$valuationDate]);
+            $currentIndex = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            $stmt->execute([$property['effective_date']]);
+            $initialIndex = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            error_log("Initial index value found: " . print_r($initialIndex, true));
+            error_log("Current index value found: " . print_r($currentIndex, true));
+            
+            if (!$initialIndex || !$currentIndex) {
+                error_log("Missing index values. Need to fetch historical data first.");
+                // Try to fetch historical data
+                if ($this->fetchHistoricalData($property['effective_date'], $valuationDate)) {
+                    // Retry getting index values after fetching
+                    $stmt->execute([$valuationDate]);
+                    $currentIndex = $stmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    $stmt->execute([$property['effective_date']]);
+                    $initialIndex = $stmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    if (!$initialIndex || !$currentIndex) {
+                        error_log("Still missing index values after fetching historical data");
+                        return false;
+                    }
+                } else {
+                    error_log("Failed to fetch historical data");
+                    return false;
+                }
+            }
+            
             // Calculate appreciation
-            $initialIndex = $indexValues[0]['value'];
-            $currentIndex = $indexValues[1]['value'];
+            $initialValue = $initialIndex['value'];
+            $currentValue = $currentIndex['value'];
             
-            error_log("Initial index value: {$initialIndex}");
-            error_log("Current index value: {$currentIndex}");
+            error_log("Initial index value: {$initialValue}");
+            error_log("Current index value: {$currentValue}");
             
-            if ($initialIndex == 0) {
+            if ($initialValue == 0) {
                 error_log("Initial index value is zero, cannot calculate appreciation");
                 return false;
             }
             
-            $appreciationRate = ($currentIndex - $initialIndex) / $initialIndex;
+            $appreciationRate = ($currentValue - $initialValue) / $initialValue;
             $appreciation = $property['initial_valuation'] * $appreciationRate;
             $shareAppreciation = $appreciation * ($property['agreed_pct'] / 100);
             

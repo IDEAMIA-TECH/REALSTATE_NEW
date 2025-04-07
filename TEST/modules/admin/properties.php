@@ -969,25 +969,94 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             });
         }
         
-        function fetchDocuments(propertyId) {
-            log('Fetching documents for property:', propertyId);
+        // Handle document upload
+        document.getElementById('documentUploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
             
-            // Verificar si hay una sesión activa
+            // Verificar sesión antes de subir
             if (!document.cookie.includes('PHPSESSID')) {
-                log('No active session found');
-                const container = document.getElementById('documents_list');
-                container.innerHTML = `
-                    <div class="alert alert-warning">
-                        <h6>Session Expired</h6>
-                        <p class="mb-0">Your session has expired. Please refresh the page and log in again.</p>
-                    </div>
-                `;
+                alert('Your session has expired. Please refresh the page and log in again.');
                 return;
             }
             
-            // Verificar si estamos en la página correcta
-            if (window.location.pathname.includes('dashboard.php')) {
-                log('Redirected to dashboard');
+            const propertyId = document.getElementById('document_property_id').value;
+            log('Attempting to upload document for property:', propertyId);
+            
+            if (!propertyId) {
+                log('Error: No property ID found');
+                alert('Error: No property ID found');
+                return;
+            }
+            
+            const formData = new FormData(this);
+            formData.append('property_id', propertyId);
+            
+            log('Form data:', {
+                property_id: propertyId,
+                document_name: formData.get('document_name'),
+                document_type: formData.get('document_type')
+            });
+            
+            fetch('upload_document.php', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                log('Upload response status:', response.status);
+                
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('Session expired');
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return response.text().then(text => {
+                    log('Raw upload response:', text);
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        log('JSON parse error:', e);
+                        if (text.includes('dashboard.php')) {
+                            throw new Error('Session expired - Redirected to dashboard');
+                        }
+                        throw new Error('Invalid JSON response');
+                    }
+                });
+            })
+            .then(data => {
+                log('Upload response data:', data);
+                if (data.success) {
+                    // Refresh documents list
+                    fetchDocuments(propertyId);
+                    alert(data.message);
+                    // Reset form
+                    this.reset();
+                } else {
+                    alert(data.error || 'Error uploading document');
+                }
+            })
+            .catch(error => {
+                log('Error uploading document:', error);
+                if (error.message.includes('Session expired') || error.message.includes('Redirected to dashboard')) {
+                    alert('Your session has expired. Please refresh the page and log in again.');
+                } else {
+                    alert('Error uploading document: ' + error.message);
+                }
+            });
+        });
+
+        function fetchDocuments(propertyId) {
+            log('Fetching documents for property:', propertyId);
+            
+            // Verificar sesión antes de hacer la petición
+            if (!document.cookie.includes('PHPSESSID')) {
+                log('No active session found');
                 const container = document.getElementById('documents_list');
                 container.innerHTML = `
                     <div class="alert alert-warning">
@@ -1018,21 +1087,18 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
-                // Verificar el tipo de contenido
-                const contentType = response.headers.get('content-type');
-                log('Content-Type:', contentType);
-                
-                if (!contentType || !contentType.includes('application/json')) {
-                    return response.text().then(text => {
-                        log('Unexpected response text:', text);
+                return response.text().then(text => {
+                    log('Raw response text:', text);
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        log('JSON parse error:', e);
                         if (text.includes('dashboard.php')) {
                             throw new Error('Session expired - Redirected to dashboard');
                         }
-                        throw new Error('Server returned HTML instead of JSON. Please check the server configuration.');
-                    });
-                }
-                
-                return response.json();
+                        throw new Error('Invalid JSON response');
+                    }
+                });
             })
             .then(data => {
                 log('Documents data:', data);
@@ -1088,14 +1154,6 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <div class="alert alert-warning">
                             <h6>Session Expired</h6>
                             <p class="mb-0">Your session has expired. Please refresh the page and log in again.</p>
-                        </div>
-                    `;
-                } else if (error.message.includes('HTML instead of JSON')) {
-                    container.innerHTML = `
-                        <div class="alert alert-danger">
-                            <h6>Server Configuration Error</h6>
-                            <p class="mb-0">The server returned an unexpected response. Please contact support.</p>
-                            <small>Error details: ${error.message}</small>
                         </div>
                     `;
                 } else {

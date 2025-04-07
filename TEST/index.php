@@ -1,5 +1,9 @@
 <?php
+// Configurar sesión
+ini_set('session.gc_maxlifetime', SESSION_LIFETIME);
+session_name(SESSION_NAME);
 session_start();
+
 require_once __DIR__ . '/config/paths.php';
 require_once CONFIG_PATH . '/config.php';
 require_once CONFIG_PATH . '/env.php';
@@ -7,10 +11,6 @@ require_once CONFIG_PATH . '/database.php';
 
 // Configurar zona horaria
 date_default_timezone_set(APP_TIMEZONE);
-
-// Configurar sesión
-ini_set('session.gc_maxlifetime', SESSION_LIFETIME);
-session_name(SESSION_NAME);
 
 // Obtener la ruta actual
 $request_uri = $_SERVER['REQUEST_URI'];

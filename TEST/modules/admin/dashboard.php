@@ -196,8 +196,8 @@ $recentProperties = $db->query("
     
     <div class="dashboard-hero">
         <div class="container">
-            <h1><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
-            <p class="lead">Welcome back, <?php echo htmlspecialchars($_SESSION['username']); ?></p>
+            <h1 class="text-white"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
+            <p class="lead text-white">Welcome back, <?php echo htmlspecialchars($_SESSION['username']); ?></p>
         </div>
     </div>
 

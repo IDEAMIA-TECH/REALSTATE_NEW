@@ -362,17 +362,6 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <div class="container">
-        <!-- Debug Log Container -->
-        <div id="debug-log" class="debug-log-container" style="display: none;">
-            <div class="debug-log-header">
-                <h6>Debug Log</h6>
-                <button type="button" class="btn btn-sm btn-secondary" onclick="toggleDebugLog()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="debug-log-content"></div>
-        </div>
-
         <?php if ($message): ?>
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 <?php echo htmlspecialchars($message); ?>

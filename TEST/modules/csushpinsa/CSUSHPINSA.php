@@ -145,45 +145,104 @@ class CSUSHPINSA {
     }
     
     public function updatePropertyValuation($propertyId, $valuationDate) {
-        $appreciation = $this->calculatePropertyAppreciation($propertyId, $valuationDate);
-        
-        if (!$appreciation) {
+        try {
+            // Get property details
+            $stmt = $this->db->prepare("
+                SELECT initial_valuation, effective_date, agreed_pct, term, option_price
+                FROM properties
+                WHERE id = ? AND status = 'active'
+            ");
+            $stmt->execute([$propertyId]);
+            $property = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$property) {
+                throw new Exception("Property not found or inactive");
+            }
+            
+            // Calculate appreciation
+            $appreciation = $this->calculatePropertyAppreciation($propertyId, $valuationDate);
+            if (!$appreciation) {
+                throw new Exception("Failed to calculate appreciation");
+            }
+            
+            // Calculate current value
+            $currentValue = $property['initial_valuation'] + $appreciation['appreciation'];
+            
+            // Calculate terminal value (projected value at end of term)
+            $yearsRemaining = (strtotime($property['term']) - strtotime($valuationDate)) / (365 * 24 * 60 * 60);
+            $terminalValue = $currentValue * pow(1 + ($appreciation['appreciation_rate'] / 100), $yearsRemaining);
+            
+            // Calculate projected payoff
+            $projectedPayoff = $terminalValue * ($property['agreed_pct'] / 100);
+            
+            // Calculate option valuation
+            $optionValuation = $projectedPayoff - $property['option_price'];
+            
+            // Check if valuation already exists for this date
+            $stmt = $this->db->prepare("
+                SELECT id FROM property_valuations 
+                WHERE property_id = ? AND valuation_date = ?
+            ");
+            $stmt->execute([$propertyId, $valuationDate]);
+            $existingValuation = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($existingValuation) {
+                // Update existing valuation
+                $stmt = $this->db->prepare("
+                    UPDATE property_valuations 
+                    SET current_value = ?,
+                        appreciation = ?,
+                        share_appreciation = ?,
+                        terminal_value = ?,
+                        projected_payoff = ?,
+                        option_valuation = ?,
+                        updated_at = NOW()
+                    WHERE id = ?
+                ");
+                $stmt->execute([
+                    $currentValue,
+                    $appreciation['appreciation'],
+                    $appreciation['share_appreciation'],
+                    $terminalValue,
+                    $projectedPayoff,
+                    $optionValuation,
+                    $existingValuation['id']
+                ]);
+            } else {
+                // Insert new valuation
+                $stmt = $this->db->prepare("
+                    INSERT INTO property_valuations (
+                        property_id, valuation_date, current_value, appreciation,
+                        share_appreciation, terminal_value, projected_payoff, option_valuation
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+                $stmt->execute([
+                    $propertyId,
+                    $valuationDate,
+                    $currentValue,
+                    $appreciation['appreciation'],
+                    $appreciation['share_appreciation'],
+                    $terminalValue,
+                    $projectedPayoff,
+                    $optionValuation
+                ]);
+            }
+            
+            // Log the activity
+            $stmt = $this->db->prepare("
+                INSERT INTO activity_log (user_id, action, entity_type, details)
+                VALUES (?, 'update', 'valuation', ?)
+            ");
+            $stmt->execute([
+                $_SESSION['user_id'],
+                "Updated property valuation for property ID {$propertyId} to {$currentValue}"
+            ]);
+            
+            return true;
+        } catch (Exception $e) {
+            error_log("Property Valuation Error: " . $e->getMessage());
             return false;
         }
-        
-        // Get property details
-        $stmt = $this->db->prepare("
-            SELECT initial_valuation, agreed_pct, term, option_price
-            FROM properties
-            WHERE id = ?
-        ");
-        $stmt->execute([$propertyId]);
-        $property = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        // Calculate terminal value and projected payoff
-        $currentValue = $property['initial_valuation'] + $appreciation['appreciation'];
-        $terminalValue = $currentValue * (1 + ($appreciation['appreciation_rate'] / 100));
-        $projectedPayoff = $terminalValue * ($property['agreed_pct'] / 100);
-        $optionValuation = $projectedPayoff - $property['option_price'];
-        
-        // Store valuation
-        $stmt = $this->db->prepare("
-            INSERT INTO property_valuations (
-                property_id, valuation_date, current_value, appreciation,
-                share_appreciation, terminal_value, projected_payoff, option_valuation
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        
-        return $stmt->execute([
-            $propertyId,
-            $valuationDate,
-            $currentValue,
-            $appreciation['appreciation'],
-            $appreciation['share_appreciation'],
-            $terminalValue,
-            $projectedPayoff,
-            $optionValuation
-        ]);
     }
     
     public function getIndexComparison($propertyId) {

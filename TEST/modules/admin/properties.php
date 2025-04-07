@@ -620,10 +620,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-6">
-                            <img src="https://source.unsplash.com/random/800x600/?house" 
-                                 alt="Property Image" 
-                                 class="property-image mb-3">
+                        <div class="col-md-12">
                             <h6>Basic Information</h6>
                             <table class="table table-sm">
                                 <tr>
@@ -644,6 +641,8 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </tr>
                             </table>
                         </div>
+                    </div>
+                    <div class="row mt-3">
                         <div class="col-md-6">
                             <h6>Financial Information</h6>
                             <table class="table table-sm">
@@ -665,8 +664,6 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </tr>
                             </table>
                         </div>
-                    </div>
-                    <div class="row mt-3">
                         <div class="col-md-6">
                             <h6>Contract Details</h6>
                             <table class="table table-sm">
@@ -680,7 +677,9 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </tr>
                             </table>
                         </div>
-                        <div class="col-md-6">
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
                             <h6>Valuation History</h6>
                             <div id="valuation_history" class="table-responsive">
                                 <table class="table table-sm">

@@ -751,39 +751,6 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="document-section">
-                        <h6>Documents</h6>
-                        <form id="documentUploadForm" class="mb-3" enctype="multipart/form-data">
-                            <input type="hidden" name="property_id" id="document_property_id">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <input type="text" class="form-control" name="document_name" placeholder="Document Name" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <select class="form-select" name="document_type" required>
-                                        <option value="">Select Type</option>
-                                        <option value="contract">Contract</option>
-                                        <option value="valuation">Valuation Report</option>
-                                        <option value="inspection">Inspection Report</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <input type="file" class="form-control" name="document" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
-                                </div>
-                                <div class="col-md-2">
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="fas fa-upload"></i> Upload
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                        
-                        <div id="documents_list">
-                            <!-- Documents will be loaded here -->
-                        </div>
-                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -828,15 +795,6 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 const property = JSON.parse(this.getAttribute('data-property'));
                 log('Property data:', property);
                 
-                // Set property ID for document upload
-                const propertyIdInput = document.getElementById('document_property_id');
-                if (propertyIdInput) {
-                    propertyIdInput.value = property.id;
-                    log('Set document_property_id:', property.id);
-                } else {
-                    log('Error: document_property_id input not found');
-                }
-                
                 // Basic Information
                 document.getElementById('view_id').textContent = property.id;
                 document.getElementById('view_client_name').textContent = property.client_name;
@@ -853,11 +811,10 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 document.getElementById('view_effective_date').textContent = property.effective_date;
                 document.getElementById('view_term').textContent = property.term + ' months';
                 
-                log('Basic info set, fetching valuation history and documents...');
+                log('Basic info set, fetching valuation history...');
                 
-                // Fetch and display valuation history and documents
+                // Fetch and display valuation history
                 fetchValuationHistory(property.id);
-                fetchDocuments(property.id);
                 
                 // Show the modal
                 const modal = new bootstrap.Modal(document.getElementById('viewPropertyModal'));

@@ -862,6 +862,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="updateValuationBtn">Update Valuation</button>
                 </div>
             </div>
         </div>
@@ -1318,6 +1319,26 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             const button = event.relatedTarget;
             const property = JSON.parse(button.getAttribute('data-property'));
             document.getElementById('cancel_property_id').value = property.id;
+        });
+
+        // Handle valuation update
+        document.getElementById('updateValuationBtn').addEventListener('click', function() {
+            const propertyId = document.getElementById('view_id').textContent;
+            const csushpinsa = new CSUSHPINSA();
+            
+            // Get current date in YYYY-MM-DD format
+            const today = new Date();
+            const valuationDate = today.toISOString().split('T')[0];
+            
+            try {
+                csushpinsa.updatePropertyValuation(propertyId, valuationDate);
+                alert('Valuation updated successfully');
+                // Refresh the valuation history
+                fetchValuationHistory(propertyId);
+            } catch (error) {
+                console.error('Error updating valuation:', error);
+                alert('Error updating valuation: ' + error.message);
+            }
         });
     </script>
 </body>

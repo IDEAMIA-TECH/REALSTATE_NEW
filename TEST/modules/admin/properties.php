@@ -1429,25 +1429,33 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 // Calculate values based on the property_valuations table structure
                 const indexValue = parseFloat(valuation.index_value);
-                const difference = (indexValue - initialIndex) / indexValue; // (index_value - initial_index) / index_value
-                const appreciation = difference * initialValue; // difference * initial_valuation
+                const difference = parseFloat(valuation.diference);
+                const appreciation = parseFloat(valuation.appreciation);
+                const appreciationShare = (agreedPercentage / 100) * appreciation;
+                const calculation = optionPrice + appreciationShare + totalFees;
                 
                 console.log(`Valuation History - Row ${index + 1} Calculation:`, {
-                    date: valuation.date,
+                    date: valuation.valuation_date,
                     initialValue,
                     initialIndex,
                     indexValue,
                     difference,
-                    appreciation
+                    appreciation,
+                    appreciationShare,
+                    calculation
                 });
 
                 row.innerHTML = `
-                    <td>${new Date(valuation.date).toLocaleDateString()}</td>
+                    <td>${new Date(valuation.valuation_date).toLocaleDateString()}</td>
                     <td>$${initialValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td>${initialIndex.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td>${indexValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td>${(difference * 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
+                    <td>${difference.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
+                    <td>$${optionPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td>$${appreciation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>${agreedPercentage.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
+                    <td>$${appreciationShare.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>$${calculation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 `;
                 tbody.appendChild(row);
             });

@@ -11,6 +11,33 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 $db = Database::getInstance()->getConnection();
+$message = '';
+$error = '';
+
+// Check if system_logs table exists, if not create it
+try {
+    $db->query("SELECT 1 FROM system_logs LIMIT 1");
+} catch (PDOException $e) {
+    // Create system_logs table
+    $createTableSQL = "
+        CREATE TABLE IF NOT EXISTS system_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            level ENUM('error', 'warning', 'info', 'debug') NOT NULL,
+            message TEXT NOT NULL,
+            context TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_level (level),
+            INDEX idx_created_at (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ";
+    
+    try {
+        $db->exec($createTableSQL);
+        $message = "System logs table created successfully";
+    } catch (PDOException $e) {
+        $error = "Failed to create system logs table: " . $e->getMessage();
+    }
+}
 
 // Handle filters
 $filters = [
@@ -53,12 +80,18 @@ if ($filters['search']) {
 $query .= " ORDER BY created_at DESC";
 
 // Get logs
-$stmt = $db->prepare($query);
-$stmt->execute($params);
-$logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $stmt = $db->prepare($query);
+    $stmt->execute($params);
+    $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Get unique log levels
-$levels = $db->query("SELECT DISTINCT level FROM system_logs")->fetchAll(PDO::FETCH_COLUMN);
+    // Get unique log levels
+    $levels = $db->query("SELECT DISTINCT level FROM system_logs")->fetchAll(PDO::FETCH_COLUMN);
+} catch (PDOException $e) {
+    $error = "Error fetching logs: " . $e->getMessage();
+    $logs = [];
+    $levels = [];
+}
 ?>
 
 <!DOCTYPE html>
@@ -91,6 +124,14 @@ $levels = $db->query("SELECT DISTINCT level FROM system_logs")->fetchAll(PDO::FE
     
     <div class="container mt-4">
         <h1 class="mb-4">System Logs</h1>
+        
+        <?php if ($message): ?>
+            <div class="alert alert-success"><?php echo $message; ?></div>
+        <?php endif; ?>
+        
+        <?php if ($error): ?>
+            <div class="alert alert-danger"><?php echo $error; ?></div>
+        <?php endif; ?>
         
         <!-- Filters -->
         <div class="card mb-4">

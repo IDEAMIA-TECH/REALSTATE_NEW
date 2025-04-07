@@ -1324,6 +1324,11 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         // Handle valuation update
         document.getElementById('updateValuationBtn').addEventListener('click', function() {
             const propertyId = document.getElementById('view_id').textContent;
+            const propertyData = {
+                initial_valuation: parseFloat(document.getElementById('view_initial_valuation').textContent.replace(/[^0-9.-]+/g, '')),
+                agreed_pct: parseFloat(document.getElementById('view_agreed_pct').textContent.replace('%', '')),
+                term: document.getElementById('view_term').textContent.replace(' months', '')
+            };
             
             // Get current date in YYYY-MM-DD format
             const today = new Date();
@@ -1391,6 +1396,11 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // Function to update the valuation history table
         function updateValuationHistoryTable(valuations, propertyData) {
+            if (!propertyData) {
+                console.error('Property data is required for valuation history table');
+                return;
+            }
+
             const tbody = document.getElementById('valuationHistoryBody');
             tbody.innerHTML = '';
             

@@ -1056,24 +1056,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     return;
                 }
                 
-                if (!data.valuations || !Array.isArray(data.valuations)) {
+                if (!data.data || !data.data.valuations || !Array.isArray(data.data.valuations)) {
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center">No valuation history available</td></tr>';
                     return;
                 }
                 
-                data.valuations.forEach(valuation => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${valuation.date}</td>
-                        <td>$${parseFloat(valuation.value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td>${valuation.appreciation_rate}%</td>
-                        <td>$${parseFloat(valuation.share_appreciation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td>$${parseFloat(valuation.terminal_value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td>$${parseFloat(valuation.projected_payoff).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td>$${parseFloat(valuation.option_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
+                updateValuationHistoryTable(data.data.valuations);
             })
             .catch(error => {
                 log('Error fetching valuation history:', error);
@@ -1375,9 +1363,9 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 return response.json();
             })
             .then(data => {
-                if (data.success) {
-                    // Update the valuation history table
-                    updateValuationHistoryTable(data.valuations);
+                if (data.success && data.data && data.data.valuations) {
+                    // Update the valuation history table with the nested valuations array
+                    updateValuationHistoryTable(data.data.valuations);
                     alert('Valuation updated successfully');
                 } else {
                     throw new Error(data.error || 'Error loading valuation history');
@@ -1405,7 +1393,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 row.innerHTML = `
                     <td>${valuation.date}</td>
                     <td>$${parseFloat(valuation.value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td>${valuation.appreciation_rate}%</td>
+                    <td>${parseFloat(valuation.appreciation_rate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
                     <td>$${parseFloat(valuation.share_appreciation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td>$${parseFloat(valuation.terminal_value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td>$${parseFloat(valuation.projected_payoff).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>

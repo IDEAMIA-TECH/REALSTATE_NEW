@@ -1330,6 +1330,10 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             const today = new Date();
             const valuationDate = today.toISOString().split('T')[0];
             
+            // Show loading state
+            const tbody = document.getElementById('valuation_history_body');
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+            
             // Make a fetch request to update the valuation
             fetch('update_valuation.php', {
                 method: 'POST',
@@ -1349,18 +1353,67 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             })
             .then(data => {
                 if (data.success) {
-                    alert('Valuation updated successfully');
-                    // Refresh the valuation history
-                    fetchValuationHistory(propertyId);
+                    // Clear the table and show loading state
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+                    
+                    // Fetch the updated valuation history
+                    return fetch(`get_valuation_history.php?property_id=${propertyId}`, {
+                        credentials: 'same-origin',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    });
                 } else {
                     throw new Error(data.error || 'Error updating valuation');
                 }
             })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Update the valuation history table
+                    updateValuationHistoryTable(data.valuations);
+                    alert('Valuation updated successfully');
+                } else {
+                    throw new Error(data.error || 'Error loading valuation history');
+                }
+            })
             .catch(error => {
-                console.error('Error updating valuation:', error);
+                console.error('Error:', error);
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">${error.message}</td></tr>`;
                 alert('Error updating valuation: ' + error.message);
             });
         });
+
+        // Function to update the valuation history table
+        function updateValuationHistoryTable(valuations) {
+            const tbody = document.getElementById('valuation_history_body');
+            tbody.innerHTML = '';
+            
+            if (!valuations || valuations.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No valuation history available</td></tr>';
+                return;
+            }
+            
+            valuations.forEach(valuation => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${valuation.date}</td>
+                    <td>$${parseFloat(valuation.value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>${valuation.appreciation_rate}%</td>
+                    <td>$${parseFloat(valuation.share_appreciation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>$${parseFloat(valuation.terminal_value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>$${parseFloat(valuation.projected_payoff).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>$${parseFloat(valuation.option_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
     </script>
 </body>
 </html> 

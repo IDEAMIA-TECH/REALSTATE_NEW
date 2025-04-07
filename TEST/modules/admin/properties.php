@@ -1,0 +1,434 @@
+<?php
+session_start();
+require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../auth/User.php';
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../csushpinsa/CSUSHPINSA.php';
+
+// Check if user is logged in and is admin
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    header('Location: ' . BASE_URL . '/modules/auth/login.php');
+    exit;
+}
+
+$db = Database::getInstance()->getConnection();
+$message = '';
+$error = '';
+
+// Handle form submissions
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['action'])) {
+        switch ($_POST['action']) {
+            case 'create':
+                try {
+                    $stmt = $db->prepare("
+                        INSERT INTO properties (
+                            client_id, address, initial_valuation, agreed_pct,
+                            total_fees, effective_date, term, option_price,
+                            status, created_by
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
+                    ");
+                    
+                    $stmt->execute([
+                        $_POST['client_id'],
+                        $_POST['address'],
+                        $_POST['initial_valuation'],
+                        $_POST['agreed_pct'],
+                        $_POST['total_fees'],
+                        $_POST['effective_date'],
+                        $_POST['term'],
+                        $_POST['option_price'],
+                        $_SESSION['user_id']
+                    ]);
+                    
+                    $propertyId = $db->lastInsertId();
+                    
+                    // Create initial valuation
+                    $csushpinsa = new CSUSHPINSA();
+                    $csushpinsa->updatePropertyValuation($propertyId, $_POST['effective_date']);
+                    
+                    $message = 'Property created successfully';
+                } catch (PDOException $e) {
+                    $error = 'Error creating property: ' . $e->getMessage();
+                }
+                break;
+                
+            case 'update':
+                try {
+                    $stmt = $db->prepare("
+                        UPDATE properties SET
+                            client_id = ?,
+                            address = ?,
+                            initial_valuation = ?,
+                            agreed_pct = ?,
+                            total_fees = ?,
+                            effective_date = ?,
+                            term = ?,
+                            option_price = ?,
+                            status = ?
+                        WHERE id = ?
+                    ");
+                    
+                    $stmt->execute([
+                        $_POST['client_id'],
+                        $_POST['address'],
+                        $_POST['initial_valuation'],
+                        $_POST['agreed_pct'],
+                        $_POST['total_fees'],
+                        $_POST['effective_date'],
+                        $_POST['term'],
+                        $_POST['option_price'],
+                        $_POST['status'],
+                        $_POST['property_id']
+                    ]);
+                    
+                    $message = 'Property updated successfully';
+                } catch (PDOException $e) {
+                    $error = 'Error updating property: ' . $e->getMessage();
+                }
+                break;
+                
+            case 'delete':
+                try {
+                    $stmt = $db->prepare("UPDATE properties SET status = 'archived' WHERE id = ?");
+                    $stmt->execute([$_POST['property_id']]);
+                    $message = 'Property archived successfully';
+                } catch (PDOException $e) {
+                    $error = 'Error archiving property: ' . $e->getMessage();
+                }
+                break;
+        }
+    }
+}
+
+// Get clients for dropdown
+$stmt = $db->query("SELECT id, name FROM clients WHERE status = 'active'");
+$clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get properties for listing
+$stmt = $db->query("
+    SELECT p.*, c.name as client_name
+    FROM properties p
+    LEFT JOIN clients c ON p.client_id = c.id
+    ORDER BY p.created_at DESC
+");
+$properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Management - <?php echo APP_NAME; ?></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <?php require_once INCLUDES_PATH . '/header.php'; ?>
+    
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Property Management</h1>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPropertyModal">
+                <i class="fas fa-plus"></i> Add Property
+            </button>
+        </div>
+        
+        <?php if ($message): ?>
+            <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
+        <?php endif; ?>
+        
+        <?php if ($error): ?>
+            <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
+        <?php endif; ?>
+        
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Client</th>
+                                <th>Address</th>
+                                <th>Initial Value</th>
+                                <th>Agreed %</th>
+                                <th>Effective Date</th>
+                                <th>Term</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($properties as $property): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($property['id']); ?></td>
+                                    <td><?php echo htmlspecialchars($property['client_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($property['address']); ?></td>
+                                    <td>$<?php echo number_format($property['initial_valuation'], 2); ?></td>
+                                    <td><?php echo number_format($property['agreed_pct'], 2); ?>%</td>
+                                    <td><?php echo htmlspecialchars($property['effective_date']); ?></td>
+                                    <td><?php echo htmlspecialchars($property['term']); ?> months</td>
+                                    <td>
+                                        <span class="badge bg-<?php echo $property['status'] === 'active' ? 'success' : 'secondary'; ?>">
+                                            <?php echo ucfirst($property['status']); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-primary" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#editPropertyModal"
+                                                data-property='<?php echo json_encode($property); ?>'>
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deletePropertyModal"
+                                                data-property-id="<?php echo $property['id']; ?>">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Create Property Modal -->
+    <div class="modal fade" id="createPropertyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Property</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="">
+                    <div class="modal-body">
+                        <input type="hidden" name="action" value="create">
+                        
+                        <div class="mb-3">
+                            <label for="client_id" class="form-label">Client</label>
+                            <select class="form-select" id="client_id" name="client_id" required>
+                                <option value="">Select a client</option>
+                                <?php foreach ($clients as $client): ?>
+                                    <option value="<?php echo $client['id']; ?>">
+                                        <?php echo htmlspecialchars($client['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <input type="text" class="form-control" id="address" name="address" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="initial_valuation" class="form-label">Initial Valuation</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="initial_valuation" 
+                                       name="initial_valuation" step="0.01" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="agreed_pct" class="form-label">Agreed Percentage</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="agreed_pct" 
+                                       name="agreed_pct" step="0.01" required>
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="total_fees" class="form-label">Total Fees</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="total_fees" 
+                                       name="total_fees" step="0.01" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="effective_date" class="form-label">Effective Date</label>
+                            <input type="date" class="form-control" id="effective_date" 
+                                   name="effective_date" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="term" class="form-label">Term (months)</label>
+                            <input type="number" class="form-control" id="term" 
+                                   name="term" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="option_price" class="form-label">Option Price</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="option_price" 
+                                       name="option_price" step="0.01" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Property</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Property Modal -->
+    <div class="modal fade" id="editPropertyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Property</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="">
+                    <div class="modal-body">
+                        <input type="hidden" name="action" value="update">
+                        <input type="hidden" name="property_id" id="edit_property_id">
+                        
+                        <div class="mb-3">
+                            <label for="edit_client_id" class="form-label">Client</label>
+                            <select class="form-select" id="edit_client_id" name="client_id" required>
+                                <option value="">Select a client</option>
+                                <?php foreach ($clients as $client): ?>
+                                    <option value="<?php echo $client['id']; ?>">
+                                        <?php echo htmlspecialchars($client['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="edit_address" class="form-label">Address</label>
+                            <input type="text" class="form-control" id="edit_address" name="address" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="edit_initial_valuation" class="form-label">Initial Valuation</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="edit_initial_valuation" 
+                                       name="initial_valuation" step="0.01" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="edit_agreed_pct" class="form-label">Agreed Percentage</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="edit_agreed_pct" 
+                                       name="agreed_pct" step="0.01" required>
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="edit_total_fees" class="form-label">Total Fees</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="edit_total_fees" 
+                                       name="total_fees" step="0.01" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="edit_effective_date" class="form-label">Effective Date</label>
+                            <input type="date" class="form-control" id="edit_effective_date" 
+                                   name="effective_date" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="edit_term" class="form-label">Term (months)</label>
+                            <input type="number" class="form-control" id="edit_term" 
+                                   name="term" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="edit_option_price" class="form-label">Option Price</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="edit_option_price" 
+                                       name="option_price" step="0.01" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="edit_status" class="form-label">Status</label>
+                            <select class="form-select" id="edit_status" name="status" required>
+                                <option value="active">Active</option>
+                                <option value="archived">Archived</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Property</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Property Modal -->
+    <div class="modal fade" id="deletePropertyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Archive Property</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="">
+                    <div class="modal-body">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="property_id" id="delete_property_id">
+                        <p>Are you sure you want to archive this property? This action cannot be undone.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Archive Property</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <?php require_once INCLUDES_PATH . '/footer.php'; ?>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Handle edit modal
+        document.getElementById('editPropertyModal').addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const property = JSON.parse(button.getAttribute('data-property'));
+            
+            document.getElementById('edit_property_id').value = property.id;
+            document.getElementById('edit_client_id').value = property.client_id;
+            document.getElementById('edit_address').value = property.address;
+            document.getElementById('edit_initial_valuation').value = property.initial_valuation;
+            document.getElementById('edit_agreed_pct').value = property.agreed_pct;
+            document.getElementById('edit_total_fees').value = property.total_fees;
+            document.getElementById('edit_effective_date').value = property.effective_date;
+            document.getElementById('edit_term').value = property.term;
+            document.getElementById('edit_option_price').value = property.option_price;
+            document.getElementById('edit_status').value = property.status;
+        });
+        
+        // Handle delete modal
+        document.getElementById('deletePropertyModal').addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const propertyId = button.getAttribute('data-property-id');
+            document.getElementById('delete_property_id').value = propertyId;
+        });
+    </script>
+</body>
+</html> 

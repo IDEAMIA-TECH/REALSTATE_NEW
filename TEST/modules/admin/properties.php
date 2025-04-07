@@ -1402,14 +1402,17 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 const agreedPercentage = parseFloat(valuation.agreed_percentage);
                 const appreciation = currentValue - initialValue;
                 const userProfit = appreciation * (agreedPercentage / 100);
+
                 row.innerHTML = `
-                    <td>${valuation.date}</td>
-                    <td>$${parseFloat(valuation.value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>${new Date(valuation.valuation_date).toLocaleDateString()}</td>
+                    <td>$${initialValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>$${currentValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>$${appreciation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>$${userProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td>${parseFloat(valuation.appreciation_rate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
-                    <td>$${parseFloat(valuation.share_appreciation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td>$${parseFloat(valuation.terminal_value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td>$${parseFloat(valuation.projected_payoff).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td>$${parseFloat(valuation.option_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>$${parseFloat(valuation.option_value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 `;
                 tbody.appendChild(row);
             });

@@ -277,6 +277,14 @@
    
     <script>
    
+    // Add error handling for missing resources
+    window.addEventListener('error', function(e) {
+        if (e.target.tagName === 'IMG') {
+            console.log('Image failed to load:', e.target.src);
+            e.target.style.display = 'none';
+        }
+    }, true);
+
     let Index_Information = { data: [], meta: { fields: [] } };
     let Option_Listing = { data: [], meta: { fields: [] } };
 
@@ -284,6 +292,15 @@
     async function loadIndexData() {
         try {
             const response = await fetch('get_index_data.php');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server did not return JSON');
+            }
+            
             const result = await response.json();
             
             if (result.success) {
@@ -299,11 +316,14 @@
         } catch (error) {
             console.error('Error:', error);
             showNotification('Error loading index data: ' + error.message, 'error');
+            // Initialize with empty data if loading fails
+            Index_Information.data = [];
         }
     }
 
     // Esperar a que el DOM esté completamente cargado
-    window.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize with empty data
         loadIndexData();
         
         // Agregar event listener para el archivo de opciones
@@ -826,7 +846,6 @@ function fix_date( in_date ) {
     </script>
 
     <footer class="footer">
-        <img src="images/IDEAMIA.png" alt="IDEAMIA Logo">
         <span class="footer-text">Develop and created by IDEAMIA - TECH</span>
     </footer>
 

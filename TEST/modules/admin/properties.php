@@ -15,30 +15,64 @@ $db = Database::getInstance()->getConnection();
 $message = '';
 $error = '';
 
+// Function to get the closest home price index for a given date
+function getClosestHomePriceIndex($db, $targetDate) {
+    // First try to get the exact date
+    $stmt = $db->prepare("
+        SELECT date, value 
+        FROM home_price_index 
+        WHERE date = ?
+    ");
+    $stmt->execute([$targetDate]);
+    $exactMatch = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($exactMatch) {
+        return $exactMatch;
+    }
+    
+    // If no exact match, get the closest dates before and after
+    $stmt = $db->prepare("
+        (
+            SELECT date, value, ABS(DATEDIFF(date, ?)) as diff
+            FROM home_price_index 
+            WHERE date < ?
+            ORDER BY date DESC
+            LIMIT 1
+        )
+        UNION ALL
+        (
+            SELECT date, value, ABS(DATEDIFF(date, ?)) as diff
+            FROM home_price_index 
+            WHERE date > ?
+            ORDER BY date ASC
+            LIMIT 1
+        )
+        ORDER BY diff ASC
+        LIMIT 1
+    ");
+    $stmt->execute([$targetDate, $targetDate, $targetDate, $targetDate]);
+    $closestMatch = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    return $closestMatch;
+}
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         switch ($_POST['action']) {
             case 'create':
                 try {
-                    // Get the home price index for the effective date
-                    $stmt = $db->prepare("
-                        SELECT value 
-                        FROM home_price_index 
-                        WHERE date <= ? 
-                        ORDER BY date DESC 
-                        LIMIT 1
-                    ");
-                    $stmt->execute([$_POST['effective_date']]);
-                    $indexData = $stmt->fetch(PDO::FETCH_ASSOC);
+                    // Get the closest home price index for the effective date
+                    $indexData = getClosestHomePriceIndex($db, $_POST['effective_date']);
                     $initial_index = $indexData ? $indexData['value'] : 0;
+                    $index_date = $indexData ? $indexData['date'] : $_POST['effective_date'];
 
                     $stmt = $db->prepare("
                         INSERT INTO properties (
                             client_id, address, initial_valuation, agreed_pct,
                             total_fees, effective_date, term, option_price,
-                            status, created_by, initial_index
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)
+                            status, created_by, initial_index, initial_index_date
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)
                     ");
                     
                     $stmt->execute([
@@ -51,7 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_POST['term'],
                         $_POST['option_price'],
                         $_SESSION['user_id'],
-                        $initial_index
+                        $initial_index,
+                        $index_date
                     ]);
                     
                     $propertyId = $db->lastInsertId();
@@ -113,29 +148,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             case 'cancel':
                 try {
-                    // Get the home price index for the cancellation date
-                    $stmt = $db->prepare("
-                        SELECT value 
-                        FROM home_price_index 
-                        WHERE date <= ? 
-                        ORDER BY date DESC 
-                        LIMIT 1
-                    ");
-                    $stmt->execute([$_POST['cancel_date']]);
-                    $indexData = $stmt->fetch(PDO::FETCH_ASSOC);
+                    // Get the closest home price index for the cancellation date
+                    $indexData = getClosestHomePriceIndex($db, $_POST['cancel_date']);
                     $closing_index = $indexData ? $indexData['value'] : 0;
+                    $closing_index_date = $indexData ? $indexData['date'] : $_POST['cancel_date'];
 
                     $stmt = $db->prepare("
                         UPDATE properties SET
                             status = 'archived',
                             closing_index = ?,
-                            closing_date = ?
+                            closing_date = ?,
+                            closing_index_date = ?
                         WHERE id = ?
                     ");
                     
                     $stmt->execute([
                         $closing_index,
                         $_POST['cancel_date'],
+                        $closing_index_date,
                         $_POST['property_id']
                     ]);
                     

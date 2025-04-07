@@ -775,8 +775,13 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             log('Property data:', property);
             
             // Set property ID for document upload
-            document.getElementById('document_property_id').value = property.id;
-            log('Set document_property_id:', property.id);
+            const propertyIdInput = document.getElementById('document_property_id');
+            if (propertyIdInput) {
+                propertyIdInput.value = property.id;
+                log('Set document_property_id:', property.id);
+            } else {
+                log('Error: document_property_id input not found');
+            }
             
             // Basic Information
             document.getElementById('view_id').textContent = property.id;
@@ -805,22 +810,52 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         document.getElementById('documentUploadForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            const propertyId = document.getElementById('document_property_id').value;
+            log('Attempting to upload document for property:', propertyId);
+            
+            if (!propertyId) {
+                log('Error: No property ID found');
+                alert('Error: No property ID found');
+                return;
+            }
+            
             const formData = new FormData(this);
+            formData.append('property_id', propertyId); // Asegurarse de que el property_id esté en el FormData
+            
+            log('Form data:', {
+                property_id: propertyId,
+                document_name: formData.get('document_name'),
+                document_type: formData.get('document_type')
+            });
             
             fetch('upload_document.php', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             })
             .then(response => {
+                log('Upload response status:', response.status);
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                return response.json();
+                return response.text().then(text => {
+                    log('Raw upload response:', text);
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        log('JSON parse error:', e);
+                        throw new Error('Invalid JSON response');
+                    }
+                });
             })
             .then(data => {
+                log('Upload response data:', data);
                 if (data.success) {
                     // Refresh documents list
-                    fetchDocuments(document.getElementById('document_property_id').value);
+                    fetchDocuments(propertyId);
                     alert(data.message);
                     // Reset form
                     this.reset();
@@ -829,8 +864,8 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert('Error uploading document');
+                log('Error uploading document:', error);
+                alert('Error uploading document: ' + error.message);
             });
         });
         

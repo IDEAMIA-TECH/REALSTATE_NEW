@@ -94,32 +94,83 @@ class User {
 
     public function getById($id) {
         try {
-            $sql = "SELECT id, username, email, role, status, created_at 
-                    FROM {$this->table} 
-                    WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute(['id' => $id]);
-            return $stmt->fetch();
+            $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE id = ? LIMIT 1");
+            $stmt->execute([$id]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            throw new Exception("Error fetching user: " . $e->getMessage());
+            return false;
         }
     }
 
     public function update($id, $data) {
         try {
-            $sql = "UPDATE {$this->table} 
-                    SET email = :email, role = :role, status = :status 
-                    WHERE id = :id";
+            $updates = [];
+            $params = [];
+            
+            if (isset($data['email'])) {
+                $updates[] = "email = ?";
+                $params[] = $data['email'];
+            }
+            
+            if (isset($data['role'])) {
+                $updates[] = "role = ?";
+                $params[] = $data['role'];
+            }
+            
+            if (isset($data['status'])) {
+                $updates[] = "status = ?";
+                $params[] = $data['status'];
+            }
+            
+            if (empty($updates)) {
+                return [
+                    'success' => false,
+                    'message' => 'No data to update'
+                ];
+            }
+            
+            $params[] = $id;
+            $sql = "UPDATE {$this->table} SET " . implode(', ', $updates) . " WHERE id = ?";
             
             $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
-                'id' => $id,
-                'email' => $data['email'],
-                'role' => $data['role'],
-                'status' => $data['status']
-            ]);
+            $stmt->execute($params);
+            
+            return [
+                'success' => true,
+                'message' => 'User updated successfully'
+            ];
         } catch (PDOException $e) {
-            throw new Exception("Error updating user: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Database error: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    public function delete($id) {
+        try {
+            $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE id = ?");
+            $stmt->execute([$id]);
+            
+            return [
+                'success' => true,
+                'message' => 'User deleted successfully'
+            ];
+        } catch (PDOException $e) {
+            return [
+                'success' => false,
+                'message' => 'Database error: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    public function getAll() {
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM {$this->table} ORDER BY created_at DESC");
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            return [];
         }
     }
 

@@ -985,11 +985,26 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 return;
             }
             
+            // Verificar si estamos en la página correcta
+            if (window.location.pathname.includes('dashboard.php')) {
+                log('Redirected to dashboard');
+                const container = document.getElementById('documents_list');
+                container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <h6>Session Expired</h6>
+                        <p class="mb-0">Your session has expired. Please refresh the page and log in again.</p>
+                    </div>
+                `;
+                return;
+            }
+            
             fetch(`get_documents.php?property_id=${propertyId}`, {
                 credentials: 'same-origin',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
                 }
             })
             .then(response => {
@@ -1010,6 +1025,9 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 if (!contentType || !contentType.includes('application/json')) {
                     return response.text().then(text => {
                         log('Unexpected response text:', text);
+                        if (text.includes('dashboard.php')) {
+                            throw new Error('Session expired - Redirected to dashboard');
+                        }
                         throw new Error('Server returned HTML instead of JSON. Please check the server configuration.');
                     });
                 }
@@ -1065,7 +1083,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 log('Error fetching documents:', error);
                 const container = document.getElementById('documents_list');
                 
-                if (error.message === 'Session expired') {
+                if (error.message.includes('Session expired') || error.message.includes('Redirected to dashboard')) {
                     container.innerHTML = `
                         <div class="alert alert-warning">
                             <h6>Session Expired</h6>

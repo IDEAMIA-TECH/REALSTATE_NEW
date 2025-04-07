@@ -989,8 +989,10 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 .then(data => {
                     if (data.success && data.data && data.data.valuations && data.data.valuations.length > 0) {
                         const latestValuation = data.data.valuations[0];
-                        const currentValue = parseFloat(latestValuation.value);
                         const initialValue = parseFloat(property.initial_valuation);
+                        const appreciationRate = parseFloat(latestValuation.appreciation_rate);
+                        // Calculate current value: initial value * (1 + appreciation rate)
+                        const currentValue = initialValue * (1 + (appreciationRate / 100));
                         const agreedPercentage = parseFloat(property.agreed_pct);
                         const appreciation = currentValue - initialValue;
                         // Calculate user profit: if appreciation > 0, multiply by agreed percentage, otherwise 0
@@ -1396,8 +1398,9 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             valuations.forEach(valuation => {
                 const row = document.createElement('tr');
                 
-                // Calculate appreciation and user profit
-                const currentValue = parseFloat(valuation.value);
+                // Calculate current value using appreciation rate
+                const appreciationRate = parseFloat(valuation.appreciation_rate);
+                const currentValue = initialValue * (1 + (appreciationRate / 100));
                 const appreciation = currentValue - initialValue;
                 // Calculate user profit: if appreciation > 0, multiply by agreed percentage, otherwise 0
                 const userProfit = appreciation > 0 ? appreciation * (agreedPercentage / 100) : 0;
@@ -1408,7 +1411,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <td>$${currentValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td>$${appreciation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td>$${userProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td>${parseFloat(valuation.appreciation_rate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
+                    <td>${appreciationRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
                     <td>$${parseFloat(valuation.terminal_value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td>$${parseFloat(valuation.projected_payoff).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td>$${parseFloat(valuation.option_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>

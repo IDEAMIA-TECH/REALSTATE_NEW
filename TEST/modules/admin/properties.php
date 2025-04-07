@@ -875,10 +875,24 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         function fetchDocuments(propertyId) {
             fetch(`get_documents.php?property_id=${propertyId}`)
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
+                    // Verificar el tipo de contenido de la respuesta
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        throw new Error(`Expected JSON but got ${contentType}`);
                     }
-                    return response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    return response.text().then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            console.error('Response text:', text);
+                            throw new Error('Invalid JSON response');
+                        }
+                    });
                 })
                 .then(data => {
                     const container = document.getElementById('documents_list');
@@ -922,7 +936,13 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 .catch(error => {
                     console.error('Error fetching documents:', error);
                     const container = document.getElementById('documents_list');
-                    container.innerHTML = '<div class="alert alert-danger">Error loading documents</div>';
+                    container.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>Error loading documents</h6>
+                            <p class="mb-0">${error.message}</p>
+                            <small>Please try again or contact support if the problem persists.</small>
+                        </div>
+                    `;
                 });
         }
         

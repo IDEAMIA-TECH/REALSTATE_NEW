@@ -1012,24 +1012,11 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         });
 
         function fetchValuationHistory(propertyId) {
-            log('Fetching valuation history for property:', propertyId);
+            console.log('Fetching valuation history for property:', propertyId);
             
-            // Verificar si hay una sesión activa
-            if (!document.cookie.includes('PHPSESSID')) {
-                log('No active session found');
-                const tbody = document.getElementById('valuationHistoryBody');
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="9" class="text-center">
-                            <div class="alert alert-warning">
-                                <h6>Session Expired</h6>
-                                <p class="mb-0">Your session has expired. Please refresh the page and log in again.</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
+            // Show loading state
+            const tbody = document.getElementById('valuationHistoryBody');
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
             
             fetch(`get_valuation_history.php?property_id=${propertyId}`, {
                 credentials: 'same-origin',
@@ -1039,53 +1026,22 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
             })
             .then(response => {
-                log('Valuation history response status:', response.status);
-                
-                if (response.status === 401 || response.status === 403) {
-                    throw new Error('Session expired');
-                }
-                
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error('Network response was not ok');
                 }
-                
                 return response.json();
             })
             .then(data => {
-                log('Valuation history data:', data);
-                const tbody = document.getElementById('valuationHistoryBody');
-                tbody.innerHTML = '';
-                
-                if (!data.success) {
-                    tbody.innerHTML = `<tr><td colspan="9" class="text-center">${data.error || 'Error loading valuation history'}</td></tr>`;
-                    return;
-                }
-                
-                if (!data.data || !data.data.valuations || !Array.isArray(data.data.valuations)) {
+                console.log('Valuation history data:', data);
+                if (data.success && data.data && data.data.valuations) {
+                    updateValuationHistoryTable(data.data.valuations);
+                } else {
                     tbody.innerHTML = '<tr><td colspan="9" class="text-center">No valuation history available</td></tr>';
-                    return;
                 }
-                
-                updateValuationHistoryTable(data.data.valuations);
             })
             .catch(error => {
-                log('Error fetching valuation history:', error);
-                const tbody = document.getElementById('valuationHistoryBody');
-                
-                if (error.message === 'Session expired') {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="9" class="text-center">
-                                <div class="alert alert-warning">
-                                    <h6>Session Expired</h6>
-                                    <p class="mb-0">Your session has expired. Please refresh the page and log in again.</p>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="9" class="text-center">Error loading valuation history</td></tr>';
-                }
+                console.error('Error fetching valuation history:', error);
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading valuation history</td></tr>';
             });
         }
         

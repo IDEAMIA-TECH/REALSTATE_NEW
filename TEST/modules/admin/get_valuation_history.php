@@ -49,7 +49,11 @@ try {
         SELECT 
             DATE_FORMAT(valuation_date, '%Y-%m-%d') as date,
             current_value as value,
-            appreciation_rate as appreciation
+            appreciation as appreciation_rate,
+            share_appreciation,
+            terminal_value,
+            projected_payoff,
+            option_valuation
         FROM property_valuations
         WHERE property_id = ?
         ORDER BY valuation_date DESC
@@ -63,7 +67,8 @@ try {
         $stmt = $db->prepare("
             SELECT 
                 initial_valuation,
-                effective_date
+                effective_date,
+                agreed_pct
             FROM properties
             WHERE id = ?
         ");
@@ -74,14 +79,22 @@ try {
             $valuations[] = [
                 'date' => $property['effective_date'],
                 'value' => number_format($property['initial_valuation'], 2, '.', ''),
-                'appreciation' => '0.00'
+                'appreciation_rate' => '0.00',
+                'share_appreciation' => '0.00',
+                'terminal_value' => number_format($property['initial_valuation'], 2, '.', ''),
+                'projected_payoff' => '0.00',
+                'option_valuation' => '0.00'
             ];
         }
     } else {
         // Format the data
         foreach ($valuations as &$valuation) {
             $valuation['value'] = number_format($valuation['value'], 2, '.', '');
-            $valuation['appreciation'] = number_format($valuation['appreciation'], 2, '.', '');
+            $valuation['appreciation_rate'] = number_format($valuation['appreciation_rate'], 2, '.', '');
+            $valuation['share_appreciation'] = number_format($valuation['share_appreciation'], 2, '.', '');
+            $valuation['terminal_value'] = number_format($valuation['terminal_value'], 2, '.', '');
+            $valuation['projected_payoff'] = number_format($valuation['projected_payoff'], 2, '.', '');
+            $valuation['option_valuation'] = number_format($valuation['option_valuation'], 2, '.', '');
         }
     }
     

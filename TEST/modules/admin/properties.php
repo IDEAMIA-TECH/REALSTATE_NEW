@@ -482,8 +482,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <thead>
                                         <tr>
                                             <th>Date</th>
-                                            <th>Value</th>
+                                            <th>Current Value</th>
                                             <th>Appreciation</th>
+                                            <th>Share Appreciation</th>
+                                            <th>Terminal Value</th>
+                                            <th>Projected Payoff</th>
+                                            <th>Option Value</th>
                                         </tr>
                                     </thead>
                                     <tbody id="valuation_history_body">
@@ -561,12 +565,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     tbody.innerHTML = '';
                     
                     if (!data.success) {
-                        tbody.innerHTML = `<tr><td colspan="3" class="text-center">${data.error || 'Error loading valuation history'}</td></tr>`;
+                        tbody.innerHTML = `<tr><td colspan="7" class="text-center">${data.error || 'Error loading valuation history'}</td></tr>`;
                         return;
                     }
                     
                     if (!data.data || data.data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="3" class="text-center">No valuation history available</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No valuation history available</td></tr>';
                         return;
                     }
                     
@@ -575,7 +579,11 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         row.innerHTML = `
                             <td>${valuation.date}</td>
                             <td>$${parseFloat(valuation.value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td>${valuation.appreciation}%</td>
+                            <td>${valuation.appreciation_rate}%</td>
+                            <td>$${parseFloat(valuation.share_appreciation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td>$${parseFloat(valuation.terminal_value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td>$${parseFloat(valuation.projected_payoff).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td>$${parseFloat(valuation.option_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         `;
                         tbody.appendChild(row);
                     });
@@ -583,7 +591,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 .catch(error => {
                     console.error('Error fetching valuation history:', error);
                     const tbody = document.getElementById('valuation_history_body');
-                    tbody.innerHTML = '<tr><td colspan="3" class="text-center">Error loading valuation history</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading valuation history</td></tr>';
                 });
         }
     </script>

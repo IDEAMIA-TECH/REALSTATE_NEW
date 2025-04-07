@@ -811,10 +811,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 if (data.success) {
                     // Refresh documents list
                     fetchDocuments(document.getElementById('document_property_id').value);
-                    
-                    // Show success message
                     alert(data.message);
-                    
                     // Reset form
                     this.reset();
                 } else {
@@ -866,7 +863,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         
         function fetchDocuments(propertyId) {
-            fetch(`get_valuation_history.php?property_id=${propertyId}`)
+            fetch(`get_documents.php?property_id=${propertyId}`)
                 .then(response => response.json())
                 .then(data => {
                     const container = document.getElementById('documents_list');
@@ -877,12 +874,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         return;
                     }
                     
-                    if (!data.data.documents || data.data.documents.length === 0) {
+                    if (!data.documents || data.documents.length === 0) {
                         container.innerHTML = '<div class="alert alert-info">No documents available</div>';
                         return;
                     }
                     
-                    data.data.documents.forEach(doc => {
+                    data.documents.forEach(doc => {
                         const docElement = document.createElement('div');
                         docElement.className = 'document-item';
                         docElement.innerHTML = `

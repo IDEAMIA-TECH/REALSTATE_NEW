@@ -1126,16 +1126,8 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg
                 ).join(' ');
                 
-                const logContainer = document.getElementById('debug-log');
-                const logContent = logContainer.querySelector('.debug-log-content');
-                
-                if (logContainer && logContent) {
-                    logContent.innerHTML += `<div class="debug-entry">[${timestamp}] ${message}</div>`;
-                    logContent.scrollTop = logContent.scrollHeight;
-                }
-                
-                // También mostrar en consola para desarrollo
-                console.log(...args);
+                // Mostrar en consola con timestamp
+                console.log(`[${timestamp}]`, ...args);
             } catch (error) {
                 console.error('Error in log function:', error);
             }

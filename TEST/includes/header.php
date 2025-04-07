@@ -35,11 +35,23 @@ if (session_status() === PHP_SESSION_NONE) {
                     </li>
                     <?php if (isset($_SESSION['user_id'])): ?>
                         <li class="nav-item">
-                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : ''; ?>" href="<?php echo BASE_URL; ?>/dashboard">Dashboard</a>
+                            <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : ''; ?>" href="<?php echo BASE_URL; ?>/modules/admin/dashboard.php">Dashboard</a>
                         </li>
                         <?php if ($_SESSION['role'] == 'admin'): ?>
-                            <li class="nav-item">
-                                <a class="nav-link" href="<?php echo BASE_URL; ?>/admin">Admin</a>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Admin
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                    <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/users.php">Users</a></li>
+                                    <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/clients.php">Clients</a></li>
+                                    <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/properties.php">Properties</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/reports.php">Reports</a></li>
+                                    <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/activity_log.php">Activity Log</a></li>
+                                    <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/backup.php">Backup</a></li>
+                                    <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/logs.php">System Logs</a></li>
+                                </ul>
                             </li>
                         <?php endif; ?>
                     <?php endif; ?>
@@ -50,7 +62,7 @@ if (session_status() === PHP_SESSION_NONE) {
                             <span class="nav-link">Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?></span>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="<?php echo BASE_URL; ?>/logout">Logout</a>
+                            <a class="nav-link" href="<?php echo BASE_URL; ?>/modules/auth/logout.php">Logout</a>
                         </li>
                     <?php else: ?>
                         <li class="nav-item">

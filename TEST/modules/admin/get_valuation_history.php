@@ -29,7 +29,10 @@ try {
         SELECT 
             initial_valuation,
             agreed_pct,
-            option_price
+            option_price,
+            effective_date,
+            initial_index,
+            initial_index_date
         FROM properties
         WHERE id = ?
     ");
@@ -58,11 +61,27 @@ try {
     $stmt->execute([$propertyId]);
     $valuations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Add initial values to each valuation
-    foreach ($valuations as &$valuation) {
-        $valuation['initial_valuation'] = $property['initial_valuation'];
-        $valuation['agreed_pct'] = $property['agreed_pct'];
-        $valuation['option_price'] = $property['option_price'];
+    // If no valuations exist, create initial valuation
+    if (empty($valuations)) {
+        $valuations[] = [
+            'date' => $property['initial_index_date'] ?? $property['effective_date'],
+            'current_value' => $property['initial_valuation'],
+            'appreciation' => 0,
+            'share_appreciation' => 0,
+            'terminal_value' => $property['initial_valuation'],
+            'projected_payoff' => 0,
+            'option_valuation' => -$property['option_price'],
+            'initial_valuation' => $property['initial_valuation'],
+            'agreed_pct' => $property['agreed_pct'],
+            'option_price' => $property['option_price']
+        ];
+    } else {
+        // Add initial values to each valuation
+        foreach ($valuations as &$valuation) {
+            $valuation['initial_valuation'] = $property['initial_valuation'];
+            $valuation['agreed_pct'] = $property['agreed_pct'];
+            $valuation['option_price'] = $property['option_price'];
+        }
     }
     
     $response['data'] = $valuations;

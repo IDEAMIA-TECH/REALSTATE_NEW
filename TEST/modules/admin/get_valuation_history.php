@@ -7,7 +7,9 @@ require_once __DIR__ . '/../../config/database.php';
 // Set default response
 $response = [
     'success' => true,
-    'data' => []
+    'data' => [
+        'valuations' => []
+    ]
 ];
 
 try {
@@ -29,7 +31,10 @@ try {
         SELECT 
             initial_valuation,
             initial_index,
-            initial_index_date
+            initial_index_date,
+            agreed_pct,
+            option_price,
+            total_fees
         FROM properties
         WHERE id = ?
     ");
@@ -43,7 +48,7 @@ try {
     // Get valuation history
     $stmt = $db->prepare("
         SELECT 
-            DATE_FORMAT(valuation_date, '%Y-%m-%d') as date,
+            valuation_date,
             index_value,
             initial_index,
             diference,
@@ -59,7 +64,7 @@ try {
     // If no valuations exist, create initial valuation
     if (empty($valuations)) {
         $valuations[] = [
-            'date' => $property['initial_index_date'],
+            'valuation_date' => $property['initial_index_date'],
             'index_value' => $property['initial_index'],
             'initial_index' => $property['initial_index'],
             'diference' => 0,
@@ -67,7 +72,15 @@ try {
         ];
     }
     
-    $response['data'] = $valuations;
+    // Add property details to each valuation
+    foreach ($valuations as &$valuation) {
+        $valuation['initial_valuation'] = $property['initial_valuation'];
+        $valuation['agreed_pct'] = $property['agreed_pct'];
+        $valuation['option_price'] = $property['option_price'];
+        $valuation['total_fees'] = $property['total_fees'];
+    }
+    
+    $response['data']['valuations'] = $valuations;
     
 } catch (Exception $e) {
     $response['success'] = false;

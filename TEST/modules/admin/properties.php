@@ -1063,10 +1063,11 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         function fetchValuationHistory(propertyId, propertyData) {
             console.log('Fetching valuation history for property:', propertyId);
+            console.log('Property data:', propertyData);
             
             // Show loading state
             const tbody = document.getElementById('valuationHistoryBody');
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
             
             fetch(`get_valuation_history.php?property_id=${propertyId}`, {
                 credentials: 'same-origin',
@@ -1082,16 +1083,28 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 return response.json();
             })
             .then(data => {
-                console.log('Valuation history data:', data);
+                console.log('Valuation history response:', data);
+                
                 if (data.success && data.data && data.data.valuations) {
-                    updateValuationHistoryTable(data.data.valuations, propertyData);
+                    // Ensure propertyData has all required fields
+                    const requiredData = {
+                        initial_valuation: parseFloat(propertyData.initial_valuation),
+                        initial_index: parseFloat(propertyData.initial_index),
+                        agreed_pct: parseFloat(propertyData.agreed_pct),
+                        option_price: parseFloat(propertyData.option_price),
+                        total_fees: parseFloat(propertyData.total_fees)
+                    };
+                    
+                    console.log('Required property data:', requiredData);
+                    updateValuationHistoryTable(data.data.valuations, requiredData);
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="9" class="text-center">No valuation history available</td></tr>';
+                    console.error('Invalid data structure:', data);
+                    tbody.innerHTML = '<tr><td colspan="10" class="text-center">No valuation history available</td></tr>';
                 }
             })
             .catch(error => {
                 console.error('Error fetching valuation history:', error);
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading valuation history</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading valuation history</td></tr>';
             });
         }
         

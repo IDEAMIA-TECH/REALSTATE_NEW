@@ -309,6 +309,46 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             display: flex;
             gap: 0.5rem;
         }
+
+        .debug-log-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            max-height: 300px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 9999;
+            overflow: hidden;
+        }
+        
+        .debug-log-header {
+            padding: 10px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .debug-log-content {
+            padding: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .debug-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .debug-entry:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
@@ -322,6 +362,17 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <div class="container">
+        <!-- Debug Log Container -->
+        <div id="debug-log" class="debug-log-container" style="display: none;">
+            <div class="debug-log-header">
+                <h6>Debug Log</h6>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="toggleDebugLog()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="debug-log-content"></div>
+        </div>
+
         <?php if ($message): ?>
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 <?php echo htmlspecialchars($message); ?>
@@ -1061,15 +1112,42 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
         }
 
+        // Función para mostrar/ocultar el log
+        function toggleDebugLog() {
+            const logContainer = document.getElementById('debug-log');
+            logContainer.style.display = logContainer.style.display === 'none' ? 'block' : 'none';
+        }
+
         // Función de logging personalizada
         function log(...args) {
-            const timestamp = new Date().toISOString();
-            const message = args.map(arg => 
-                typeof arg === 'object' ? JSON.stringify(arg) : arg
-            ).join(' ');
-            document.getElementById('debug-log').innerHTML += 
-                `<div class="debug-entry">[${timestamp}] ${message}</div>`;
+            try {
+                const timestamp = new Date().toISOString();
+                const message = args.map(arg => 
+                    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg
+                ).join(' ');
+                
+                const logContainer = document.getElementById('debug-log');
+                const logContent = logContainer.querySelector('.debug-log-content');
+                
+                if (logContainer && logContent) {
+                    logContent.innerHTML += `<div class="debug-entry">[${timestamp}] ${message}</div>`;
+                    logContent.scrollTop = logContent.scrollHeight;
+                }
+                
+                // También mostrar en consola para desarrollo
+                console.log(...args);
+            } catch (error) {
+                console.error('Error in log function:', error);
+            }
         }
+
+        // Mostrar el log al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            const logContainer = document.getElementById('debug-log');
+            if (logContainer) {
+                logContainer.style.display = 'block';
+            }
+        });
     </script>
 </body>
 </html> 

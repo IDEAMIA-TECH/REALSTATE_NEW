@@ -31,9 +31,16 @@ $recentActivity = $db->query("
 
 // Get recent properties
 $recentProperties = $db->query("
-    SELECT * FROM properties 
-    WHERE status = 'active' 
-    ORDER BY created_at DESC 
+    SELECT 
+        p.id,
+        p.address as title,
+        p.city as location,
+        p.initial_valuation as price,
+        p.status,
+        p.created_at
+    FROM properties p 
+    WHERE p.status = 'active' 
+    ORDER BY p.created_at DESC 
     LIMIT 3
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -278,13 +285,13 @@ $recentProperties = $db->query("
                                  style="background-image: url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80');">
                             </div>
                             <div class="property-details">
-                                <div class="property-title"><?php echo htmlspecialchars($property['title']); ?></div>
+                                <div class="property-title"><?php echo htmlspecialchars($property['title'] ?? 'No Address'); ?></div>
                                 <div class="property-location">
                                     <i class="fas fa-map-marker-alt me-1"></i>
-                                    <?php echo htmlspecialchars($property['location']); ?>
+                                    <?php echo htmlspecialchars($property['location'] ?? 'No Location'); ?>
                                 </div>
                                 <div class="property-price">
-                                    $<?php echo number_format($property['price'], 2); ?>
+                                    $<?php echo number_format(floatval($property['price'] ?? 0), 2); ?>
                                 </div>
                             </div>
                         </div>

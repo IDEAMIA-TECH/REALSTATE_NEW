@@ -34,7 +34,7 @@ $recentProperties = $db->query("
     SELECT 
         p.id,
         p.address as title,
-        p.city as location,
+        p.address as location,
         p.initial_valuation as price,
         p.status,
         p.created_at

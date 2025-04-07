@@ -821,15 +821,15 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             });
         });
         
-        // Prevenir cierre no deseado del modal
-        document.getElementById('viewPropertyModal').addEventListener('hide.bs.modal', function(event) {
+        // Remove the event listener that prevents modal closing
+        document.getElementById('viewPropertyModal').removeEventListener('hide.bs.modal', function(event) {
             event.preventDefault();
             event.stopPropagation();
         });
 
-        // Prevenir redirección en los botones del modal
+        // Remove the event listeners that prevent button clicks
         document.querySelectorAll('#viewPropertyModal button').forEach(button => {
-            button.addEventListener('click', function(event) {
+            button.removeEventListener('click', function(event) {
                 event.preventDefault();
                 event.stopPropagation();
             });

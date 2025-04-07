@@ -1,4 +1,10 @@
 <?php
+// Load configuration first
+require_once __DIR__ . '/config.php';
+
+// Start session
+session_start();
+
 // If user is logged in, redirect to dashboard
 if (isset($_SESSION['user_id'])) {
     header('Location: ' . BASE_URL . '/dashboard');

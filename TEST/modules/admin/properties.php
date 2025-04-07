@@ -1003,6 +1003,17 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
+                // Verificar el tipo de contenido
+                const contentType = response.headers.get('content-type');
+                log('Content-Type:', contentType);
+                
+                if (!contentType || !contentType.includes('application/json')) {
+                    return response.text().then(text => {
+                        log('Unexpected response text:', text);
+                        throw new Error('Server returned HTML instead of JSON. Please check the server configuration.');
+                    });
+                }
+                
                 return response.json();
             })
             .then(data => {
@@ -1059,6 +1070,14 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <div class="alert alert-warning">
                             <h6>Session Expired</h6>
                             <p class="mb-0">Your session has expired. Please refresh the page and log in again.</p>
+                        </div>
+                    `;
+                } else if (error.message.includes('HTML instead of JSON')) {
+                    container.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>Server Configuration Error</h6>
+                            <p class="mb-0">The server returned an unexpected response. Please contact support.</p>
+                            <small>Error details: ${error.message}</small>
                         </div>
                     `;
                 } else {

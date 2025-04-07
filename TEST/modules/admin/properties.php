@@ -176,6 +176,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         </span>
                                     </td>
                                     <td>
+                                        <button type="button" class="btn btn-sm btn-info" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#viewPropertyModal"
+                                                data-property='<?php echo json_encode($property); ?>'>
+                                            <i class="fas fa-eye"></i>
+                                        </button>
                                         <button type="button" class="btn btn-sm btn-primary" 
                                                 data-bs-toggle="modal" 
                                                 data-bs-target="#editPropertyModal"
@@ -402,6 +408,98 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
     
+    <!-- View Property Modal -->
+    <div class="modal fade" id="viewPropertyModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Property Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Basic Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>ID:</th>
+                                    <td id="view_id"></td>
+                                </tr>
+                                <tr>
+                                    <th>Client:</th>
+                                    <td id="view_client_name"></td>
+                                </tr>
+                                <tr>
+                                    <th>Address:</th>
+                                    <td id="view_address"></td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td id="view_status"></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Financial Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Initial Valuation:</th>
+                                    <td id="view_initial_valuation"></td>
+                                </tr>
+                                <tr>
+                                    <th>Agreed Percentage:</th>
+                                    <td id="view_agreed_pct"></td>
+                                </tr>
+                                <tr>
+                                    <th>Total Fees:</th>
+                                    <td id="view_total_fees"></td>
+                                </tr>
+                                <tr>
+                                    <th>Option Price:</th>
+                                    <td id="view_option_price"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <h6>Contract Details</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Effective Date:</th>
+                                    <td id="view_effective_date"></td>
+                                </tr>
+                                <tr>
+                                    <th>Term:</th>
+                                    <td id="view_term"></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Valuation History</h6>
+                            <div id="valuation_history" class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Value</th>
+                                            <th>Appreciation</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="valuation_history_body">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <?php require_once INCLUDES_PATH . '/footer.php'; ?>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -429,6 +527,54 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             const propertyId = button.getAttribute('data-property-id');
             document.getElementById('delete_property_id').value = propertyId;
         });
+        
+        // Handle view modal
+        document.getElementById('viewPropertyModal').addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const property = JSON.parse(button.getAttribute('data-property'));
+            
+            // Basic Information
+            document.getElementById('view_id').textContent = property.id;
+            document.getElementById('view_client_name').textContent = property.client_name;
+            document.getElementById('view_address').textContent = property.address;
+            document.getElementById('view_status').textContent = property.status.charAt(0).toUpperCase() + property.status.slice(1);
+            
+            // Financial Information
+            document.getElementById('view_initial_valuation').textContent = '$' + parseFloat(property.initial_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('view_agreed_pct').textContent = property.agreed_pct + '%';
+            document.getElementById('view_total_fees').textContent = '$' + parseFloat(property.total_fees).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('view_option_price').textContent = '$' + parseFloat(property.option_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
+            // Contract Details
+            document.getElementById('view_effective_date').textContent = property.effective_date;
+            document.getElementById('view_term').textContent = property.term + ' months';
+            
+            // Fetch and display valuation history
+            fetchValuationHistory(property.id);
+        });
+        
+        function fetchValuationHistory(propertyId) {
+            fetch(`get_valuation_history.php?property_id=${propertyId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('valuation_history_body');
+                    tbody.innerHTML = '';
+                    
+                    data.forEach(valuation => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${valuation.date}</td>
+                            <td>$${parseFloat(valuation.value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td>${valuation.appreciation}%</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching valuation history:', error);
+                    document.getElementById('valuation_history_body').innerHTML = '<tr><td colspan="3" class="text-center">Error loading valuation history</td></tr>';
+                });
+        }
     </script>
 </body>
 </html> 

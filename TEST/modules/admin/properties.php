@@ -769,11 +769,14 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Handle view modal
         document.getElementById('viewPropertyModal').addEventListener('show.bs.modal', function(event) {
+            console.log('Opening view modal...');
             const button = event.relatedTarget;
             const property = JSON.parse(button.getAttribute('data-property'));
+            console.log('Property data:', property);
             
             // Set property ID for document upload
             document.getElementById('document_property_id').value = property.id;
+            console.log('Set document_property_id:', property.id);
             
             // Basic Information
             document.getElementById('view_id').textContent = property.id;
@@ -790,6 +793,8 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             // Contract Details
             document.getElementById('view_effective_date').textContent = property.effective_date;
             document.getElementById('view_term').textContent = property.term + ' months';
+            
+            console.log('Basic info set, fetching valuation history and documents...');
             
             // Fetch and display valuation history and documents
             fetchValuationHistory(property.id);
@@ -830,14 +835,17 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         });
         
         function fetchValuationHistory(propertyId) {
+            console.log('Fetching valuation history for property:', propertyId);
             fetch(`get_valuation_history.php?property_id=${propertyId}`)
                 .then(response => {
+                    console.log('Valuation history response status:', response.status);
                     if (!response.ok) {
-                        throw new Error('Network response was not ok');
+                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     return response.json();
                 })
                 .then(data => {
+                    console.log('Valuation history data:', data);
                     const tbody = document.getElementById('valuation_history_body');
                     tbody.innerHTML = '';
                     
@@ -873,31 +881,29 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         
         function fetchDocuments(propertyId) {
-            // Verificar si hay una sesión activa
-            if (!document.cookie.includes('PHPSESSID')) {
-                window.location.href = '<?php echo BASE_URL; ?>/modules/auth/login.php';
-                return;
-            }
-
+            console.log('Fetching documents for property:', propertyId);
             fetch(`get_documents.php?property_id=${propertyId}`, {
-                credentials: 'same-origin', // Incluir cookies en la petición
+                credentials: 'same-origin',
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest' // Indicar que es una petición AJAX
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             })
             .then(response => {
-                // Verificar si la respuesta es una redirección
+                console.log('Documents response status:', response.status);
+                console.log('Documents response headers:', Object.fromEntries(response.headers.entries()));
+                
                 if (response.redirected) {
+                    console.log('Response was redirected to:', response.url);
                     window.location.href = response.url;
                     return Promise.reject('Session expired');
                 }
-
-                // Verificar el tipo de contenido de la respuesta
+                
                 const contentType = response.headers.get('content-type');
+                console.log('Content-Type:', contentType);
+                
                 if (!contentType || !contentType.includes('application/json')) {
-                    // Si no es JSON, intentar obtener el texto para depuración
                     return response.text().then(text => {
-                        console.error('Unexpected response:', text);
+                        console.error('Unexpected response text:', text);
                         throw new Error(`Expected JSON but got ${contentType}`);
                     });
                 }
@@ -907,15 +913,17 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
                 
                 return response.text().then(text => {
+                    console.log('Raw response text:', text);
                     try {
                         return JSON.parse(text);
                     } catch (e) {
-                        console.error('Response text:', text);
+                        console.error('JSON parse error:', e);
                         throw new Error('Invalid JSON response');
                     }
                 });
             })
             .then(data => {
+                console.log('Documents data:', data);
                 const container = document.getElementById('documents_list');
                 container.innerHTML = '';
                 

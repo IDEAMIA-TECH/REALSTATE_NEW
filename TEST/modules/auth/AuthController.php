@@ -1,5 +1,7 @@
 <?php
 // Load required files
+require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/User.php';
 
 class AuthController {
@@ -27,7 +29,17 @@ class AuthController {
     }
 
     public function logout() {
+        // Log the activity before destroying the session
+        if (isset($_SESSION['user_id'])) {
+            $this->logActivity($_SESSION['user_id'], 'logout', 'User logged out');
+        }
+        
+        // Clear all session variables
+        $_SESSION = array();
+        
+        // Destroy the session
         session_destroy();
+        
         return ['success' => true, 'message' => 'Logged out successfully'];
     }
 

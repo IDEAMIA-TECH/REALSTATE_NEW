@@ -2,12 +2,25 @@
 // Initialize session
 session_start();
 
-// Create AuthController instance
-$auth = new AuthController();
+// Load required files
+require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/AuthController.php';
 
-// Perform logout
-$result = $auth->logout();
+try {
+    // Create AuthController instance
+    $auth = new AuthController();
 
-// Redirect to login page
-header('Location: ' . BASE_URL . '/login.php');
-exit; 
+    // Perform logout
+    $result = $auth->logout();
+
+    // Redirect to login page
+    header('Location: ' . BASE_URL . '/modules/auth/login.php');
+    exit;
+} catch (Exception $e) {
+    // Log the error
+    error_log('Logout error: ' . $e->getMessage());
+    
+    // Redirect to login page even if there's an error
+    header('Location: ' . BASE_URL . '/modules/auth/login.php');
+    exit;
+} 

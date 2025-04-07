@@ -14,52 +14,73 @@ class CSUSHPINSA {
     }
     
     public function fetchHistoricalData($startDate = null, $endDate = null) {
-        if (!$startDate) {
-            $startDate = date('Y-m-d', strtotime('-1 year'));
-        }
-        if (!$endDate) {
-            $endDate = date('Y-m-d');
-        }
-        
-        $params = [
-            'series_id' => 'CSUSHPINSA',
-            'api_key' => $this->apiKey,
-            'file_type' => 'json',
-            'observation_start' => $startDate,
-            'observation_end' => $endDate
-        ];
-        
-        $url = $this->baseUrl . '?' . http_build_query($params);
-        
         try {
-            $response = file_get_contents($url);
-            $data = json_decode($response, true);
+            // Set default dates if not provided
+            if (!$startDate) {
+                $startDate = date('Y-m-d', strtotime('-1 year'));
+            }
+            if (!$endDate) {
+                $endDate = date('Y-m-d');
+            }
+
+            // Build URL with parameters
+            $params = [
+                'series_id' => 'CSUSHPINSA',
+                'api_key' => $this->apiKey,
+                'file_type' => 'json',
+                'observation_start' => $startDate,
+                'observation_end' => $endDate
+            ];
             
-            if (isset($data['observations'])) {
-                $this->storeData($data['observations']);
-                return true;
+            $url = $this->baseUrl . '?' . http_build_query($params);
+
+            // Initialize cURL
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+
+            // Execute request
+            $response = curl_exec($ch);
+            
+            if (curl_errno($ch)) {
+                throw new Exception('cURL Error: ' . curl_error($ch));
             }
-            return false;
+            
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            if ($httpCode !== 200) {
+                throw new Exception('HTTP Error: ' . $httpCode);
+            }
+            
+            curl_close($ch);
+
+            // Parse response
+            $data = json_decode($response, true);
+            if (!$data || !isset($data['observations'])) {
+                throw new Exception('Invalid API response');
+            }
+
+            // Store observations in database
+            $stmt = $this->db->prepare("
+                INSERT INTO home_price_index (date, value)
+                VALUES (?, ?)
+                ON DUPLICATE KEY UPDATE value = VALUES(value)
+            ");
+
+            foreach ($data['observations'] as $observation) {
+                if ($observation['value'] !== '.') { // FRED uses '.' for missing values
+                    $stmt->execute([
+                        $observation['date'],
+                        $observation['value']
+                    ]);
+                }
+            }
+
+            return true;
         } catch (Exception $e) {
-            error_log("Error fetching CSUSHPINSA data: " . $e->getMessage());
+            error_log('CSUSHPINSA Error: ' . $e->getMessage());
             return false;
-        }
-    }
-    
-    private function storeData($observations) {
-        $stmt = $this->db->prepare("
-            INSERT INTO home_price_index (date, value)
-            VALUES (?, ?)
-            ON DUPLICATE KEY UPDATE value = VALUES(value)
-        ");
-        
-        foreach ($observations as $observation) {
-            if ($observation['value'] !== '.') {
-                $stmt->execute([
-                    $observation['date'],
-                    $observation['value']
-                ]);
-            }
         }
     }
     

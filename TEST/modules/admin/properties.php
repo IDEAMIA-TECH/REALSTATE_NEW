@@ -991,6 +991,14 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         const latestValuation = data.data.valuations[0];
                         const initialValue = parseFloat(property.initial_valuation);
                         const appreciationRate = parseFloat(latestValuation.appreciation_rate);
+                        
+                        console.log('Contract Details - Current Value Calculation:', {
+                            initialValue,
+                            appreciationRate,
+                            calculation: `Current Value = ${initialValue} * (1 + (${appreciationRate} / 100))`,
+                            result: initialValue * (1 + (appreciationRate / 100))
+                        });
+
                         // Calculate current value: initial value * (1 + appreciation rate)
                         const currentValue = initialValue * (1 + (appreciationRate / 100));
                         const agreedPercentage = parseFloat(property.agreed_pct);
@@ -1395,7 +1403,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             const initialValue = parseFloat(propertyData.initial_valuation);
             const agreedPercentage = parseFloat(propertyData.agreed_pct);
 
-            valuations.forEach(valuation => {
+            console.log('Valuation History - Property Data:', {
+                initialValue,
+                agreedPercentage
+            });
+
+            valuations.forEach((valuation, index) => {
                 const row = document.createElement('tr');
                 
                 // Calculate current value using appreciation rate
@@ -1404,6 +1417,16 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 const appreciation = currentValue - initialValue;
                 // Calculate user profit: if appreciation > 0, multiply by agreed percentage, otherwise 0
                 const userProfit = appreciation > 0 ? appreciation * (agreedPercentage / 100) : 0;
+
+                console.log(`Valuation History - Row ${index + 1} Calculation:`, {
+                    date: valuation.date,
+                    initialValue,
+                    appreciationRate,
+                    calculation: `Current Value = ${initialValue} * (1 + (${appreciationRate} / 100))`,
+                    result: currentValue,
+                    appreciation,
+                    userProfit
+                });
 
                 row.innerHTML = `
                     <td>${new Date(valuation.date).toLocaleDateString()}</td>

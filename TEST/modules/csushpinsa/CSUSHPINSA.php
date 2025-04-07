@@ -206,7 +206,8 @@ class CSUSHPINSA {
                     initial_index,
                     agreed_pct,
                     option_price,
-                    total_fees
+                    total_fees,
+                    effective_date
                 FROM properties
                 WHERE id = ? AND status = 'active'
             ");
@@ -222,7 +223,8 @@ class CSUSHPINSA {
                 'initial_index' => $property['initial_index'],
                 'agreed_pct' => $property['agreed_pct'],
                 'option_price' => $property['option_price'],
-                'total_fees' => $property['total_fees']
+                'total_fees' => $property['total_fees'],
+                'effective_date' => $property['effective_date']
             ], true));
             
             // Get the current index value

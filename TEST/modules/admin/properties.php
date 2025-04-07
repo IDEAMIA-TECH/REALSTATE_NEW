@@ -881,17 +881,42 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         function fetchValuationHistory(propertyId) {
             log('Fetching valuation history for property:', propertyId);
+            
+            // Verificar si hay una sesión activa
+            if (!document.cookie.includes('PHPSESSID')) {
+                log('No active session found');
+                const tbody = document.getElementById('valuation_history_body');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            <div class="alert alert-warning">
+                                <h6>Session Expired</h6>
+                                <p class="mb-0">Your session has expired. Please refresh the page and log in again.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
             fetch(`get_valuation_history.php?property_id=${propertyId}`, {
                 credentials: 'same-origin',
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
                 }
             })
             .then(response => {
                 log('Valuation history response status:', response.status);
+                
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('Session expired');
+                }
+                
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                
                 return response.json();
             })
             .then(data => {
@@ -926,38 +951,52 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             .catch(error => {
                 log('Error fetching valuation history:', error);
                 const tbody = document.getElementById('valuation_history_body');
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading valuation history</td></tr>';
+                
+                if (error.message === 'Session expired') {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center">
+                                <div class="alert alert-warning">
+                                    <h6>Session Expired</h6>
+                                    <p class="mb-0">Your session has expired. Please refresh the page and log in again.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading valuation history</td></tr>';
+                }
             });
         }
         
         function fetchDocuments(propertyId) {
             log('Fetching documents for property:', propertyId);
+            
+            // Verificar si hay una sesión activa
+            if (!document.cookie.includes('PHPSESSID')) {
+                log('No active session found');
+                const container = document.getElementById('documents_list');
+                container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <h6>Session Expired</h6>
+                        <p class="mb-0">Your session has expired. Please refresh the page and log in again.</p>
+                    </div>
+                `;
+                return;
+            }
+            
             fetch(`get_documents.php?property_id=${propertyId}`, {
                 credentials: 'same-origin',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
-                },
-                redirect: 'manual' // Evitar el seguimiento automático de redirecciones
+                }
             })
             .then(response => {
                 log('Documents response status:', response.status);
                 
-                // Si la respuesta es una redirección, lanzar un error
-                if (response.type === 'opaqueredirect') {
-                    log('Response was redirected');
+                if (response.status === 401 || response.status === 403) {
                     throw new Error('Session expired');
-                }
-                
-                // Verificar el tipo de contenido
-                const contentType = response.headers.get('content-type');
-                log('Content-Type:', contentType);
-                
-                if (!contentType || !contentType.includes('application/json')) {
-                    return response.text().then(text => {
-                        log('Unexpected response text:', text);
-                        throw new Error('Invalid response format');
-                    });
                 }
                 
                 if (!response.ok) {

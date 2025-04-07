@@ -560,7 +560,17 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     const tbody = document.getElementById('valuation_history_body');
                     tbody.innerHTML = '';
                     
-                    data.forEach(valuation => {
+                    if (!data.success) {
+                        tbody.innerHTML = `<tr><td colspan="3" class="text-center">${data.error || 'Error loading valuation history'}</td></tr>`;
+                        return;
+                    }
+                    
+                    if (!data.data || data.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="3" class="text-center">No valuation history available</td></tr>';
+                        return;
+                    }
+                    
+                    data.data.forEach(valuation => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             <td>${valuation.date}</td>
@@ -572,7 +582,8 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 })
                 .catch(error => {
                     console.error('Error fetching valuation history:', error);
-                    document.getElementById('valuation_history_body').innerHTML = '<tr><td colspan="3" class="text-center">Error loading valuation history</td></tr>';
+                    const tbody = document.getElementById('valuation_history_body');
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center">Error loading valuation history</td></tr>';
                 });
         }
     </script>

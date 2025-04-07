@@ -4,24 +4,26 @@ require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../auth/User.php';
 require_once __DIR__ . '/../../config/database.php';
 
-// Check if user is logged in and is admin
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    http_response_code(403);
-    echo json_encode(['error' => 'Unauthorized']);
-    exit;
-}
-
-// Check if property_id is provided
-if (!isset($_GET['property_id']) || !is_numeric($_GET['property_id'])) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Invalid property ID']);
-    exit;
-}
-
-$propertyId = (int)$_GET['property_id'];
-$db = Database::getInstance()->getConnection();
+// Set default response
+$response = [
+    'success' => true,
+    'data' => []
+];
 
 try {
+    // Check if user is logged in and is admin
+    if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+        throw new Exception('Unauthorized access');
+    }
+
+    // Check if property_id is provided
+    if (!isset($_GET['property_id']) || !is_numeric($_GET['property_id'])) {
+        throw new Exception('Invalid property ID');
+    }
+
+    $propertyId = (int)$_GET['property_id'];
+    $db = Database::getInstance()->getConnection();
+
     // Check if property_valuations table exists
     try {
         $db->query("SELECT 1 FROM property_valuations LIMIT 1");
@@ -83,9 +85,13 @@ try {
         }
     }
     
-    header('Content-Type: application/json');
-    echo json_encode($valuations);
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
-} 
+    $response['data'] = $valuations;
+
+} catch (Exception $e) {
+    $response['success'] = false;
+    $response['error'] = $e->getMessage();
+}
+
+// Always return a JSON response
+header('Content-Type: application/json');
+echo json_encode($response); 

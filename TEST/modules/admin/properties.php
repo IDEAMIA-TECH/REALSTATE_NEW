@@ -21,12 +21,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         switch ($_POST['action']) {
             case 'create':
                 try {
+                    // Get the home price index for the effective date
+                    $stmt = $db->prepare("
+                        SELECT value 
+                        FROM home_price_index 
+                        WHERE date <= ? 
+                        ORDER BY date DESC 
+                        LIMIT 1
+                    ");
+                    $stmt->execute([$_POST['effective_date']]);
+                    $indexData = $stmt->fetch(PDO::FETCH_ASSOC);
+                    $initial_index = $indexData ? $indexData['value'] : 0;
+
                     $stmt = $db->prepare("
                         INSERT INTO properties (
                             client_id, address, initial_valuation, agreed_pct,
                             total_fees, effective_date, term, option_price,
-                            status, created_by
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
+                            status, created_by, initial_index
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)
                     ");
                     
                     $stmt->execute([
@@ -38,7 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_POST['effective_date'],
                         $_POST['term'],
                         $_POST['option_price'],
-                        $_SESSION['user_id']
+                        $_SESSION['user_id'],
+                        $initial_index
                     ]);
                     
                     $propertyId = $db->lastInsertId();

@@ -827,6 +827,14 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <td id="view_expiration_date"></td>
                                 </tr>
                                 <tr>
+                                    <th>Current Value:</th>
+                                    <td id="view_current_value"></td>
+                                </tr>
+                                <tr>
+                                    <th>User Profit:</th>
+                                    <td id="view_user_profit"></td>
+                                </tr>
+                                <tr>
                                     <th>Closing Index:</th>
                                     <td id="view_closing_index"></td>
                                 </tr>
@@ -967,6 +975,37 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
+                });
+
+                // Fetch and display current value and user profit
+                fetch(`get_valuation_history.php?property_id=${property.id}`, {
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data && data.data.valuations && data.data.valuations.length > 0) {
+                        const latestValuation = data.data.valuations[0];
+                        const currentValue = parseFloat(latestValuation.value);
+                        const initialValue = parseFloat(property.initial_valuation);
+                        const agreedPercentage = parseFloat(property.agreed_pct);
+                        const appreciation = currentValue - initialValue;
+                        const userProfit = appreciation * (agreedPercentage / 100);
+
+                        document.getElementById('view_current_value').textContent = '$' + currentValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        document.getElementById('view_user_profit').textContent = '$' + userProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    } else {
+                        document.getElementById('view_current_value').textContent = 'N/A';
+                        document.getElementById('view_user_profit').textContent = 'N/A';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching current value:', error);
+                    document.getElementById('view_current_value').textContent = 'Error';
+                    document.getElementById('view_user_profit').textContent = 'Error';
                 });
 
                 // Closing Information

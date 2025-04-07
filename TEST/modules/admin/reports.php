@@ -395,7 +395,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             <div class="summary-card">
                                 <div class="summary-value">
-                                    <?php echo number_format((array_sum(array_column($data, 'current_value')) / array_sum(array_column($data, 'initial_valuation')) - 1) * 100, 2); ?>%
+                                    <?php 
+                                    $totalInitialValue = array_sum(array_column($data, 'initial_valuation'));
+                                    $totalCurrentValue = array_sum(array_column($data, 'current_value'));
+                                    $appreciation = $totalInitialValue > 0 ? 
+                                        (($totalCurrentValue / $totalInitialValue) - 1) * 100 : 0;
+                                    echo number_format($appreciation, 2); 
+                                    ?>%
                                 </div>
                                 <div class="summary-label">Average Appreciation</div>
                             </div>

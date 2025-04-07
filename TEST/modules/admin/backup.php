@@ -96,75 +96,238 @@ if (file_exists($backupDir)) {
     <title>Database Backup - <?php echo APP_NAME; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="<?php echo BASE_URL; ?>/assets/css/global.css" rel="stylesheet">
+    <style>
+        .page-hero {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+            border-radius: var(--border-radius);
+        }
+
+        .backup-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .backup-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
+        }
+
+        .backup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .backup-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .backup-meta {
+            display: flex;
+            gap: 1rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .backup-size {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .backup-date {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-button {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            border: none;
+        }
+
+        .action-button:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-download {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: #2ecc71;
+        }
+
+        .btn-delete {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
+        .create-backup-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--box-shadow);
+            text-align: center;
+        }
+
+        .create-backup-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .create-backup-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .create-backup-description {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-create-backup {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .btn-create-backup:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .no-backups {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .no-backups i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #ddd;
+        }
+
+        .alert {
+            border-radius: var(--border-radius);
+            border: none;
+        }
+
+        .alert-success {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: #2ecc71;
+        }
+
+        .alert-danger {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+    </style>
 </head>
 <body>
     <?php require_once INCLUDES_PATH . '/header.php'; ?>
     
-    <div class="container mt-4">
-        <h1 class="mb-4">Database Backup</h1>
-        
+    <div class="page-hero">
+        <div class="container">
+            <h1 class="text-white"><i class="fas fa-database me-2"></i>Database Backup</h1>
+            <p class="lead text-white">Manage and download your database backups</p>
+        </div>
+    </div>
+
+    <div class="container">
         <?php if ($message): ?>
-            <div class="alert alert-success"><?php echo $message; ?></div>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php echo $message; ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         <?php endif; ?>
         
         <?php if ($error): ?>
-            <div class="alert alert-danger"><?php echo $error; ?></div>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?php echo $error; ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         <?php endif; ?>
-        
-        <!-- Create Backup Form -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Create New Backup</h5>
-                <form method="POST" action="">
-                    <button type="submit" name="create_backup" class="btn btn-primary">
-                        <i class="fas fa-database"></i> Create Backup
-                    </button>
-                </form>
-            </div>
+
+        <div class="create-backup-section">
+            <i class="fas fa-database create-backup-icon"></i>
+            <h2 class="create-backup-title">Create New Backup</h2>
+            <p class="create-backup-description">
+                Create a new backup of your database to ensure your data is safe and secure.
+            </p>
+            <form method="POST" action="">
+                <button type="submit" name="create_backup" class="btn btn-create-backup">
+                    <i class="fas fa-plus me-2"></i>Create Backup
+                </button>
+            </form>
         </div>
-        
-        <!-- Existing Backups -->
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Existing Backups</h5>
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Filename</th>
-                                <th>Date</th>
-                                <th>Size</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($backups as $backup): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($backup['filename']); ?></td>
-                                    <td><?php echo $backup['date']; ?></td>
-                                    <td><?php echo number_format($backup['size'] / 1024, 2) . ' KB'; ?></td>
-                                    <td>
-                                        <a href="?download=1&file=<?php echo urlencode($backup['filename']); ?>" 
-                                           class="btn btn-sm btn-primary">
-                                            <i class="fas fa-download"></i> Download
-                                        </a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                            
-                            <?php if (empty($backups)): ?>
-                                <tr>
-                                    <td colspan="4" class="text-center">No backups found</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+
+        <h3 class="h4 mb-4">Existing Backups</h3>
+
+        <?php if (empty($backups)): ?>
+            <div class="no-backups">
+                <i class="fas fa-database"></i>
+                <h4>No backups found</h4>
+                <p>Create your first backup to get started</p>
+            </div>
+        <?php else: ?>
+            <?php foreach ($backups as $backup): ?>
+                <div class="backup-card">
+                    <div class="backup-header">
+                        <h5 class="backup-title">
+                            <i class="fas fa-file-alt me-2"></i>
+                            <?php echo htmlspecialchars($backup['filename']); ?>
+                        </h5>
+                        <div class="action-buttons">
+                            <a href="?download=1&file=<?php echo urlencode($backup['filename']); ?>" 
+                               class="action-button btn-download">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="backup-meta">
+                        <div class="backup-size">
+                            <i class="fas fa-hdd"></i>
+                            <?php echo number_format($backup['size'] / 1024, 2) . ' KB'; ?>
+                        </div>
+                        <div class="backup-date">
+                            <i class="fas fa-calendar"></i>
+                            <?php echo $backup['date']; ?>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
-    
-    <?php require_once INCLUDES_PATH . '/footer.php'; ?>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

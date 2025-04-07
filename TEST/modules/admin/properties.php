@@ -147,14 +147,6 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             box-shadow: var(--box-shadow);
         }
 
-        .property-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: var(--border-radius);
-            margin-bottom: 1rem;
-        }
-
         .property-header {
             display: flex;
             justify-content: space-between;
@@ -355,10 +347,6 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php foreach ($properties as $property): ?>
                 <div class="col-md-6 col-lg-4">
                     <div class="property-card">
-                        <img src="https://source.unsplash.com/random/800x600/?house,<?php echo urlencode($property['address']); ?>" 
-                             alt="<?php echo htmlspecialchars($property['address']); ?>" 
-                             class="property-image">
-                        
                         <div class="property-header">
                             <h5 class="property-title"><?php echo htmlspecialchars($property['address']); ?></h5>
                             <span class="property-status status-<?php echo htmlspecialchars($property['status']); ?>">

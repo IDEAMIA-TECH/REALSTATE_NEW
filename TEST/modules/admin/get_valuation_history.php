@@ -28,9 +28,6 @@ try {
     $stmt = $db->prepare("
         SELECT 
             initial_valuation,
-            agreed_pct,
-            option_price,
-            effective_date,
             initial_index,
             initial_index_date
         FROM properties
@@ -47,12 +44,10 @@ try {
     $stmt = $db->prepare("
         SELECT 
             DATE_FORMAT(valuation_date, '%Y-%m-%d') as date,
-            current_value,
-            appreciation,
-            share_appreciation,
-            terminal_value,
-            projected_payoff,
-            option_valuation
+            index_value,
+            initial_index,
+            diference,
+            appreciation
         FROM property_valuations
         WHERE property_id = ?
         ORDER BY valuation_date DESC
@@ -64,24 +59,12 @@ try {
     // If no valuations exist, create initial valuation
     if (empty($valuations)) {
         $valuations[] = [
-            'date' => $property['initial_index_date'] ?? $property['effective_date'],
-            'current_value' => $property['initial_valuation'],
-            'appreciation' => 0,
-            'share_appreciation' => 0,
-            'terminal_value' => $property['initial_valuation'],
-            'projected_payoff' => 0,
-            'option_valuation' => -$property['option_price'],
-            'initial_valuation' => $property['initial_valuation'],
-            'agreed_pct' => $property['agreed_pct'],
-            'option_price' => $property['option_price']
+            'date' => $property['initial_index_date'],
+            'index_value' => $property['initial_index'],
+            'initial_index' => $property['initial_index'],
+            'diference' => 0,
+            'appreciation' => 0
         ];
-    } else {
-        // Add initial values to each valuation
-        foreach ($valuations as &$valuation) {
-            $valuation['initial_valuation'] = $property['initial_valuation'];
-            $valuation['agreed_pct'] = $property['agreed_pct'];
-            $valuation['option_price'] = $property['option_price'];
-        }
     }
     
     $response['data'] = $valuations;

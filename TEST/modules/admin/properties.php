@@ -110,6 +110,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Error archiving property: ' . $e->getMessage();
                 }
                 break;
+            
+            case 'cancel':
+                try {
+                    // Get the home price index for the cancellation date
+                    $stmt = $db->prepare("
+                        SELECT value 
+                        FROM home_price_index 
+                        WHERE date <= ? 
+                        ORDER BY date DESC 
+                        LIMIT 1
+                    ");
+                    $stmt->execute([$_POST['cancel_date']]);
+                    $indexData = $stmt->fetch(PDO::FETCH_ASSOC);
+                    $closing_index = $indexData ? $indexData['value'] : 0;
+
+                    $stmt = $db->prepare("
+                        UPDATE properties SET
+                            status = 'archived',
+                            closing_index = ?,
+                            closing_date = ?
+                        WHERE id = ?
+                    ");
+                    
+                    $stmt->execute([
+                        $closing_index,
+                        $_POST['cancel_date'],
+                        $_POST['property_id']
+                    ]);
+                    
+                    $message = 'Contract cancelled successfully';
+                } catch (PDOException $e) {
+                    $error = 'Error cancelling contract: ' . $e->getMessage();
+                }
+                break;
         }
     }
 }
@@ -253,6 +287,11 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .btn-delete {
             background-color: rgba(231, 76, 60, 0.1);
             color: #e74c3c;
+        }
+
+        .btn-cancel {
+            background-color: rgba(243, 156, 18, 0.1);
+            color: #f39c12;
         }
 
         .modal-content {
@@ -455,6 +494,14 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     data-property='<?php echo json_encode($property); ?>'>
                                 <i class="fas fa-edit"></i>
                             </button>
+                            <?php if ($property['status'] === 'active'): ?>
+                            <button type="button" class="action-button btn-cancel"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#cancelContractModal"
+                                    data-property='<?php echo json_encode($property); ?>'>
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <?php endif; ?>
                             <button type="button" class="action-button btn-delete"
                                     data-bs-toggle="modal"
                                     data-bs-target="#deletePropertyModal"
@@ -770,6 +817,39 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cancel Contract Modal -->
+    <div class="modal fade" id="cancelContractModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cancel Contract</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="">
+                    <div class="modal-body">
+                        <input type="hidden" name="action" value="cancel">
+                        <input type="hidden" name="property_id" id="cancel_property_id">
+                        
+                        <div class="mb-3">
+                            <label for="cancel_date" class="form-label">Cancellation Date</label>
+                            <input type="date" class="form-control" id="cancel_date" name="cancel_date" 
+                                   value="<?php echo date('Y-m-d'); ?>" required>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Are you sure you want to cancel this contract? This action cannot be undone.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-danger">Cancel Contract</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -1179,6 +1259,13 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             if (logContainer) {
                 logContainer.style.display = 'block';
             }
+        });
+
+        // Handle cancel contract modal
+        document.getElementById('cancelContractModal').addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const property = JSON.parse(button.getAttribute('data-property'));
+            document.getElementById('cancel_property_id').value = property.id;
         });
     </script>
 </body>

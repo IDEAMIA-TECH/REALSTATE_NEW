@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS properties (
     option_price DECIMAL(15,2) NOT NULL,
     status ENUM('active', 'archived') DEFAULT 'active',
     created_by INT,
+    initial_index DECIMAL(15,2) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,

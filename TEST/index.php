@@ -1,7 +1,6 @@
 <?php
 // Load configuration files first
-require_once __DIR__ . '/config/paths.php';
-require_once CONFIG_PATH . '/config.php';
+require_once __DIR__ . '/config.php';
 require_once CONFIG_PATH . '/env.php';
 require_once CONFIG_PATH . '/database.php';
 

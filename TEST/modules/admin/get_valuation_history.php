@@ -24,40 +24,32 @@ try {
     $propertyId = (int)$_GET['property_id'];
     $db = Database::getInstance()->getConnection();
 
-    // Check if property_documents table exists
-    try {
-        $db->query("SELECT 1 FROM property_documents LIMIT 1");
-    } catch (PDOException $e) {
-        // Create property_documents table if it doesn't exist
-        $createTableSQL = "
-            CREATE TABLE IF NOT EXISTS property_documents (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                property_id INT NOT NULL,
-                document_name VARCHAR(255) NOT NULL,
-                document_type VARCHAR(50) NOT NULL,
-                file_path VARCHAR(255) NOT NULL,
-                uploaded_by INT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
-                FOREIGN KEY (uploaded_by) REFERENCES users(id),
-                INDEX idx_property_documents (property_id)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ";
-        $db->exec($createTableSQL);
+    // Get property details for initial values
+    $stmt = $db->prepare("
+        SELECT 
+            initial_valuation,
+            agreed_pct,
+            option_price
+        FROM properties
+        WHERE id = ?
+    ");
+    $stmt->execute([$propertyId]);
+    $property = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$property) {
+        throw new Exception('Property not found');
     }
 
     // Get valuation history
     $stmt = $db->prepare("
         SELECT 
             DATE_FORMAT(valuation_date, '%Y-%m-%d') as date,
-            initial_valuation,
-            initial_index,
-            index_value,
+            current_value,
             appreciation,
-            agreed_pct,
             share_appreciation,
-            option_price,
-            total_fees
+            terminal_value,
+            projected_payoff,
+            option_valuation
         FROM property_valuations
         WHERE property_id = ?
         ORDER BY valuation_date DESC
@@ -66,70 +58,15 @@ try {
     $stmt->execute([$propertyId]);
     $valuations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Get documents
-    $stmt = $db->prepare("
-        SELECT 
-            id,
-            document_name,
-            document_type,
-            file_path,
-            DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') as upload_date
-        FROM property_documents
-        WHERE property_id = ?
-        ORDER BY created_at DESC
-    ");
-    
-    $stmt->execute([$propertyId]);
-    $documents = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // If no valuations exist, create initial valuation from property data
-    if (empty($valuations)) {
-        $stmt = $db->prepare("
-            SELECT 
-                initial_valuation,
-                initial_index,
-                initial_index_date,
-                agreed_pct,
-                option_price,
-                total_fees
-            FROM properties
-            WHERE id = ?
-        ");
-        $stmt->execute([$propertyId]);
-        $property = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($property) {
-            $valuations[] = [
-                'date' => $property['initial_index_date'],
-                'initial_valuation' => number_format($property['initial_valuation'], 2, '.', ''),
-                'initial_index' => number_format($property['initial_index'], 2, '.', ''),
-                'index_value' => number_format($property['initial_index'], 2, '.', ''),
-                'appreciation' => '0.00',
-                'agreed_pct' => number_format($property['agreed_pct'], 2, '.', ''),
-                'share_appreciation' => '0.00',
-                'option_price' => number_format($property['option_price'], 2, '.', ''),
-                'total_fees' => number_format($property['total_fees'], 2, '.', '')
-            ];
-        }
-    }
-    
-    // Format the data
+    // Add initial values to each valuation
     foreach ($valuations as &$valuation) {
-        $valuation['initial_valuation'] = number_format($valuation['initial_valuation'], 2, '.', '');
-        $valuation['initial_index'] = number_format($valuation['initial_index'], 2, '.', '');
-        $valuation['index_value'] = number_format($valuation['index_value'], 2, '.', '');
-        $valuation['appreciation'] = number_format($valuation['appreciation'], 2, '.', '');
-        $valuation['agreed_pct'] = number_format($valuation['agreed_pct'], 2, '.', '');
-        $valuation['share_appreciation'] = number_format($valuation['share_appreciation'], 2, '.', '');
-        $valuation['option_price'] = number_format($valuation['option_price'], 2, '.', '');
-        $valuation['total_fees'] = number_format($valuation['total_fees'], 2, '.', '');
+        $valuation['initial_valuation'] = $property['initial_valuation'];
+        $valuation['agreed_pct'] = $property['agreed_pct'];
+        $valuation['option_price'] = $property['option_price'];
     }
     
-    $response['data'] = [
-        'valuations' => $valuations,
-        'documents' => $documents
-    ];
-
+    $response['data'] = $valuations;
+    
 } catch (Exception $e) {
     $response['success'] = false;
     $response['error'] = $e->getMessage();

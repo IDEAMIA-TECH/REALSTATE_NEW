@@ -417,6 +417,15 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <i class="fas fa-clock"></i>
                                     <?php echo htmlspecialchars($property['term']); ?> months
                                 </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-calendar-times"></i>
+                                    <?php 
+                                        $effectiveDate = new DateTime($property['effective_date']);
+                                        $expirationDate = clone $effectiveDate;
+                                        $expirationDate->modify('+' . $property['term'] . ' months');
+                                        echo $expirationDate->format('Y-m-d');
+                                    ?>
+                                </div>
                             </div>
                         </div>
 

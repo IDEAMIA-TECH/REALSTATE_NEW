@@ -806,7 +806,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     // Refresh documents list
@@ -826,7 +831,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         function fetchValuationHistory(propertyId) {
             fetch(`get_valuation_history.php?property_id=${propertyId}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     const tbody = document.getElementById('valuation_history_body');
                     tbody.innerHTML = '';
@@ -836,12 +846,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         return;
                     }
                     
-                    if (!data.data || data.data.length === 0) {
+                    if (!data.valuations || !Array.isArray(data.valuations)) {
                         tbody.innerHTML = '<tr><td colspan="7" class="text-center">No valuation history available</td></tr>';
                         return;
                     }
                     
-                    data.data.forEach(valuation => {
+                    data.valuations.forEach(valuation => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             <td>${valuation.date}</td>
@@ -864,7 +874,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         function fetchDocuments(propertyId) {
             fetch(`get_documents.php?property_id=${propertyId}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     const container = document.getElementById('documents_list');
                     container.innerHTML = '';
@@ -874,7 +889,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         return;
                     }
                     
-                    if (!data.documents || data.documents.length === 0) {
+                    if (!data.documents || !Array.isArray(data.documents)) {
                         container.innerHTML = '<div class="alert alert-info">No documents available</div>';
                         return;
                     }

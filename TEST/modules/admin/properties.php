@@ -902,6 +902,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="<?php echo BASE_URL; ?>/modules/csushpinsa/CSUSHPINSA.js"></script>
     <script>
         // Handle edit modal
         document.getElementById('editPropertyModal').addEventListener('show.bs.modal', function(event) {
@@ -1324,21 +1325,41 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         // Handle valuation update
         document.getElementById('updateValuationBtn').addEventListener('click', function() {
             const propertyId = document.getElementById('view_id').textContent;
-            const csushpinsa = new CSUSHPINSA();
             
             // Get current date in YYYY-MM-DD format
             const today = new Date();
             const valuationDate = today.toISOString().split('T')[0];
             
-            try {
-                csushpinsa.updatePropertyValuation(propertyId, valuationDate);
-                alert('Valuation updated successfully');
-                // Refresh the valuation history
-                fetchValuationHistory(propertyId);
-            } catch (error) {
+            // Make a fetch request to update the valuation
+            fetch('update_valuation.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    property_id: propertyId,
+                    valuation_date: valuationDate
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert('Valuation updated successfully');
+                    // Refresh the valuation history
+                    fetchValuationHistory(propertyId);
+                } else {
+                    throw new Error(data.error || 'Error updating valuation');
+                }
+            })
+            .catch(error => {
                 console.error('Error updating valuation:', error);
                 alert('Error updating valuation: ' + error.message);
-            }
+            });
         });
     </script>
 </body>

@@ -769,14 +769,14 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Handle view modal
         document.getElementById('viewPropertyModal').addEventListener('show.bs.modal', function(event) {
-            console.log('Opening view modal...');
+            log('Opening view modal...');
             const button = event.relatedTarget;
             const property = JSON.parse(button.getAttribute('data-property'));
-            console.log('Property data:', property);
+            log('Property data:', property);
             
             // Set property ID for document upload
             document.getElementById('document_property_id').value = property.id;
-            console.log('Set document_property_id:', property.id);
+            log('Set document_property_id:', property.id);
             
             // Basic Information
             document.getElementById('view_id').textContent = property.id;
@@ -794,7 +794,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             document.getElementById('view_effective_date').textContent = property.effective_date;
             document.getElementById('view_term').textContent = property.term + ' months';
             
-            console.log('Basic info set, fetching valuation history and documents...');
+            log('Basic info set, fetching valuation history and documents...');
             
             // Fetch and display valuation history and documents
             fetchValuationHistory(property.id);
@@ -835,17 +835,17 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         });
         
         function fetchValuationHistory(propertyId) {
-            console.log('Fetching valuation history for property:', propertyId);
+            log('Fetching valuation history for property:', propertyId);
             fetch(`get_valuation_history.php?property_id=${propertyId}`)
                 .then(response => {
-                    console.log('Valuation history response status:', response.status);
+                    log('Valuation history response status:', response.status);
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Valuation history data:', data);
+                    log('Valuation history data:', data);
                     const tbody = document.getElementById('valuation_history_body');
                     tbody.innerHTML = '';
                     
@@ -874,14 +874,14 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     });
                 })
                 .catch(error => {
-                    console.error('Error fetching valuation history:', error);
+                    log('Error fetching valuation history:', error);
                     const tbody = document.getElementById('valuation_history_body');
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading valuation history</td></tr>';
                 });
         }
         
         function fetchDocuments(propertyId) {
-            console.log('Fetching documents for property:', propertyId);
+            log('Fetching documents for property:', propertyId);
             fetch(`get_documents.php?property_id=${propertyId}`, {
                 credentials: 'same-origin',
                 headers: {
@@ -889,21 +889,20 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
             })
             .then(response => {
-                console.log('Documents response status:', response.status);
-                console.log('Documents response headers:', Object.fromEntries(response.headers.entries()));
+                log('Documents response status:', response.status);
                 
                 if (response.redirected) {
-                    console.log('Response was redirected to:', response.url);
+                    log('Response was redirected to:', response.url);
                     window.location.href = response.url;
                     return Promise.reject('Session expired');
                 }
                 
                 const contentType = response.headers.get('content-type');
-                console.log('Content-Type:', contentType);
+                log('Content-Type:', contentType);
                 
                 if (!contentType || !contentType.includes('application/json')) {
                     return response.text().then(text => {
-                        console.error('Unexpected response text:', text);
+                        log('Unexpected response text:', text);
                         throw new Error(`Expected JSON but got ${contentType}`);
                     });
                 }
@@ -913,17 +912,17 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
                 
                 return response.text().then(text => {
-                    console.log('Raw response text:', text);
+                    log('Raw response text:', text);
                     try {
                         return JSON.parse(text);
                     } catch (e) {
-                        console.error('JSON parse error:', e);
+                        log('JSON parse error:', e);
                         throw new Error('Invalid JSON response');
                     }
                 });
             })
             .then(data => {
-                console.log('Documents data:', data);
+                log('Documents data:', data);
                 const container = document.getElementById('documents_list');
                 container.innerHTML = '';
                 
@@ -963,7 +962,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 });
             })
             .catch(error => {
-                console.error('Error fetching documents:', error);
+                log('Error fetching documents:', error);
                 const container = document.getElementById('documents_list');
                 
                 if (error === 'Session expired') {
@@ -1025,6 +1024,16 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     alert('Error deleting document');
                 });
             }
+        }
+
+        // Función de logging personalizada
+        function log(...args) {
+            const timestamp = new Date().toISOString();
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg) : arg
+            ).join(' ');
+            document.getElementById('debug-log').innerHTML += 
+                `<div class="debug-entry">[${timestamp}] ${message}</div>`;
         }
     </script>
 </body>

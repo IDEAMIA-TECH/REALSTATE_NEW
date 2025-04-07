@@ -820,6 +820,9 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Handle view modal
         document.getElementById('viewPropertyModal').addEventListener('show.bs.modal', function(event) {
+            event.preventDefault(); // Prevenir comportamiento por defecto
+            event.stopPropagation(); // Detener propagación del evento
+            
             log('Opening view modal...');
             const button = event.relatedTarget;
             const property = JSON.parse(button.getAttribute('data-property'));
@@ -857,113 +860,69 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             fetchDocuments(property.id);
         });
         
-        // Handle document upload
-        document.getElementById('documentUploadForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const propertyId = document.getElementById('document_property_id').value;
-            log('Attempting to upload document for property:', propertyId);
-            
-            if (!propertyId) {
-                log('Error: No property ID found');
-                alert('Error: No property ID found');
-                return;
-            }
-            
-            const formData = new FormData(this);
-            formData.append('property_id', propertyId); // Asegurarse de que el property_id esté en el FormData
-            
-            log('Form data:', {
-                property_id: propertyId,
-                document_name: formData.get('document_name'),
-                document_type: formData.get('document_type')
+        // Prevenir cierre no deseado del modal
+        document.getElementById('viewPropertyModal').addEventListener('hide.bs.modal', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+        });
+
+        // Prevenir redirección en los botones del modal
+        document.querySelectorAll('#viewPropertyModal button').forEach(button => {
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
             });
-            
-            fetch('upload_document.php', {
-                method: 'POST',
-                body: formData,
+        });
+
+        function fetchValuationHistory(propertyId) {
+            log('Fetching valuation history for property:', propertyId);
+            fetch(`get_valuation_history.php?property_id=${propertyId}`, {
                 credentials: 'same-origin',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
             .then(response => {
-                log('Upload response status:', response.status);
+                log('Valuation history response status:', response.status);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                return response.text().then(text => {
-                    log('Raw upload response:', text);
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        log('JSON parse error:', e);
-                        throw new Error('Invalid JSON response');
-                    }
-                });
+                return response.json();
             })
             .then(data => {
-                log('Upload response data:', data);
-                if (data.success) {
-                    // Refresh documents list
-                    fetchDocuments(propertyId);
-                    alert(data.message);
-                    // Reset form
-                    this.reset();
-                } else {
-                    alert(data.error || 'Error uploading document');
+                log('Valuation history data:', data);
+                const tbody = document.getElementById('valuation_history_body');
+                tbody.innerHTML = '';
+                
+                if (!data.success) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center">${data.error || 'Error loading valuation history'}</td></tr>`;
+                    return;
                 }
+                
+                if (!data.valuations || !Array.isArray(data.valuations)) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No valuation history available</td></tr>';
+                    return;
+                }
+                
+                data.valuations.forEach(valuation => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${valuation.date}</td>
+                        <td>$${parseFloat(valuation.value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td>${valuation.appreciation_rate}%</td>
+                        <td>$${parseFloat(valuation.share_appreciation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td>$${parseFloat(valuation.terminal_value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td>$${parseFloat(valuation.projected_payoff).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td>$${parseFloat(valuation.option_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
             })
             .catch(error => {
-                log('Error uploading document:', error);
-                alert('Error uploading document: ' + error.message);
+                log('Error fetching valuation history:', error);
+                const tbody = document.getElementById('valuation_history_body');
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading valuation history</td></tr>';
             });
-        });
-        
-        function fetchValuationHistory(propertyId) {
-            log('Fetching valuation history for property:', propertyId);
-            fetch(`get_valuation_history.php?property_id=${propertyId}`)
-                .then(response => {
-                    log('Valuation history response status:', response.status);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    log('Valuation history data:', data);
-                    const tbody = document.getElementById('valuation_history_body');
-                    tbody.innerHTML = '';
-                    
-                    if (!data.success) {
-                        tbody.innerHTML = `<tr><td colspan="7" class="text-center">${data.error || 'Error loading valuation history'}</td></tr>`;
-                        return;
-                    }
-                    
-                    if (!data.valuations || !Array.isArray(data.valuations)) {
-                        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No valuation history available</td></tr>';
-                        return;
-                    }
-                    
-                    data.valuations.forEach(valuation => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${valuation.date}</td>
-                            <td>$${parseFloat(valuation.value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td>${valuation.appreciation_rate}%</td>
-                            <td>$${parseFloat(valuation.share_appreciation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td>$${parseFloat(valuation.terminal_value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td>$${parseFloat(valuation.projected_payoff).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td>$${parseFloat(valuation.option_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                })
-                .catch(error => {
-                    log('Error fetching valuation history:', error);
-                    const tbody = document.getElementById('valuation_history_body');
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading valuation history</td></tr>';
-                });
         }
         
         function fetchDocuments(propertyId) {
@@ -979,7 +938,6 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 if (response.redirected) {
                     log('Response was redirected to:', response.url);
-                    window.location.href = response.url;
                     return Promise.reject('Session expired');
                 }
                 
@@ -1058,9 +1016,6 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <p class="mb-0">Your session has expired. Please log in again.</p>
                         </div>
                     `;
-                    setTimeout(() => {
-                        window.location.href = '<?php echo BASE_URL; ?>/modules/auth/login.php';
-                    }, 2000);
                 } else {
                     container.innerHTML = `
                         <div class="alert alert-danger">

@@ -993,7 +993,8 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         const initialValue = parseFloat(property.initial_valuation);
                         const agreedPercentage = parseFloat(property.agreed_pct);
                         const appreciation = currentValue - initialValue;
-                        const userProfit = appreciation * (agreedPercentage / 100);
+                        // Calculate user profit: if appreciation > 0, multiply by agreed percentage, otherwise 0
+                        const userProfit = appreciation > 0 ? appreciation * (agreedPercentage / 100) : 0;
 
                         document.getElementById('view_current_value').textContent = '$' + currentValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                         document.getElementById('view_user_profit').textContent = '$' + userProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -1398,7 +1399,8 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 // Calculate appreciation and user profit
                 const currentValue = parseFloat(valuation.value);
                 const appreciation = currentValue - initialValue;
-                const userProfit = appreciation * (agreedPercentage / 100);
+                // Calculate user profit: if appreciation > 0, multiply by agreed percentage, otherwise 0
+                const userProfit = appreciation > 0 ? appreciation * (agreedPercentage / 100) : 0;
 
                 row.innerHTML = `
                     <td>${new Date(valuation.date).toLocaleDateString()}</td>

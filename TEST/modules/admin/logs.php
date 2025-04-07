@@ -164,7 +164,7 @@ try {
                     <div class="col-md-3">
                         <label for="search" class="form-label">Search</label>
                         <input type="text" class="form-control" id="search" name="search" 
-                               value="<?php echo htmlspecialchars($filters['search']); ?>" 
+                               value="<?php echo htmlspecialchars($filters['search'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" 
                                placeholder="Search in messages...">
                     </div>
                     

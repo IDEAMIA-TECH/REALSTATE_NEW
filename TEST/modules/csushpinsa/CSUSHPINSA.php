@@ -102,46 +102,72 @@ class CSUSHPINSA {
     }
     
     public function calculatePropertyAppreciation($propertyId, $valuationDate) {
-        // Get property details
-        $stmt = $this->db->prepare("
-            SELECT initial_valuation, effective_date, agreed_pct
-            FROM properties
-            WHERE id = ?
-        ");
-        $stmt->execute([$propertyId]);
-        $property = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if (!$property) {
+        try {
+            error_log("Starting property appreciation calculation for property ID: {$propertyId} and date: {$valuationDate}");
+            
+            // Get property details
+            $stmt = $this->db->prepare("
+                SELECT initial_valuation, effective_date, agreed_pct
+                FROM properties
+                WHERE id = ? AND status = 'active'
+            ");
+            $stmt->execute([$propertyId]);
+            $property = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$property) {
+                error_log("Property not found or inactive: {$propertyId}");
+                return false;
+            }
+            
+            error_log("Property details found: " . print_r($property, true));
+            
+            // Get index values for both dates
+            $stmt = $this->db->prepare("
+                SELECT date, value 
+                FROM home_price_index 
+                WHERE date IN (?, ?)
+                ORDER BY date ASC
+            ");
+            $stmt->execute([$property['effective_date'], $valuationDate]);
+            $indexValues = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            error_log("Index values found: " . print_r($indexValues, true));
+            
+            if (count($indexValues) !== 2) {
+                error_log("Missing index values. Expected 2, found: " . count($indexValues));
+                return false;
+            }
+            
+            // Calculate appreciation
+            $initialIndex = $indexValues[0]['value'];
+            $currentIndex = $indexValues[1]['value'];
+            
+            error_log("Initial index value: {$initialIndex}");
+            error_log("Current index value: {$currentIndex}");
+            
+            if ($initialIndex == 0) {
+                error_log("Initial index value is zero, cannot calculate appreciation");
+                return false;
+            }
+            
+            $appreciationRate = ($currentIndex - $initialIndex) / $initialIndex;
+            $appreciation = $property['initial_valuation'] * $appreciationRate;
+            $shareAppreciation = $appreciation * ($property['agreed_pct'] / 100);
+            
+            error_log("Calculated appreciation rate: " . ($appreciationRate * 100) . "%");
+            error_log("Calculated appreciation: {$appreciation}");
+            error_log("Calculated share appreciation: {$shareAppreciation}");
+            
+            return [
+                'appreciation' => $appreciation,
+                'share_appreciation' => $shareAppreciation,
+                'appreciation_rate' => $appreciationRate * 100
+            ];
+        } catch (Exception $e) {
+            error_log("Error in calculatePropertyAppreciation: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
             return false;
         }
-        
-        // Get index values
-        $stmt = $this->db->prepare("
-            SELECT value
-            FROM home_price_index
-            WHERE date IN (?, ?)
-            ORDER BY date ASC
-        ");
-        $stmt->execute([$property['effective_date'], $valuationDate]);
-        $indexValues = $stmt->fetchAll(PDO::FETCH_COLUMN);
-        
-        if (count($indexValues) !== 2) {
-            return false;
-        }
-        
-        // Calculate appreciation
-        $initialIndex = $indexValues[0];
-        $currentIndex = $indexValues[1];
-        $appreciationRate = ($currentIndex - $initialIndex) / $initialIndex;
-        
-        $appreciation = $property['initial_valuation'] * $appreciationRate;
-        $shareAppreciation = $appreciation * ($property['agreed_pct'] / 100);
-        
-        return [
-            'appreciation' => $appreciation,
-            'share_appreciation' => $shareAppreciation,
-            'appreciation_rate' => $appreciationRate * 100
-        ];
     }
     
     public function updatePropertyValuation($propertyId, $valuationDate) {

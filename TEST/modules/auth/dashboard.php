@@ -1,7 +1,11 @@
 <?php
+// Start session and load configuration
+session_start();
+require_once __DIR__ . '/../../config.php';
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
-    header('Location: ' . BASE_URL . '/login.php');
+    header('Location: ' . BASE_URL . '/modules/auth/login.php');
     exit;
 }
 
@@ -12,68 +16,68 @@ $userData = $user->getById($_SESSION['user_id']);
 // Get role-specific dashboard items
 $dashboardItems = [];
 switch ($_SESSION['role']) {
-    case ROLE_ADMIN:
+    case 'admin':
         $dashboardItems = [
             [
                 'title' => 'User Management',
                 'icon' => '👥',
-                'link' => BASE_URL . '/users.php',
+                'link' => BASE_URL . '/modules/admin/users.php',
                 'description' => 'Manage system users and roles'
             ],
             [
                 'title' => 'System Settings',
                 'icon' => '⚙️',
-                'link' => BASE_URL . '/settings.php',
+                'link' => BASE_URL . '/modules/admin/settings.php',
                 'description' => 'Configure system settings'
             ],
             [
                 'title' => 'Reports',
                 'icon' => '📊',
-                'link' => BASE_URL . '/reports.php',
+                'link' => BASE_URL . '/modules/admin/reports.php',
                 'description' => 'View system reports and analytics'
             ]
         ];
         break;
-    case ROLE_AGENT:
+    case 'property_owner':
         $dashboardItems = [
             [
                 'title' => 'My Properties',
                 'icon' => '🏠',
-                'link' => BASE_URL . '/properties.php',
+                'link' => BASE_URL . '/modules/properties/list.php',
                 'description' => 'Manage your property listings'
             ],
             [
                 'title' => 'Client Management',
                 'icon' => '👥',
-                'link' => BASE_URL . '/clients.php',
+                'link' => BASE_URL . '/modules/clients/list.php',
                 'description' => 'Manage your clients'
             ],
             [
                 'title' => 'Property Valuations',
                 'icon' => '💰',
-                'link' => BASE_URL . '/valuations.php',
+                'link' => BASE_URL . '/modules/valuations/list.php',
                 'description' => 'View property valuations'
             ]
         ];
         break;
-    case ROLE_CLIENT:
+    case 'view_only':
         $dashboardItems = [
             [
                 'title' => 'My Properties',
                 'icon' => '🏠',
-                'link' => BASE_URL . '/my-properties.php',
+                'link' => BASE_URL . '/modules/properties/view.php',
                 'description' => 'View your properties'
             ],
             [
                 'title' => 'Property Valuations',
                 'icon' => '💰',
-                'link' => BASE_URL . '/valuations.php',
+                'link' => BASE_URL . '/modules/valuations/view.php',
                 'description' => 'View property valuations'
             ],
             [
                 'title' => 'My Profile',
                 'icon' => '👤',
-                'link' => BASE_URL . '/profile.php',
+                'link' => BASE_URL . '/modules/profile/view.php',
                 'description' => 'Manage your profile'
             ]
         ];
@@ -147,7 +151,7 @@ switch ($_SESSION['role']) {
         </div>
     </div>
     
-    <a href="<?php echo BASE_URL; ?>/logout.php" class="btn btn-danger logout-btn">
+    <a href="<?php echo BASE_URL; ?>/modules/auth/logout.php" class="btn btn-danger logout-btn">
         <i class="fas fa-sign-out-alt"></i> Logout
     </a>
     

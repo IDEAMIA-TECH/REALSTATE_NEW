@@ -246,7 +246,7 @@ class CSUSHPINSA {
             $difference = (($indexValue - $initialIndex) / $initialIndex) * 100;
             
             // Calculate appreciation in dollars
-            $appreciation = ($difference / 100) * $currentIndex['value'];
+            $appreciation = ($difference / 100) * $property['initial_valuation'];
 
             error_log("Calculations: " . print_r([
                 'indexValue' => $indexValue,

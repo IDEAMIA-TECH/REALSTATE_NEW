@@ -24,21 +24,23 @@ try {
     $propertyId = (int)$_GET['property_id'];
     $db = Database::getInstance()->getConnection();
 
-    // Check if property_valuations table exists
+    // Check if property_documents table exists
     try {
-        $db->query("SELECT 1 FROM property_valuations LIMIT 1");
+        $db->query("SELECT 1 FROM property_documents LIMIT 1");
     } catch (PDOException $e) {
-        // Create property_valuations table if it doesn't exist
+        // Create property_documents table if it doesn't exist
         $createTableSQL = "
-            CREATE TABLE IF NOT EXISTS property_valuations (
+            CREATE TABLE IF NOT EXISTS property_documents (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 property_id INT NOT NULL,
-                valuation_date DATE NOT NULL,
-                current_value DECIMAL(15,2) NOT NULL,
-                appreciation_rate DECIMAL(5,2) NOT NULL,
+                document_name VARCHAR(255) NOT NULL,
+                document_type VARCHAR(50) NOT NULL,
+                file_path VARCHAR(255) NOT NULL,
+                uploaded_by INT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
-                INDEX idx_property_date (property_id, valuation_date)
+                FOREIGN KEY (uploaded_by) REFERENCES users(id),
+                INDEX idx_property_documents (property_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ";
         $db->exec($createTableSQL);
@@ -61,6 +63,22 @@ try {
     
     $stmt->execute([$propertyId]);
     $valuations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Get documents
+    $stmt = $db->prepare("
+        SELECT 
+            id,
+            document_name,
+            document_type,
+            file_path,
+            DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') as upload_date
+        FROM property_documents
+        WHERE property_id = ?
+        ORDER BY created_at DESC
+    ");
+    
+    $stmt->execute([$propertyId]);
+    $documents = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // If no valuations exist, create initial valuation from property data
     if (empty($valuations)) {
@@ -98,7 +116,10 @@ try {
         }
     }
     
-    $response['data'] = $valuations;
+    $response['data'] = [
+        'valuations' => $valuations,
+        'documents' => $documents
+    ];
 
 } catch (Exception $e) {
     $response['success'] = false;

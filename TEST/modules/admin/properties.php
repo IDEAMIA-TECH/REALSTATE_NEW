@@ -496,6 +496,58 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         </div>
                     </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6>Documents</h6>
+                            <div class="card">
+                                <div class="card-body">
+                                    <!-- Document Upload Form -->
+                                    <form id="documentUploadForm" class="mb-3" enctype="multipart/form-data">
+                                        <input type="hidden" name="property_id" id="document_property_id">
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <input type="text" class="form-control" name="document_name" placeholder="Document Name" required>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <select class="form-select" name="document_type" required>
+                                                    <option value="">Select Type</option>
+                                                    <option value="contract">Contract</option>
+                                                    <option value="valuation">Valuation Report</option>
+                                                    <option value="inspection">Inspection Report</option>
+                                                    <option value="other">Other</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="file" class="form-control" name="document" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <button type="submit" class="btn btn-primary w-100">
+                                                    <i class="fas fa-upload"></i> Upload
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                    
+                                    <!-- Documents Table -->
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Type</th>
+                                                    <th>Upload Date</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="documents_body">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -537,6 +589,9 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             const button = event.relatedTarget;
             const property = JSON.parse(button.getAttribute('data-property'));
             
+            // Set property ID for document upload
+            document.getElementById('document_property_id').value = property.id;
+            
             // Basic Information
             document.getElementById('view_id').textContent = property.id;
             document.getElementById('view_client_name').textContent = property.client_name;
@@ -553,8 +608,40 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             document.getElementById('view_effective_date').textContent = property.effective_date;
             document.getElementById('view_term').textContent = property.term + ' months';
             
-            // Fetch and display valuation history
+            // Fetch and display valuation history and documents
             fetchValuationHistory(property.id);
+            fetchDocuments(property.id);
+        });
+        
+        // Handle document upload
+        document.getElementById('documentUploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('upload_document.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Refresh documents list
+                    fetchDocuments(document.getElementById('document_property_id').value);
+                    
+                    // Show success message
+                    alert(data.message);
+                    
+                    // Reset form
+                    this.reset();
+                } else {
+                    alert(data.error || 'Error uploading document');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error uploading document');
+            });
         });
         
         function fetchValuationHistory(propertyId) {
@@ -593,6 +680,74 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     const tbody = document.getElementById('valuation_history_body');
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading valuation history</td></tr>';
                 });
+        }
+        
+        function fetchDocuments(propertyId) {
+            fetch(`get_valuation_history.php?property_id=${propertyId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('documents_body');
+                    tbody.innerHTML = '';
+                    
+                    if (!data.success) {
+                        tbody.innerHTML = `<tr><td colspan="4" class="text-center">${data.error || 'Error loading documents'}</td></tr>`;
+                        return;
+                    }
+                    
+                    if (!data.data.documents || data.data.documents.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center">No documents available</td></tr>';
+                        return;
+                    }
+                    
+                    data.data.documents.forEach(doc => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${doc.document_name}</td>
+                            <td>${doc.document_type}</td>
+                            <td>${doc.upload_date}</td>
+                            <td>
+                                <a href="${BASE_URL}/${doc.file_path}" class="btn btn-sm btn-primary" target="_blank">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-danger" onclick="deleteDocument(${doc.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching documents:', error);
+                    const tbody = document.getElementById('documents_body');
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">Error loading documents</td></tr>';
+                });
+        }
+        
+        function deleteDocument(docId) {
+            if (confirm('Are you sure you want to delete this document?')) {
+                fetch('delete_document.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ doc_id: docId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Refresh documents list
+                        fetchDocuments(document.getElementById('document_property_id').value);
+                        alert(data.message);
+                    } else {
+                        alert(data.error || 'Error deleting document');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting document');
+                });
+            }
         }
     </script>
 </body>

@@ -715,6 +715,10 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <th>Term:</th>
                                     <td id="view_term"></td>
                                 </tr>
+                                <tr>
+                                    <th>Expiration Date:</th>
+                                    <td id="view_expiration_date"></td>
+                                </tr>
                             </table>
                         </div>
                     </div>
@@ -780,9 +784,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 event.preventDefault();
                 event.stopPropagation();
                 
-                log('Opening view modal...');
                 const property = JSON.parse(this.getAttribute('data-property'));
-                log('Property data:', property);
                 
                 // Basic Information
                 document.getElementById('view_id').textContent = property.id;
@@ -800,7 +802,15 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 document.getElementById('view_effective_date').textContent = property.effective_date;
                 document.getElementById('view_term').textContent = property.term + ' months';
                 
-                log('Basic info set, fetching valuation history...');
+                // Calculate and display expiration date
+                const effectiveDate = new Date(property.effective_date);
+                const expirationDate = new Date(effectiveDate);
+                expirationDate.setMonth(expirationDate.getMonth() + parseInt(property.term));
+                document.getElementById('view_expiration_date').textContent = expirationDate.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
                 
                 // Fetch and display valuation history
                 fetchValuationHistory(property.id);

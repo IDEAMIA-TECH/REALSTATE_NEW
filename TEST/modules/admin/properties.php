@@ -819,45 +819,50 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         });
         
         // Handle view modal
-        document.getElementById('viewPropertyModal').addEventListener('show.bs.modal', function(event) {
-            event.preventDefault(); // Prevenir comportamiento por defecto
-            event.stopPropagation(); // Detener propagación del evento
-            
-            log('Opening view modal...');
-            const button = event.relatedTarget;
-            const property = JSON.parse(button.getAttribute('data-property'));
-            log('Property data:', property);
-            
-            // Set property ID for document upload
-            const propertyIdInput = document.getElementById('document_property_id');
-            if (propertyIdInput) {
-                propertyIdInput.value = property.id;
-                log('Set document_property_id:', property.id);
-            } else {
-                log('Error: document_property_id input not found');
-            }
-            
-            // Basic Information
-            document.getElementById('view_id').textContent = property.id;
-            document.getElementById('view_client_name').textContent = property.client_name;
-            document.getElementById('view_address').textContent = property.address;
-            document.getElementById('view_status').textContent = property.status.charAt(0).toUpperCase() + property.status.slice(1);
-            
-            // Financial Information
-            document.getElementById('view_initial_valuation').textContent = '$' + parseFloat(property.initial_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('view_agreed_pct').textContent = property.agreed_pct + '%';
-            document.getElementById('view_total_fees').textContent = '$' + parseFloat(property.total_fees).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('view_option_price').textContent = '$' + parseFloat(property.option_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            
-            // Contract Details
-            document.getElementById('view_effective_date').textContent = property.effective_date;
-            document.getElementById('view_term').textContent = property.term + ' months';
-            
-            log('Basic info set, fetching valuation history and documents...');
-            
-            // Fetch and display valuation history and documents
-            fetchValuationHistory(property.id);
-            fetchDocuments(property.id);
+        document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target="#viewPropertyModal"]').forEach(button => {
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                log('Opening view modal...');
+                const property = JSON.parse(this.getAttribute('data-property'));
+                log('Property data:', property);
+                
+                // Set property ID for document upload
+                const propertyIdInput = document.getElementById('document_property_id');
+                if (propertyIdInput) {
+                    propertyIdInput.value = property.id;
+                    log('Set document_property_id:', property.id);
+                } else {
+                    log('Error: document_property_id input not found');
+                }
+                
+                // Basic Information
+                document.getElementById('view_id').textContent = property.id;
+                document.getElementById('view_client_name').textContent = property.client_name;
+                document.getElementById('view_address').textContent = property.address;
+                document.getElementById('view_status').textContent = property.status.charAt(0).toUpperCase() + property.status.slice(1);
+                
+                // Financial Information
+                document.getElementById('view_initial_valuation').textContent = '$' + parseFloat(property.initial_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('view_agreed_pct').textContent = property.agreed_pct + '%';
+                document.getElementById('view_total_fees').textContent = '$' + parseFloat(property.total_fees).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('view_option_price').textContent = '$' + parseFloat(property.option_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                
+                // Contract Details
+                document.getElementById('view_effective_date').textContent = property.effective_date;
+                document.getElementById('view_term').textContent = property.term + ' months';
+                
+                log('Basic info set, fetching valuation history and documents...');
+                
+                // Fetch and display valuation history and documents
+                fetchValuationHistory(property.id);
+                fetchDocuments(property.id);
+                
+                // Show the modal
+                const modal = new bootstrap.Modal(document.getElementById('viewPropertyModal'));
+                modal.show();
+            });
         });
         
         // Prevenir cierre no deseado del modal

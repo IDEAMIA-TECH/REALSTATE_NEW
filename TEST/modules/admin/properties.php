@@ -831,10 +831,6 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <td id="view_closing_index"></td>
                                 </tr>
                                 <tr>
-                                    <th>Closing Index Date:</th>
-                                    <td id="view_closing_index_date"></td>
-                                </tr>
-                                <tr>
                                     <th>Closing Date:</th>
                                     <td id="view_closing_date"></td>
                                 </tr>
@@ -968,7 +964,6 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 // Closing Information
                 document.getElementById('view_closing_index').textContent = property.closing_index ? parseFloat(property.closing_index).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'N/A';
-                document.getElementById('view_closing_index_date').textContent = property.closing_index_date || 'N/A';
                 document.getElementById('view_closing_date').textContent = property.closing_date || 'N/A';
                 
                 // Fetch and display valuation history

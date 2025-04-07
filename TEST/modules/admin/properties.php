@@ -751,7 +751,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     <!-- View Property Modal -->
     <div class="modal fade" id="viewPropertyModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Property Details</h5>
@@ -841,19 +841,24 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <div class="col-md-12">
                             <h6>Valuation History</h6>
                             <div id="valuation_history" class="table-responsive">
-                                <table class="table table-sm">
+                                <table class="table table-striped">
                                     <thead>
                                         <tr>
                                             <th>Date</th>
+                                            <th>Initial Value</th>
                                             <th>Current Value</th>
                                             <th>Appreciation</th>
-                                            <th>Share Appreciation</th>
+                                            <th>User Profit</th>
+                                            <th>Appreciation Rate</th>
                                             <th>Terminal Value</th>
                                             <th>Projected Payoff</th>
                                             <th>Option Value</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="valuation_history_body">
+                                    <tbody id="valuationHistoryBody">
+                                        <tr>
+                                            <td colspan="9" class="text-center">Loading valuation history...</td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -1012,10 +1017,10 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             // Verificar si hay una sesión activa
             if (!document.cookie.includes('PHPSESSID')) {
                 log('No active session found');
-                const tbody = document.getElementById('valuation_history_body');
+                const tbody = document.getElementById('valuationHistoryBody');
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="text-center">
+                        <td colspan="9" class="text-center">
                             <div class="alert alert-warning">
                                 <h6>Session Expired</h6>
                                 <p class="mb-0">Your session has expired. Please refresh the page and log in again.</p>
@@ -1048,16 +1053,16 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             })
             .then(data => {
                 log('Valuation history data:', data);
-                const tbody = document.getElementById('valuation_history_body');
+                const tbody = document.getElementById('valuationHistoryBody');
                 tbody.innerHTML = '';
                 
                 if (!data.success) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="text-center">${data.error || 'Error loading valuation history'}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="9" class="text-center">${data.error || 'Error loading valuation history'}</td></tr>`;
                     return;
                 }
                 
                 if (!data.data || !data.data.valuations || !Array.isArray(data.data.valuations)) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No valuation history available</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center">No valuation history available</td></tr>';
                     return;
                 }
                 
@@ -1065,12 +1070,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             })
             .catch(error => {
                 log('Error fetching valuation history:', error);
-                const tbody = document.getElementById('valuation_history_body');
+                const tbody = document.getElementById('valuationHistoryBody');
                 
                 if (error.message === 'Session expired') {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="7" class="text-center">
+                            <td colspan="9" class="text-center">
                                 <div class="alert alert-warning">
                                     <h6>Session Expired</h6>
                                     <p class="mb-0">Your session has expired. Please refresh the page and log in again.</p>
@@ -1079,7 +1084,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </tr>
                     `;
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading valuation history</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center">Error loading valuation history</td></tr>';
                 }
             });
         }
@@ -1319,8 +1324,8 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             const valuationDate = today.toISOString().split('T')[0];
             
             // Show loading state
-            const tbody = document.getElementById('valuation_history_body');
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+            const tbody = document.getElementById('valuationHistoryBody');
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
             
             // Make a fetch request to update the valuation
             fetch('update_valuation.php', {
@@ -1342,7 +1347,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             .then(data => {
                 if (data.success) {
                     // Clear the table and show loading state
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
                     
                     // Fetch the updated valuation history
                     return fetch(`get_valuation_history.php?property_id=${propertyId}`, {
@@ -1373,23 +1378,30 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             })
             .catch(error => {
                 console.error('Error:', error);
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">${error.message}</td></tr>`;
                 alert('Error updating valuation: ' + error.message);
             });
         });
 
         // Function to update the valuation history table
         function updateValuationHistoryTable(valuations) {
-            const tbody = document.getElementById('valuation_history_body');
+            const tbody = document.getElementById('valuationHistoryBody');
             tbody.innerHTML = '';
             
-            if (!valuations || valuations.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No valuation history available</td></tr>';
+            if (!valuations || !Array.isArray(valuations) || valuations.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center">No valuation history available</td></tr>';
                 return;
             }
             
             valuations.forEach(valuation => {
                 const row = document.createElement('tr');
+                
+                // Calculate user profit
+                const initialValue = parseFloat(valuation.initial_value);
+                const currentValue = parseFloat(valuation.current_value);
+                const agreedPercentage = parseFloat(valuation.agreed_percentage);
+                const appreciation = currentValue - initialValue;
+                const userProfit = appreciation * (agreedPercentage / 100);
                 row.innerHTML = `
                     <td>${valuation.date}</td>
                     <td>$${parseFloat(valuation.value).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>

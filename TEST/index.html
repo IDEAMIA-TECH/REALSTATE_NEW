@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valuation Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.1.min.js"></script>
+	<script src="https://unpkg.com/papaparse@latest/papaparse.min.js"></script>	    
+	<style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10px;
+            margin: 20px;
+            padding: 0;
+            text-align: center;
+            background-color: #f5f5f5;
+            padding-bottom: 80px;
+        }
+        input, select {
+            margin-bottom: 20px;
+            padding: 5px;
+        }
+        .chart-container {
+            width: 100%;
+            max-width: 900px;
+            margin: auto;
+            margin-bottom: 40px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px auto;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .export-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 10px;
+        }
+        .export-btn:hover {
+            background-color: #45a049;
+        }
+        .overview-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .card {
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 250px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-align: center;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        .card-title {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .card-value {
+            color: #4CAF50;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .card-description {
+            color: #666;
+            font-size: 12px;
+            font-style: italic;
+        }
+        .highlight-card {
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+            color: white;
+        }
+        .highlight-card .card-title,
+        .highlight-card .card-value,
+        .highlight-card .card-description {
+            color: white;
+        }
+        .header-container {
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .header-title {
+            font-size: 28px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .file-input-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+        }
+        .file-input-label {
+            display: block;
+            background: white;
+            color: #4CAF50;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .file-input-label:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+        }
+        .file-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .action-button {
+            background: linear-gradient(145deg, #FF6B6B, #FF8E53);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .action-button:hover {
+            background: linear-gradient(145deg, #FF8E53, #FF6B6B);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            animation: slideIn 0.5s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .success {
+            background: linear-gradient(145deg, #2196F3, #1976D2);
+        }
+        .error {
+            background: linear-gradient(145deg, #f44336, #d32f2f);
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .notification-icon {
+            font-size: 20px;
+        }
+        
+        .footer {
+            background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            left: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .footer img {
+            height: 25px;
+            width: auto;
+            opacity: 0.9;
+            transition: opacity 0.3s ease;
+            filter: brightness(0) invert(1);
+        }
+        
+        .footer img:hover {
+            opacity: 1;
+        }
+        
+        .footer-text {
+            font-size: 14px;
+            font-weight: bold;
+            color: #00ff9d;
+            text-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="header-container">
+        <h1 class="header-title">Option Valuation Dashboard</h1>
+        <div class="input-container">
+            <div class="file-input-wrapper">
+                <label class="file-input-label" for="googydocs">
+                    Upload Thomas
+                </label>
+                <input type="file" id="googydocs" name="googydocs" accept=".csv" class="file-input">
+            </div>
+        </div>
+        <div class="button-container">
+            <button class="action-button" onclick="loadIndexData()">Load Index Data</button>
+            <button class="action-button" onclick="run_analysis()">Run Analysis</button>
+            <button class="action-button" onclick="exportToExcel()">Export to Excel</button>
+        </div>
+    </div>
+   
+    <div id="my_output">
+    </div>
+   
+   
+   
+    <script>
+   
+    let Index_Information = { data: [], meta: { fields: [] } };
+    let Option_Listing = { data: [], meta: { fields: [] } };
+
+    // Función para cargar los datos del índice desde la base de datos
+    async function loadIndexData() {
+        try {
+            const response = await fetch('get_index_data.php');
+            const result = await response.json();
+            
+            if (result.success) {
+                Index_Information.data = result.data.map(item => ({
+                    observation_date: item.observation_date,
+                    CSUSHPINSA: parseFloat(item.CSUSHPINSA)
+                }));
+                showNotification('Index data loaded successfully');
+                console.log('Index data loaded:', Index_Information);
+            } else {
+                throw new Error(result.error || 'Error loading index data');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Error loading index data: ' + error.message, 'error');
+        }
+    }
+
+    // Esperar a que el DOM esté completamente cargado
+    window.addEventListener('DOMContentLoaded', () => {
+        loadIndexData();
+        
+        // Agregar event listener para el archivo de opciones
+        const googydocs = document.getElementById('googydocs');
+        if (googydocs) {
+            googydocs.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            Option_Listing = Papa.parse(e.target.result, { 
+                                header: true,
+                                skipEmptyLines: true,
+                                trimHeaders: true,
+                                dynamicTyping: true
+                            });
+                            
+                            console.log("Parsed Options Data:", Option_Listing);
+                            
+                            if (Option_Listing.errors && Option_Listing.errors.length > 0) {
+                                console.error("CSV Parsing Errors:", Option_Listing.errors);
+                                showNotification(`Error loading Options data: ${Option_Listing.errors[0].message}`, 'error');
+                            } else if (!Option_Listing.data || Option_Listing.data.length === 0) {
+                                showNotification('Options file is empty', 'error');
+                            } else if (!Option_Listing.meta || !Option_Listing.meta.fields) {
+                                showNotification('Invalid Options file format', 'error');
+                            } else {
+                                showNotification('Options data loaded successfully');
+                            }
+                        } catch (error) {
+                            console.error("Error parsing Options file:", error);
+                            showNotification('Error parsing Options file: ' + error.message, 'error');
+                        }
+                    };
+                    reader.onerror = function(error) {
+                        console.error("File reading error:", error);
+                        showNotification('Error reading Options file', 'error');
+                    };
+                    reader.readAsText(file);
+                }
+            });
+        }
+    });
+
+    function run_analysis() {
+        // Validar que tengamos datos antes de proceder
+        if (!Index_Information.data || Index_Information.data.length === 0) {
+            showNotification('Please wait for index data to load', 'error');
+            return;
+        }
+
+        if (!Option_Listing.data || Option_Listing.data.length === 0) {
+            showNotification('Please upload options data first', 'error');
+            return;
+        }
+
+        console.log("Starting run_analysis");
+        console.log("Index_Information:", Index_Information);
+        console.log("Option_Listing:", Option_Listing);
+
+        let text = "";
+        let top_text = "";
+        let column = 0;
+        let row = 0;
+        let my_start_index = 0;
+        let effective_date = "";
+        let theIndexToFind = 0;
+        let current_index_val = 0;
+        let anchored_index_val = 0;
+        let index_difference = 0;
+        let total_appreciation = 0;
+        let share_appreciation = 0;
+        let years_to_expiration = 0;
+        let yearly_appreciation_estimate = 0.02;
+        let investment_discount_rate = 0.2;
+        let terminal_home_value = 0;
+        let min_home_value_full_payoff = 0;
+        let terminal_appreciation = 0;
+        let terminal_appreciation_share = 0;
+        let agreed_pct = 0;
+        let option_value = 0;
+        let home_value_start = 0;
+        let home_value_now = 0;
+        let cumulative_share = 0;
+        let cumulative_investment = 0;
+        let cumulative_initial_price = 0;
+        let cumulative_payoff = 0;
+        let calced_payoff = 0;
+        let total_fees = 0;
+        let option_price = 0;
+        let theLatestIndex = Index_Information.data.length;
+        let expiration_year = 0;
+        let option_term = 0;
+
+        console.log("theLatestIndex:", theLatestIndex);
+        console.log("Index_Information.data[theLatestIndex-1]:", Index_Information.data[theLatestIndex-1]);
+
+        if(  (Index_Information.data[theLatestIndex-1]["CSUSHPINSA"] === undefined ) ) {
+           console.log("Removing last index entry");
+           Index_Information.data.pop( );
+           theLatestIndex = Index_Information.data.length;
+        }
+        
+        let number_of_options = Option_Listing.data.length;
+        console.log("number_of_options:", number_of_options);
+        console.log("Option_Listing.data[number_of_options-1]:", Option_Listing.data[number_of_options-1]);
+
+        // Limpiar filas nulas o inválidas
+        Option_Listing.data = Option_Listing.data.filter(row => {
+            return row && 
+                   row["Client"] && 
+                   row["Client"].trim() !== "" &&
+                   row["Initial Valuation"] &&
+                   row["Agreed Pct"] &&
+                   row["TOTAL FEES"] &&
+                   row["Term"];
+        });
+        
+        number_of_options = Option_Listing.data.length;
+        console.log("Filtered number_of_options:", number_of_options);
+
+        if (number_of_options === 0) {
+            showNotification('No valid options data found', 'error');
+            return;
+        }
+
+        let today = new Date();
+        const current_year = today.getFullYear();
+
+        let formatter = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2
+        });
+
+        let headers = Option_Listing.meta.fields;
+        console.log("Headers:", headers);
+
+        headers.push("Index Anchor Date");
+        headers.push("Anchored Index");
+        headers.push("Current Index");
+        headers.push("Used Index Date");
+        headers.push("Index Difference");
+        headers.push("Implied Home Value");
+        headers.push("Implied Appreciation");
+        headers.push("Expiration Year");
+        headers.push("Share of Appreciation");
+        headers.push("Terminal Home Value");
+        headers.push("MIN Home Value for No Return");
+        headers.push("Calced Payoff");
+        headers.push("Option Valuation");
+        headers.splice( 17 , 2 );
+        headers.splice( 1 , 4 );
+        headers.splice( 6 , 3 );
+        
+
+        text = "<H1>Options Information Table</H1>";
+        text+= "<table>";
+
+        text+= "<tr>";
+
+        for ( column=0 ; column < headers.length ; column++ ) {
+            text+= "<th>" + headers[column] + "</th>";
+        }
+        text+= "</tr>";
+
+    /*
+    **
+    ** Start of processing the loop
+    **
+    */
+
+
+
+        for (row = 0; row < number_of_options; row++) {
+            console.log("Processing row:", row);
+            console.log("Option_Listing.data[row]:", Option_Listing.data[row]);
+            
+            text+= "<tr>"; 
+            
+            effective_date = fix_date(Option_Listing.data[row]["Effective Date"]);
+            console.log("effective_date:", effective_date);
+            
+            // Debugging de valores importantes
+            console.log({
+                effective_date,
+                agreed_pct: Option_Listing.data[row]["Agreed Pct"],
+                initial_valuation: Option_Listing.data[row]["Initial Valuation"],
+                option_price: Option_Listing.data[row]["Option Price"],
+                total_fees: Option_Listing.data[row]["TOTAL FEES"]
+            });
+            
+            // Add null checks and default values with more robust parsing
+            try {
+                agreed_pct = Option_Listing.data[row]["Agreed Pct"] ? 
+                    Number(String(Option_Listing.data[row]["Agreed Pct"]).replace(/[^0-9.-]+/g,""))/100 : 0;
+                home_value_start = Option_Listing.data[row]["Initial Valuation"] ? 
+                    Number(String(Option_Listing.data[row]["Initial Valuation"]).replace(/[^0-9.-]+/g,"")) : 0;
+                option_price = Option_Listing.data[row]["Option Price"] ? 
+                    Number(String(Option_Listing.data[row]["Option Price"]).replace(/[^0-9.-]+/g,"")) : 0;
+                total_fees = Option_Listing.data[row]["TOTAL FEES"] ? 
+                    Number(String(Option_Listing.data[row]["TOTAL FEES"]).replace(/[^0-9.-]+/g,"")) : 0;
+                
+                // Validar que los valores sean números válidos
+                if (isNaN(agreed_pct)) agreed_pct = 0;
+                if (isNaN(home_value_start)) home_value_start = 0;
+                if (isNaN(option_price)) option_price = 0;
+                if (isNaN(total_fees)) total_fees = 0;
+                
+            } catch (error) {
+                console.error("Error parsing values for row", row, error);
+                continue;
+            }
+             
+            option_term = Option_Listing.data[row]["Term"] ? Number(Option_Listing.data[row]["Term"]) : 0;         
+            expiration_year = Option_Listing.data[row]["Effective Date"] ? 
+                Number(Option_Listing.data[row]["Effective Date"].split("/")[2]) + Number(option_term) : current_year;
+             
+            theIndexToFind = (element) => element["observation_date"] === effective_date;
+            my_start_index = Index_Information.data.findIndex(theIndexToFind);		 
+            if ((my_start_index < 0) || (my_start_index === undefined)) { my_start_index = theLatestIndex-1; }
+			 		 
+            anchored_index_val = Number(Index_Information.data[my_start_index]["CSUSHPINSA"]).toFixed(3); 
+            current_index_val = Number(Index_Information.data[theLatestIndex-1]["CSUSHPINSA"]).toFixed(3); 
+         
+            // Validate values before calculations
+            if (isNaN(anchored_index_val) || anchored_index_val <= 0) {
+                console.warn(`Invalid anchored index value for row ${row}: ${anchored_index_val}`);
+                anchored_index_val = 1; // Prevent division by zero
+            }
+            if (isNaN(current_index_val)) {
+                console.warn(`Invalid current index value for row ${row}: ${current_index_val}`);
+                current_index_val = anchored_index_val; // Use anchored value as fallback
+            }
+            if (isNaN(agreed_pct) || agreed_pct <= 0) {
+                console.warn(`Invalid agreed percentage for row ${row}: ${agreed_pct}`);
+                agreed_pct = 0.01; // Set a small default value
+            }
+             
+            index_difference = (current_index_val > anchored_index_val) ? current_index_val - anchored_index_val : 0; 
+            home_value_now = home_value_start / anchored_index_val * current_index_val;
+            total_appreciation = home_value_now - home_value_start;
+            total_appreciation = total_appreciation > 0 ? total_appreciation : 0;
+            share_appreciation = total_appreciation * agreed_pct; 
+            cumulative_share += share_appreciation;
+            cumulative_investment += (total_fees + option_price);
+            cumulative_initial_price += home_value_start;
+            calced_payoff = (total_fees * 2) + option_price + share_appreciation;
+        	 
+            terminal_home_value = home_value_now * ((1 + yearly_appreciation_estimate) ** (expiration_year - current_year));
+            terminal_appreciation = terminal_home_value - home_value_now;
+            terminal_appreciation_share = terminal_appreciation * agreed_pct;
+        	 
+            calced_payoff = terminal_appreciation_share + (total_fees * 2) + option_price + share_appreciation;
+            cumulative_payoff += calced_payoff;
+            min_home_value_full_payoff = agreed_pct > 0 ? 
+                (((total_fees * 2) + option_price) / agreed_pct) + home_value_start : home_value_start;
+            option_value = calced_payoff / ((1 + investment_discount_rate) ** (expiration_year - current_year));
+        	 
+    /*
+    **  Here, move the variables into the array for printing out.
+    **  If at all possible, no calculations here... just formatting
+    */
+         Option_Listing.data[row]["Index Anchor Date"] = effective_date;
+         Option_Listing.data[row]["Expiration Year"] = expiration_year;
+         Option_Listing.data[row]["Used Index Date"] = Index_Information.data[my_start_index]["observation_date"]; 	 
+         Option_Listing.data[row]["Implied Appreciation"] = formatter.format(total_appreciation.toFixed(2)); 
+         Option_Listing.data[row]["Index Difference"] = index_difference.toFixed(3); 
+         Option_Listing.data[row]["Anchored Index"] = anchored_index_val; 
+    	 Option_Listing.data[row]["Share of Appreciation"] = formatter.format(share_appreciation.toFixed(2)); 
+         Option_Listing.data[row]["Current Index"] = current_index_val; 
+         Option_Listing.data[row]["Implied Home Value"] = formatter.format(home_value_now.toFixed(2)); 
+         Option_Listing.data[row]["Option Valuation"] = formatter.format(option_value.toFixed(2)); 
+         Option_Listing.data[row]["Share of Appreciation"] = formatter.format(share_appreciation.toFixed(2)); 
+         Option_Listing.data[row]["Terminal Home Value"] = formatter.format(terminal_home_value.toFixed(2)); 
+         Option_Listing.data[row]["MIN Home Value for No Return"] = formatter.format(min_home_value_full_payoff.toFixed(2)); 
+         Option_Listing.data[row]["Calced Payoff"] = formatter.format(calced_payoff.toFixed(2)); 
+         for ( column=0 ; column < headers.length ; column++ ) {         	
+               text+= "<td>" + Option_Listing.data[row][headers[column]] + "</td>"; 
+         }
+        text+= "</tr>";
+    }
+    text+= "</table>";
+    
+    // Add debug logs before calculations
+    console.log("cumulative_share:", cumulative_share);
+    console.log("cumulative_investment:", cumulative_investment);
+    console.log("cumulative_payoff:", cumulative_payoff);
+    
+    top_text = '<div class="overview-container">';
+    
+    // Number of Options Card
+    top_text += `
+        <div class="card">
+            <div class="card-title">Number of Options</div>
+            <div class="card-value">${number_of_options}</div>
+            <div class="card-description">Total options analyzed</div>
+        </div>
+    `;
+    
+    // Cumulative Initial Price Card
+    top_text += `
+        <div class="card">
+            <div class="card-title">Cumulative Initial Price</div>
+            <div class="card-value">${formatter.format(Number(cumulative_initial_price).toFixed(2))}</div>
+            <div class="card-description">Total initial valuation</div>
+        </div>
+    `;
+    
+    // Cumulative Share Card
+    top_text += `
+        <div class="card">
+            <div class="card-title">Cumulative Share</div>
+            <div class="card-value">${formatter.format(Number(cumulative_share).toFixed(2))}</div>
+            <div class="card-description">Total share value</div>
+        </div>
+    `;
+    
+    // Cumulative Investment Card
+    top_text += `
+        <div class="card">
+            <div class="card-title">Cumulative Investment</div>
+            <div class="card-value">${formatter.format(Number(cumulative_investment).toFixed(2))}</div>
+            <div class="card-description">Total investment + fees</div>
+        </div>
+    `;
+    
+    // Apparent Return Card
+    let apparent_return = cumulative_investment !== 0 ? (cumulative_share / cumulative_investment).toFixed(2) : "0.00";
+    top_text += `
+        <div class="card highlight-card">
+            <div class="card-title">Apparent Return</div>
+            <div class="card-value">${apparent_return}x</div>
+            <div class="card-description">Return on investment</div>
+        </div>
+    `;
+    
+    // Cumulative Payoff Card
+    let formatted_payoff = isNaN(cumulative_payoff) ? 0 : cumulative_payoff;
+    top_text += `
+        <div class="card highlight-card">
+            <div class="card-title">Cumulative Payoff</div>
+            <div class="card-value">${formatter.format(Number(formatted_payoff).toFixed(2))}</div>
+            <div class="card-description">Total expected payoff</div>
+        </div>
+    `;
+    
+    top_text += '</div>'; // Close overview-container
+    
+    document.getElementById("my_output").innerHTML = top_text + text;
+}
+
+/*
+#
+#
+# Here - get the file for the list of Options
+#
+#*/
+        document.getElementById('fileINDEXInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        Index_Information = Papa.parse(e.target.result, { 
+                            header: true,
+                            skipEmptyLines: true,
+                            trimHeaders: true,
+                            dynamicTyping: true
+                        });
+                        
+                        console.log("Parsed Index Data:", Index_Information);
+                        
+                        if (Index_Information.errors && Index_Information.errors.length > 0) {
+                            console.error("CSV Parsing Errors:", Index_Information.errors);
+                            showNotification(`Error loading Home Price Index Data: ${Index_Information.errors[0].message}`, 'error');
+                        } else if (!Index_Information.data || Index_Information.data.length === 0) {
+                            showNotification('Home Price Index file is empty', 'error');
+                        } else if (!Index_Information.meta || !Index_Information.meta.fields) {
+                            showNotification('Invalid Home Price Index file format', 'error');
+                        } else {
+                            showNotification('Home Price Index Data loaded successfully');
+                        }
+                    } catch (error) {
+                        console.error("Error parsing Index file:", error);
+                        showNotification('Error parsing Home Price Index file: ' + error.message, 'error');
+                    }
+                };
+                reader.onerror = function(error) {
+                    console.error("File reading error:", error);
+                    showNotification('Error reading Home Price Index file', 'error');
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        document.getElementById('googydocs').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        Option_Listing = Papa.parse(e.target.result, { 
+                            header: true,
+                            skipEmptyLines: true,
+                            trimHeaders: true,
+                            dynamicTyping: true
+                        });
+                        
+                        console.log("Parsed Options Data:", Option_Listing);
+                        
+                        if (Option_Listing.errors && Option_Listing.errors.length > 0) {
+                            console.error("CSV Parsing Errors:", Option_Listing.errors);
+                            showNotification(`Error loading Options data: ${Option_Listing.errors[0].message}`, 'error');
+                        } else if (!Option_Listing.data || Option_Listing.data.length === 0) {
+                            showNotification('Options file is empty', 'error');
+                        } else if (!Option_Listing.meta || !Option_Listing.meta.fields) {
+                            showNotification('Invalid Options file format', 'error');
+                        } else {
+                            showNotification('Options data loaded successfully');
+                        }
+                    } catch (error) {
+                        console.error("Error parsing Options file:", error);
+                        showNotification('Error parsing Options file: ' + error.message, 'error');
+                    }
+                };
+                reader.onerror = function(error) {
+                    console.error("File reading error:", error);
+                    showNotification('Error reading Options file', 'error');
+                };
+                reader.readAsText(file);
+            }
+        });
+
+
+
+
+function fix_date( in_date ) {
+    if (!in_date) return "";
+    let out_date = "";
+    const split_date = in_date.split("/");
+    if (split_date.length < 3) return "";
+    out_date = split_date[2] +  "-" + split_date[0].toString().padStart(2 , '0') + "-01";    
+    return out_date;
+}
+         
+    function exportToExcel() {
+        if (!Option_Listing || !Option_Listing.data || Option_Listing.data.length === 0) {
+            showNotification('No data to export. Please run the analysis first.', 'error');
+            return;
+        }
+
+        // Create a CSV string
+        let csv = [];
+        
+        // Add headers
+        let headers = Option_Listing.meta.fields;
+        headers.push("Index Anchor Date");
+        headers.push("Anchored Index");
+        headers.push("Current Index");
+        headers.push("Used Index Date");
+        headers.push("Index Difference");
+        headers.push("Implied Home Value");
+        headers.push("Implied Appreciation");
+        headers.push("Expiration Year");
+        headers.push("Share of Appreciation");
+        headers.push("Terminal Home Value");
+        headers.push("MIN Home Value for No Return");
+        headers.push("Calced Payoff");
+        headers.push("Option Valuation");
+        headers.splice(17, 2);
+        headers.splice(1, 4);
+        headers.splice(6, 3);
+        
+        csv.push(headers.join(','));
+
+        // Add data rows
+        for (let row = 0; row < Option_Listing.data.length; row++) {
+            if (!Option_Listing.data[row] || !Option_Listing.data[row]["Client"] || Option_Listing.data[row]["Client"].trim() === "") {
+                continue;
+            }
+
+            let rowData = [];
+            for (let header of headers) {
+                let value = Option_Listing.data[row][header] || '';
+                // Remove any commas from the value to prevent CSV formatting issues
+                value = value.toString().replace(/,/g, '');
+                rowData.push(value);
+            }
+            csv.push(rowData.join(','));
+        }
+
+        // Create download link
+        let csvContent = "data:text/csv;charset=utf-8," + csv.join('\n');
+        let encodedUri = encodeURI(csvContent);
+        let link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "option_valuation_data.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showNotification('Data exported successfully');
+    }
+
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <span class="notification-icon">${type === 'success' ? '✓' : '✕'}</span>
+            <span>${message}</span>
+        `;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideIn 0.5s ease-out reverse';
+            setTimeout(() => notification.remove(), 500);
+        }, 3000);
+    }
+    </script>
+
+    <footer class="footer">
+        <img src="images/IDEAMIA.png" alt="IDEAMIA Logo">
+        <span class="footer-text">Develop and created by IDEAMIA - TECH</span>
+    </footer>
+
+</body>
+</html>

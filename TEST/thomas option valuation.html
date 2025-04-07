@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valuation Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.1.min.js"></script>
+	<script src="https://unpkg.com/papaparse@latest/papaparse.min.js"></script>	    
+	<style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10px;
+            margin: 20px;
+            padding: 0;
+            text-align: center;
+        }
+        input, select {
+            margin-bottom: 20px;
+            padding: 5px;
+        }
+        .chart-container {
+            width: 100%;
+            max-width: 900px;
+            margin: auto;
+            margin-bottom: 40px;
+        }
+        td {
+           text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Option Valuation Dashboard </h1>
+    
+    <label for="googydocs">Options Google Sheet ID</label>
+    <input type="file" id="googydocs" name="googydocs" accept=".csv">
+    <br>
+    <label for="fileINDEXInput">File with Home Price Index Data</label>   
+    <input type="file" name="fileINDEXInput" id="fileINDEXInput" accept=".csv">
+    <br>
+   <input type="button" onclick="run_analysis()" value="I like big buttons and I cannot lie">
+   
+   <div id="my_output">
+   </div>
+   
+   
+   
+    <script>
+   
+    let Index_Information = [];
+    let Option_Listing = [];
+/*#
+#
+# Here get the file of monthtly option prices for over the years
+#
+#
+#  https://docs.google.com/spreadsheets/d/1MJ-z8PZER7NUUC88lyFYfYKUei16UNbmpsViNdfNzMw/edit?gid=100652378#gid=100652378
+#       1MJ-z8PZER7NUUC88lyFYfYKUei16UNbmpsViNdfNzMw
+*/
+
+
+
+function run_analysis( ) {
+    let text = "";
+    let top_text = "";
+    let column = 0;
+    let row = 0;
+    let my_start_index = 0;
+    let effective_date = "";
+    let theIndexToFind = 0;
+    let current_index_val = 0;
+    let anchored_index_val = 0;
+    let index_difference = 0;
+    let total_appreciation = 0;
+    let share_appreciation = 0;
+    let years_to_expiration = 0;
+    let yearly_appreciation_estimate = 0.02;
+    let investment_discount_rate = 0.2;
+    let terminal_home_value = 0;
+    let min_home_value_full_payoff = 0;
+    let terminal_appreciation = 0;
+    let terminal_appreciation_share = 0;
+    let agreed_pct = 0;
+    let option_value = 0;
+    let home_value_start = 0;
+    let home_value_now = 0;
+    let cumulative_share = 0;
+    let cumulative_investment = 0;
+    let cumulative_initial_price = 0;
+    let cumulative_payoff = 0;
+    let calced_payoff = 0;
+    let total_fees = 0;
+    let option_price = 0;
+    let theLatestIndex = Index_Information.data.length;
+    let expiration_year = 0;
+	let option_term = 0;
+    if(  (Index_Information.data[theLatestIndex-1]["CSUSHPINSA"] === undefined ) ) {
+       Index_Information.data.pop( );
+       theLatestIndex = Index_Information.data.length;
+    }
+    
+	let number_of_options = Option_Listing.data.length;
+    if(  (Option_Listing.data[number_of_options-1]["Client"] === undefined ) || (Option_Listing.data[number_of_options-1]["Client"].length < 5 ) ) {
+       Option_Listing.data.pop( );
+       number_of_options = Option_Listing.data.length;
+    }
+
+		let today = new Date();
+		/* var dd = String(today.getDate()).padStart(2, '0');
+		var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0! */
+		const current_year = today.getFullYear();
+
+
+let formatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 2
+});
+/* formatter = new Intl.NumberFormat();    */
+    
+
+	let headers = Option_Listing.meta.fields;
+	headers.push("Index Anchor Date");
+	headers.push("Anchored Index");
+	headers.push("Current Index");
+	headers.push("Used Index Date");
+	headers.push("Index Difference");
+	headers.push("Implied Home Value");
+	headers.push("Implied Appreciation");
+	headers.push("Expiration Year");
+	headers.push("Share of Appreciation");
+	headers.push("Terminal Home Value");
+	headers.push("MIN Home Value for No Return");
+	headers.push("Calced Payoff");
+	headers.push("Option Valuation");
+/*	headers.push("ROI");
+	headers.push("Annualized Return");
+	headers.push("Valuation"); */
+	headers.splice( 17 , 2 );
+	headers.splice( 1 , 4 );
+	headers.splice( 6 , 3 );
+	
+
+    text = "<H1>Options Information Table</H1>";
+    text+= "<table>";
+
+    text+= "<tr>";
+
+    for ( column=0 ; column < headers.length ; column++ ) {
+        text+= "<th>" + headers[column] + "</th>";
+    }
+	text+= "</tr>";
+
+/*
+**
+** Start of processing the loop
+**
+*/
+
+
+
+	for (row = 0; row < number_of_options; row++) {
+         text+= "<tr>"; 
+         
+         // Validar que existan todos los campos necesarios
+         if (!Option_Listing.data[row] || 
+             !Option_Listing.data[row]["Effective Date"] ||
+             !Option_Listing.data[row]["Agreed Pct"] ||
+             !Option_Listing.data[row]["Initial Valuation"] ||
+             !Option_Listing.data[row]["Option Price"] ||
+             !Option_Listing.data[row]["TOTAL FEES"] ||
+             !Option_Listing.data[row]["Term"]) {
+             console.warn("Skipping row due to missing data:", row);
+             continue;
+         }
+
+         effective_date = fix_date(Option_Listing.data[row]["Effective Date"]);        
+          
+         // Validar y convertir valores numéricos con valores por defecto
+         agreed_pct = Option_Listing.data[row]["Agreed Pct"] ? 
+             Number(Option_Listing.data[row]["Agreed Pct"].replace(/[^0-9.-]+/g,""))/100 : 0;
+         home_value_start = Option_Listing.data[row]["Initial Valuation"] ? 
+             Number(Option_Listing.data[row]["Initial Valuation"].replace(/[^0-9.-]+/g,"")) : 0;
+         option_price = Option_Listing.data[row]["Option Price"] ? 
+             Number(Option_Listing.data[row]["Option Price"].replace(/[^0-9.-]+/g,"")) : 0;
+         total_fees = Option_Listing.data[row]["TOTAL FEES"] ? 
+             Number(Option_Listing.data[row]["TOTAL FEES"].replace(/[^0-9.-]+/g,"")) : 0;
+         
+         option_term = Option_Listing.data[row]["Term"] ? Number(Option_Listing.data[row]["Term"]) : 0;
+         
+         // Validar y calcular el año de expiración
+         let effectiveYear = 0;
+         try {
+             effectiveYear = Number(Option_Listing.data[row]["Effective Date"].split("/")[2]);
+         } catch (error) {
+             console.warn("Error parsing effective date year:", error);
+             effectiveYear = current_year;
+         }
+         expiration_year = effectiveYear + option_term;
+         
+         theIndexToFind = (element) => element["observation_date"] === effective_date;
+         my_start_index = Index_Information.data.findIndex(theIndexToFind);		 
+         if ((my_start_index < 0) || (my_start_index === undefined)) { 
+             my_start_index = theLatestIndex-1; 
+         }
+         
+         anchored_index_val = Number(Index_Information.data[my_start_index]["CSUSHPINSA"]).toFixed(3); 
+         current_index_val = Number(Index_Information.data[theLatestIndex-1]["CSUSHPINSA"]).toFixed(3); 
+     
+/* 
+**    This section, work on calculating key variables
+**
+*/   
+         
+         index_difference = (current_index_val > anchored_index_val) ? current_index_val - anchored_index_val : 0; 
+         home_value_now =  home_value_start / anchored_index_val * current_index_val;
+         total_appreciation = home_value_now - home_value_start;
+         total_appreciation = total_appreciation > 0 ? total_appreciation : 0;
+    	 share_appreciation = total_appreciation *  agreed_pct; 
+    	 cumulative_share += share_appreciation;
+    	 cumulative_investment += (total_fees + option_price);
+    	 cumulative_initial_price += home_value_start;
+    	 calced_payoff = ( total_fees * 2 ) + option_price + share_appreciation;
+    	 
+    	 terminal_home_value = home_value_now * ((1 + yearly_appreciation_estimate) ** ( expiration_year - current_year ));
+    	 terminal_appreciation = terminal_home_value - home_value_now;
+    	 terminal_appreciation_share = terminal_appreciation * agreed_pct;
+    	 
+    	 calced_payoff = terminal_appreciation_share + (total_fees * 2) + option_price + share_appreciation;
+     	 cumulative_payoff += calced_payoff;
+	   	 min_home_value_full_payoff = (((total_fees * 2) + option_price ) / agreed_pct) + home_value_start;
+    	 option_value = calced_payoff / (( 1 + investment_discount_rate ) ** ( expiration_year - current_year ) );
+    	 
+/*
+**  Here, move the variables into the array for printing out.
+**  If at all possible, no calculations here... just formatting
+*/
+         Option_Listing.data[row]["Index Anchor Date"] = effective_date;
+         Option_Listing.data[row]["Expiration Year"] = expiration_year;
+         Option_Listing.data[row]["Used Index Date"] = Index_Information.data[my_start_index]["observation_date"]; 	 
+         Option_Listing.data[row]["Implied Appreciation"] = formatter.format(total_appreciation.toFixed(2)); 
+         Option_Listing.data[row]["Index Difference"] = index_difference.toFixed(3); 
+         Option_Listing.data[row]["Anchored Index"] = anchored_index_val; 
+    	 Option_Listing.data[row]["Share of Appreciation"] = formatter.format(share_appreciation.toFixed(2)); 
+         Option_Listing.data[row]["Current Index"] = current_index_val; 
+         Option_Listing.data[row]["Implied Home Value"] = formatter.format(home_value_now.toFixed(2)); 
+         Option_Listing.data[row]["Option Valuation"] = formatter.format(option_value.toFixed(2)); 
+         Option_Listing.data[row]["Share of Appreciation"] = formatter.format(share_appreciation.toFixed(2)); 
+         Option_Listing.data[row]["Terminal Home Value"] = formatter.format(terminal_home_value.toFixed(2)); 
+         Option_Listing.data[row]["MIN Home Value for No Return"] = formatter.format(min_home_value_full_payoff.toFixed(2)); 
+         Option_Listing.data[row]["Calced Payoff"] = formatter.format(calced_payoff.toFixed(2)); 
+         for ( column=0 ; column < headers.length ; column++ ) {         	
+               text+= "<td>" + Option_Listing.data[row][headers[column]] + "</td>"; 
+         }
+        text+= "</tr>";
+	}
+    text+= "</table>";
+    
+    top_text = "<h1> Overview </h1>";
+    top_text += "<p> Number of Options --> " + number_of_options + "</p>";
+    top_text += "<p> Cumulative Initial Price (nexus of control) --> " + formatter.format(Number(cumulative_initial_price).toFixed(2)) + "</p>";
+    top_text += "<p> Cumulative Share --> " + formatter.format(Number(cumulative_share).toFixed(2)) + "</p>";
+    top_text += "<p> Cumulative Investment + Fees --> " + formatter.format(Number(cumulative_investment).toFixed(2)) + "</p>";
+    top_text += "<p> Apparent Return (needs work) --> " + Number(cumulative_share / cumulative_investment).toFixed(2) + "</p>";
+    top_text += "<p> Cumulative Payoff (needs work) --> " + formatter.format(Number(cumulative_payoff).toFixed(2)) + "</p>";
+
+	document.getElementById("my_output").innerHTML =  top_text + text;
+
+}
+
+/*
+#
+#
+# Here - get the file for the list of Options
+#
+#*/
+        document.getElementById('fileINDEXInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+                reader.onload = function(e) {
+                    Index_Information = Papa.parse(e.target.result,{ header: true } );
+                };
+            reader.readAsText(file); 
+        });
+
+        document.getElementById('googydocs').addEventListener('change', function(event) {
+            const file1 = event.target.files[0];
+
+                const reader1 = new FileReader();
+                reader1.onload = function(e) {
+                    Option_Listing = Papa.parse(e.target.result,{ header: true } );
+                };
+                reader1.readAsText(file1); 
+        });
+
+
+
+
+function fix_date(in_date) {
+    if (!in_date) {
+        console.warn("Invalid date input:", in_date);
+        return "";
+    }
+    
+    try {
+        const split_date = in_date.split("/");
+        if (split_date.length < 3) {
+            console.warn("Invalid date format:", in_date);
+            return "";
+        }
+        return split_date[2] + "-" + split_date[0].toString().padStart(2, '0') + "-01";
+    } catch (error) {
+        console.error("Error processing date:", error);
+        return "";
+    }
+}
+         
+    </script>
+
+</body>
+</html>

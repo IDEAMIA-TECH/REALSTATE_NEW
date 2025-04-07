@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(145deg, #2196F3, #1976D2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .submit-btn {
+            background: linear-gradient(145deg, #2196F3, #1976D2);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+        .submit-btn:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Property Registration</h1>
+        </div>
+        <form id="propertyForm" onsubmit="saveProperty(event)">
+            <div class="form-group">
+                <label for="clientId">Select Client:</label>
+                <select id="clientId" name="clientId" required>
+                    <option value="">Select a client...</option>
+                    <!-- Client options will be loaded dynamically -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="propertyType">Property Type:</label>
+                <select id="propertyType" name="propertyType" required>
+                    <option value="">Select type...</option>
+                    <option value="house">House</option>
+                    <option value="apartment">Apartment</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="land">Land</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="address">Property Address:</label>
+                <input type="text" id="address" name="address" required>
+            </div>
+            <div class="form-group">
+                <label for="city">City:</label>
+                <input type="text" id="city" name="city" required>
+            </div>
+            <div class="form-group">
+                <label for="state">State:</label>
+                <input type="text" id="state" name="state" required>
+            </div>
+            <div class="form-group">
+                <label for="zipCode">ZIP Code:</label>
+                <input type="text" id="zipCode" name="zipCode" required>
+            </div>
+            <div class="form-group">
+                <label for="price">Price:</label>
+                <input type="number" id="price" name="price" required min="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label for="squareMeters">Square Meters:</label>
+                <input type="number" id="squareMeters" name="squareMeters" required min="0">
+            </div>
+            <div class="form-group">
+                <label for="bedrooms">Number of Bedrooms:</label>
+                <input type="number" id="bedrooms" name="bedrooms" min="0">
+            </div>
+            <div class="form-group">
+                <label for="bathrooms">Number of Bathrooms:</label>
+                <input type="number" id="bathrooms" name="bathrooms" min="0">
+            </div>
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" name="description" rows="4"></textarea>
+            </div>
+            <button type="submit" class="submit-btn">Register Property</button>
+        </form>
+    </div>
+
+    <script>
+        // Función para cargar los clientes en el select
+        async function loadClients() {
+            try {
+                // Aquí deberías hacer una llamada a tu API para obtener los clientes
+                const response = await fetch('get_clients.php');
+                const clients = await response.json();
+                
+                const clientSelect = document.getElementById('clientId');
+                clients.forEach(client => {
+                    const option = document.createElement('option');
+                    option.value = client.id;
+                    option.textContent = `${client.firstName} ${client.lastName}`;
+                    clientSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading clients:', error);
+            }
+        }
+
+        // Función para guardar la propiedad
+        function saveProperty(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const propertyData = Object.fromEntries(formData.entries());
+            
+            // Aquí puedes agregar la lógica para guardar en la base de datos
+            console.log('Property Data:', propertyData);
+            
+            // Mostrar mensaje de éxito
+            alert('Property registered successfully!');
+            event.target.reset();
+        }
+
+        // Cargar los clientes cuando la página se cargue
+        document.addEventListener('DOMContentLoaded', loadClients);
+    </script>
+</body>
+</html> 

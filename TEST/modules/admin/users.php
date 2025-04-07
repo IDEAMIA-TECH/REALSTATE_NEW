@@ -71,58 +71,208 @@ $users = $user->getAll();
     <title>User Management - <?php echo APP_NAME; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="<?php echo BASE_URL; ?>/assets/css/global.css" rel="stylesheet">
     <style>
-        .user-management {
-            padding: 20px;
+        .page-hero {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+            border-radius: var(--border-radius);
         }
+
+        .user-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .user-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--box-shadow);
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            margin-right: 1rem;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .user-email {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-role {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .role-admin {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: #3498db;
+        }
+
+        .role-property_owner {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: #2ecc71;
+        }
+
+        .role-view_only {
+            background-color: rgba(155, 89, 182, 0.1);
+            color: #9b59b6;
+        }
+
+        .user-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: #2ecc71;
+        }
+
+        .status-inactive {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
         .action-buttons {
-            white-space: nowrap;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-button {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            border: none;
+        }
+
+        .action-button:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-edit {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: #3498db;
+        }
+
+        .btn-delete {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
+        .modal-content {
+            border-radius: var(--border-radius);
+            border: none;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        .modal-title {
+            font-weight: 600;
+        }
+
+        .form-control, .form-select {
+            border-radius: var(--border-radius);
+            border: 1px solid #ddd;
+            padding: 0.75rem 1rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
         }
     </style>
 </head>
 <body>
     <?php require_once INCLUDES_PATH . '/header.php'; ?>
     
-    <div class="container user-management">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>User Management</h1>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
-                <i class="fas fa-user-plus"></i> Create New User
-            </button>
+    <div class="page-hero">
+        <div class="container">
+            <h1 class="text-white"><i class="fas fa-users me-2"></i>User Management</h1>
+            <p class="lead text-white">Manage system users and their permissions</p>
         </div>
-        
+    </div>
+
+    <div class="container">
         <?php if ($message): ?>
-            <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php echo htmlspecialchars($message); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         <?php endif; ?>
         
         <?php if ($error): ?>
-            <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?php echo htmlspecialchars($error); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         <?php endif; ?>
-        
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Created At</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($users as $user): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($user['id']); ?></td>
-                            <td><?php echo htmlspecialchars($user['username']); ?></td>
-                            <td><?php echo htmlspecialchars($user['email']); ?></td>
-                            <td><?php echo htmlspecialchars($user['role']); ?></td>
-                            <td><?php echo htmlspecialchars($user['status']); ?></td>
-                            <td><?php echo htmlspecialchars($user['created_at']); ?></td>
-                            <td class="action-buttons">
-                                <button type="button" class="btn btn-sm btn-primary" 
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h4 mb-0">All Users</h2>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                <i class="fas fa-user-plus me-2"></i>Create New User
+            </button>
+        </div>
+
+        <div class="row">
+            <?php foreach ($users as $user): ?>
+                <div class="col-md-6 col-lg-4">
+                    <div class="user-card">
+                        <div class="d-flex align-items-center">
+                            <div class="user-avatar" style="background-image: url('https://ui-avatars.com/api/?name=<?php echo urlencode($user['username']); ?>&background=3498db&color=fff');"></div>
+                            <div class="user-info">
+                                <div class="user-name"><?php echo htmlspecialchars($user['username']); ?></div>
+                                <div class="user-email"><?php echo htmlspecialchars($user['email']); ?></div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="user-role role-<?php echo htmlspecialchars($user['role']); ?>">
+                                        <?php echo htmlspecialchars($user['role']); ?>
+                                    </span>
+                                    <span class="user-status status-<?php echo htmlspecialchars($user['status']); ?>">
+                                        <?php echo htmlspecialchars($user['status']); ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="action-buttons">
+                                <button type="button" class="action-button btn-edit" 
                                         data-bs-toggle="modal" 
                                         data-bs-target="#editUserModal"
                                         data-id="<?php echo $user['id']; ?>"
@@ -132,18 +282,18 @@ $users = $user->getAll();
                                         data-status="<?php echo htmlspecialchars($user['status']); ?>">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-danger" 
+                                <button type="button" class="action-button btn-delete" 
                                         data-bs-toggle="modal" 
                                         data-bs-target="#deleteUserModal"
                                         data-id="<?php echo $user['id']; ?>"
                                         data-username="<?php echo htmlspecialchars($user['username']); ?>">
                                     <i class="fas fa-trash"></i>
                                 </button>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         </div>
     </div>
     
@@ -256,8 +406,6 @@ $users = $user->getAll();
             </div>
         </div>
     </div>
-    
-    <?php require_once INCLUDES_PATH . '/footer.php'; ?>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>

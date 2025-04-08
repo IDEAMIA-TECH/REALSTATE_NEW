@@ -81,18 +81,6 @@ switch ($_SESSION['role']) {
                 'icon' => '<i class="fas fa-home"></i>',
                 'link' => BASE_URL . '/modules/auth/my_properties.php',
                 'description' => 'Manage your property listings'
-            ],
-            [
-                'title' => 'Client Management',
-                'icon' => '<i class="fas fa-users"></i>',
-                'link' => BASE_URL . '/modules/clients/list.php',
-                'description' => 'Manage your clients'
-            ],
-            [
-                'title' => 'Property Valuations',
-                'icon' => '<i class="fas fa-chart-line"></i>',
-                'link' => BASE_URL . '/modules/valuations/list.php',
-                'description' => 'View property valuations'
             ]
         ];
         break;
@@ -100,21 +88,9 @@ switch ($_SESSION['role']) {
         $dashboardItems = [
             [
                 'title' => 'My Properties',
-                'icon' => '🏠',
-                'link' => BASE_URL . '/modules/properties/view.php',
-                'description' => 'View your properties'
-            ],
-            [
-                'title' => 'Property Valuations',
-                'icon' => '💰',
-                'link' => BASE_URL . '/modules/valuations/view.php',
-                'description' => 'View property valuations'
-            ],
-            [
-                'title' => 'My Profile',
-                'icon' => '👤',
-                'link' => BASE_URL . '/modules/profile/view.php',
-                'description' => 'Manage your profile'
+                'icon' => '<i class="fas fa-home"></i>',
+                'link' => BASE_URL . '/modules/auth/my_properties.php',
+                'description' => 'Manage your property listings'
             ]
         ];
         break;
@@ -326,9 +302,11 @@ switch ($_SESSION['role']) {
         <div class="row mb-4">
             <div class="col-md-3">
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-home"></i></div>
-                    <div class="stat-number"><?php echo $totalProperties; ?></div>
-                    <div class="stat-label">My Properties</div>
+                    <a href="<?php echo BASE_URL . '/modules/auth/my_properties.php'; ?>">
+                        <div class="stat-icon"><i class="fas fa-home"></i></div>
+                        <div class="stat-number"><?php echo $totalProperties; ?></div>
+                        <div class="stat-label">My Properties</div>
+                    </a>
                 </div>
             </div>
             <div class="col-md-3">

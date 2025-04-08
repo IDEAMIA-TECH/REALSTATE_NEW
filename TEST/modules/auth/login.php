@@ -112,6 +112,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 30px;
         }
 
+        .login-logo {
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
         .login-header h1 {
             color: var(--primary-color);
             font-size: 28px;
@@ -254,7 +263,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="login-form">
                 <div class="login-header">
-                    <h1>Sign In</h1>
+                    <img src="<?php echo BASE_URL; ?>/assets/images/parker-logo.png" alt="PARKER Logo" class="login-logo">
                     <p>Access your account to manage your properties</p>
                 </div>
                 

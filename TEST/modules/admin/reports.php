@@ -34,14 +34,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             p.id,
                             p.address,
                             p.initial_valuation,
+                            p.initial_index,
                             p.agreed_pct,
+                            p.option_price,
+                            p.total_fees,
                             pv.valuation_date,
-                            pv.current_value,
-                            pv.appreciation,
-                            pv.share_appreciation,
-                            pv.terminal_value,
-                            pv.projected_payoff,
-                            pv.option_valuation
+                            pv.index_value,
+                            pv.diference,
+                            pv.appreciation
                         FROM properties p
                         LEFT JOIN property_valuations pv ON p.id = pv.property_id
                         WHERE pv.valuation_date BETWEEN ? AND ?
@@ -389,7 +389,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             <div class="summary-card">
                                 <div class="summary-value">
-                                    $<?php echo number_format(array_sum(array_column($data, 'current_value')), 2); ?>
+                                    <?php 
+                                    $totalInitialValue = array_sum(array_column($data, 'initial_valuation'));
+                                    $totalAppreciation = array_sum(array_column($data, 'appreciation'));
+                                    $totalCurrentValue = $totalInitialValue + $totalAppreciation;
+                                    echo '$' . number_format($totalCurrentValue, 2); 
+                                    ?>
                                 </div>
                                 <div class="summary-label">Total Current Value</div>
                             </div>
@@ -397,10 +402,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="summary-value">
                                     <?php 
                                     $totalInitialValue = array_sum(array_column($data, 'initial_valuation'));
-                                    $totalCurrentValue = array_sum(array_column($data, 'current_value'));
-                                    $appreciation = $totalInitialValue > 0 ? 
-                                        (($totalCurrentValue / $totalInitialValue) - 1) * 100 : 0;
-                                    echo number_format($appreciation, 2); 
+                                    $totalAppreciation = array_sum(array_column($data, 'appreciation'));
+                                    $appreciationRate = $totalInitialValue > 0 ? 
+                                        ($totalAppreciation / $totalInitialValue) * 100 : 0;
+                                    echo number_format($appreciationRate, 2); 
                                     ?>%
                                 </div>
                                 <div class="summary-label">Average Appreciation</div>
@@ -413,25 +418,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <tr>
                                             <th>Property</th>
                                             <th>Initial Value</th>
-                                            <th>Current Value</th>
+                                            <th>Initial Index</th>
+                                            <th>Current Index</th>
+                                            <th>Difference</th>
                                             <th>Appreciation</th>
                                             <th>Share Appreciation</th>
-                                            <th>Terminal Value</th>
-                                            <th>Projected Payoff</th>
-                                            <th>Option Valuation</th>
+                                            <th>Option Price</th>
+                                            <th>Total Fees</th>
+                                            <th>Calculation</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php foreach ($data as $row): ?>
+                                            <?php
+                                            $initialValue = floatval($row['initial_valuation']);
+                                            $initialIndex = floatval($row['initial_index']);
+                                            $currentIndex = floatval($row['index_value']);
+                                            $difference = $initialIndex > 0 ? (($currentIndex - $initialIndex) / $initialIndex) * 100 : 0;
+                                            $appreciation = $initialValue * ($difference / 100);
+                                            $shareAppreciation = $appreciation * ($row['agreed_pct'] / 100);
+                                            $calculation = $row['option_price'] + $shareAppreciation + $row['total_fees'];
+                                            ?>
                                             <tr>
                                                 <td><?php echo htmlspecialchars($row['address']); ?></td>
-                                                <td>$<?php echo number_format($row['initial_valuation'], 2); ?></td>
-                                                <td>$<?php echo number_format($row['current_value'], 2); ?></td>
-                                                <td>$<?php echo number_format($row['appreciation'], 2); ?></td>
-                                                <td>$<?php echo number_format($row['share_appreciation'], 2); ?></td>
-                                                <td>$<?php echo number_format($row['terminal_value'], 2); ?></td>
-                                                <td>$<?php echo number_format($row['projected_payoff'], 2); ?></td>
-                                                <td>$<?php echo number_format($row['option_valuation'], 2); ?></td>
+                                                <td>$<?php echo number_format($initialValue, 2); ?></td>
+                                                <td><?php echo number_format($initialIndex, 2); ?></td>
+                                                <td><?php echo number_format($currentIndex, 2); ?></td>
+                                                <td><?php echo number_format($difference, 2); ?>%</td>
+                                                <td>$<?php echo number_format($appreciation, 2); ?></td>
+                                                <td>$<?php echo number_format($shareAppreciation, 2); ?></td>
+                                                <td>$<?php echo number_format($row['option_price'], 2); ?></td>
+                                                <td>$<?php echo number_format($row['total_fees'], 2); ?></td>
+                                                <td>$<?php echo number_format($calculation, 2); ?></td>
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>

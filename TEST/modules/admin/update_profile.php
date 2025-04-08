@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../auth/AuthController.php';
 
 // Verificar autenticación
@@ -9,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Obtener conexión a la base de datos
-$db = getDBConnection();
+$db = Database::getInstance()->getConnection();
 
 // Obtener ID del usuario actual
 $user_id = $_SESSION['user_id'];

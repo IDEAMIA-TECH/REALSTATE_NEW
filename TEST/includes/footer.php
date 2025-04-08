@@ -4,8 +4,6 @@
             <div class="col-md-6">
                 <h5 class="text-white mb-0"><?php echo APP_NAME; ?></h5>
                 <small class="text-muted">Version <?php echo APP_VERSION; ?></small>
-            </div>
-            <div class="col-md-6 text-md-end">
                 <p class="mb-0 text-white">&copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?>. All rights reserved.</p>
             </div>
         </div>
@@ -24,7 +22,7 @@
 }
 
 .footer .container {
-    max-width: 1200px;
+    max-width: auto;
     margin: 0 auto;
     display: flex;
     justify-content: space-between;

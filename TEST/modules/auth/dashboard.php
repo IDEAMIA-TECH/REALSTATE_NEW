@@ -51,50 +51,6 @@ $averageAppreciation = $totalProperties > 0 ? $totalOptionPrice / $totalProperti
 
 // Get role-specific dashboard items
 $dashboardItems = [];
-switch ($_SESSION['role']) {
-    case 'admin':
-        $dashboardItems = [
-            [
-                'title' => 'User Management',
-                'icon' => '👥',
-                'link' => BASE_URL . '/modules/admin/users.php',
-                'description' => 'Manage system users and roles'
-            ],
-            [
-                'title' => 'System Settings',
-                'icon' => '⚙️',
-                'link' => BASE_URL . '/modules/admin/settings.php',
-                'description' => 'Configure system settings'
-            ],
-            [
-                'title' => 'Reports',
-                'icon' => '📊',
-                'link' => BASE_URL . '/modules/admin/reports.php',
-                'description' => 'View system reports and analytics'
-            ]
-        ];
-        break;
-    case 'property_owner':
-        $dashboardItems = [
-            [
-                'title' => 'My Properties',
-                'icon' => '<i class="fas fa-home"></i>',
-                'link' => BASE_URL . '/modules/auth/my_properties.php',
-                'description' => 'Manage your property listings'
-            ]
-        ];
-        break;
-    case 'view_only':
-        $dashboardItems = [
-            [
-                'title' => 'My Properties',
-                'icon' => '<i class="fas fa-home"></i>',
-                'link' => BASE_URL . '/modules/auth/my_properties.php',
-                'description' => 'Manage your property listings'
-            ]
-        ];
-        break;
-}
 ?>
 
 <!DOCTYPE html>

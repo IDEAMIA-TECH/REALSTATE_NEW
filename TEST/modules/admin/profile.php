@@ -1,6 +1,6 @@
 <?php
-require_once '../../includes/config.php';
-require_once '../../includes/auth.php';
+require_once __DIR__ . '/../../includes/config.php';
+require_once __DIR__ . '/../../includes/auth.php';
 
 // Verificar autenticación
 checkAuth();
@@ -19,7 +19,7 @@ try {
 }
 
 $page_title = "User Profile";
-require_once '../../includes/header.php';
+require_once __DIR__ . '/../../includes/header.php';
 ?>
 
 <div class="container py-5">
@@ -112,4 +112,4 @@ require_once '../../includes/header.php';
 })()
 </script>
 
-<?php require_once '../../includes/footer.php'; ?> 
+<?php require_once __DIR__ . '/../../includes/footer.php'; ?> 

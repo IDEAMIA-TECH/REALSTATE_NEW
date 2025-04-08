@@ -341,13 +341,13 @@ $users = $db->query("SELECT id, username FROM users WHERE status = 'active'")->f
                     <div class="activity-header">
                         <div class="activity-user">
                             <div class="user-avatar">
-                                <?php echo strtoupper(substr($log['user_name'], 0, 1)); ?>
+                                <?php echo strtoupper(substr($log['user_name'] ?? '', 0, 1)); ?>
                             </div>
                             <div class="user-info">
-                                <h5 class="user-name"><?php echo htmlspecialchars($log['user_name']); ?></h5>
+                                <h5 class="user-name"><?php echo htmlspecialchars($log['user_name'] ?? ''); ?></h5>
                                 <span class="activity-date">
                                     <i class="fas fa-clock me-1"></i>
-                                    <?php echo date('Y-m-d H:i:s', strtotime($log['created_at'])); ?>
+                                    <?php echo date('Y-m-d H:i:s', strtotime($log['created_at'] ?? '')); ?>
                                 </span>
                             </div>
                         </div>

@@ -121,6 +121,16 @@ class User {
                 $updates[] = "status = ?";
                 $params[] = $data['status'];
             }
+
+            if (isset($data['first_name'])) {
+                $updates[] = "first_name = ?";
+                $params[] = $data['first_name'];
+            }
+
+            if (isset($data['last_name'])) {
+                $updates[] = "last_name = ?";
+                $params[] = $data['last_name'];
+            }
             
             if (empty($updates)) {
                 return [

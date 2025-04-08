@@ -30,6 +30,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 0 1rem;
+    flex-wrap: wrap;
 }
 
 .footer a {
@@ -56,9 +57,17 @@
     font-size: 0.9rem;
 }
 
+.footer .col-md-6:last-child {
+    text-align: right;
+}
+
 @media (max-width: 768px) {
     .footer .container {
         flex-direction: column;
+        text-align: center;
+    }
+
+    .footer .col-md-6:last-child {
         text-align: center;
     }
 

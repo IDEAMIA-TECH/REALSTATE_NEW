@@ -14,23 +14,51 @@
 
 <style>
 .footer {
-    background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+    background: var(--primary-color);
     color: white;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 20px var(--shadow-color);
+    padding: 2rem 0;
 }
 
 .footer a {
-    color: #6B73FF;
+    color: var(--secondary-color);
     text-decoration: none;
     transition: color 0.3s ease;
 }
 
 .footer a:hover {
-    color: #000DFF;
+    color: var(--accent-color);
 }
 
 .footer .text-muted {
-    color: rgba(255,255,255,0.6) !important;
+    color: rgba(255,255,255,0.7) !important;
+}
+
+.footer h5 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.footer p, .footer small {
+    margin-bottom: 0;
+    font-size: 0.9rem;
+}
+
+.footer .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .footer .container {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .footer h5, .footer p {
+        margin-bottom: 1rem;
+    }
 }
 
 /* Asegurar que el footer siempre esté al final */

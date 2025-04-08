@@ -1544,12 +1544,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 return;
             }
             
-            // Get the original values from property data
-            const initialValue = parseFloat(propertyData.initial_valuation);
-            const initialIndex = parseFloat(propertyData.initial_index);
-            const agreedPercentage = parseFloat(propertyData.agreed_pct);
-            const optionPrice = parseFloat(propertyData.option_price);
-            const totalFees = parseFloat(propertyData.total_fees);
+            // Get the original values from property data with null checks
+            const initialValue = parseFloat(propertyData.initial_valuation) || 0;
+            const initialIndex = parseFloat(propertyData.initial_index) || 0;
+            const agreedPercentage = parseFloat(propertyData.agreed_pct) || 0;
+            const optionPrice = parseFloat(propertyData.option_price) || 0;
+            const totalFees = parseFloat(propertyData.total_fees) || 0;
 
             console.log('Valuation History - Property Data:', {
                 initialValue,
@@ -1562,10 +1562,10 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             valuations.forEach((valuation, index) => {
                 const row = document.createElement('tr');
                 
-                // Calculate values based on the property_valuations table structure
-                const indexValue = parseFloat(valuation.index_value);
-                const difference = parseFloat(valuation.diference);
-                const appreciation = parseFloat(valuation.appreciation);
+                // Calculate values with null checks
+                const indexValue = parseFloat(valuation.index_value) || 0;
+                const difference = initialIndex > 0 ? ((indexValue - initialIndex) / initialIndex) * 100 : 0;
+                const appreciation = initialValue > 0 ? (difference / 100) * initialValue : 0;
                 const appreciationShare = (agreedPercentage / 100) * appreciation;
                 const calculation = optionPrice + appreciationShare + totalFees;
                 

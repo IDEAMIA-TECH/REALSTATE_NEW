@@ -6,6 +6,64 @@ require_once __DIR__ . '/../modules/csushpinsa/CSUSHPINSA.php';
 // Initialize database connection
 $db = Database::getInstance()->getConnection();
 
+// Function to send email notification
+function sendContractClosureEmail($properties) {
+    if (empty($properties)) {
+        return;
+    }
+
+    $to = ADMIN_EMAIL;
+    $subject = 'Contract Closure Report - ' . date('Y-m-d');
+    
+    $message = "<h2>Contract Closure Report</h2>";
+    $message .= "<p>The following contracts were automatically closed today:</p>";
+    $message .= "<table border='1' cellpadding='5' cellspacing='0'>";
+    $message .= "<tr><th>Property ID</th><th>Address</th><th>Initial Index</th><th>Closing Index</th><th>Appreciation</th><th>Appreciation Rate</th></tr>";
+    
+    foreach ($properties as $property) {
+        $message .= "<tr>";
+        $message .= "<td>" . htmlspecialchars($property['id']) . "</td>";
+        $message .= "<td>" . htmlspecialchars($property['address']) . "</td>";
+        $message .= "<td>" . number_format($property['initial_index'], 2) . "</td>";
+        $message .= "<td>" . number_format($property['closing_index'], 2) . "</td>";
+        $message .= "<td>$" . number_format($property['appreciation'], 2) . "</td>";
+        $message .= "<td>" . number_format($property['appreciation_rate'], 2) . "%</td>";
+        $message .= "</tr>";
+    }
+    
+    $message .= "</table>";
+    
+    $headers = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+    $headers .= "From: " . SMTP_USERNAME . "\r\n";
+    
+    // Use PHPMailer if available, otherwise use mail()
+    if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {
+        $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->Host = SMTP_HOST;
+            $mail->SMTPAuth = true;
+            $mail->Username = SMTP_USERNAME;
+            $mail->Password = SMTP_PASSWORD;
+            $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = SMTP_PORT;
+            
+            $mail->setFrom(SMTP_USERNAME, APP_NAME);
+            $mail->addAddress($to);
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+            $mail->Body = $message;
+            
+            $mail->send();
+        } catch (Exception $e) {
+            error_log("Email could not be sent. Mailer Error: {$mail->ErrorInfo}");
+        }
+    } else {
+        mail($to, $subject, $message, $headers);
+    }
+}
+
 try {
     // Get all active properties that have expired
     $stmt = $db->prepare("
@@ -16,6 +74,7 @@ try {
             p.status,
             p.initial_index,
             p.initial_valuation,
+            p.address,
             DATE_ADD(p.effective_date, INTERVAL p.term MONTH) as expiration_date
         FROM properties p
         WHERE p.status = 'active'
@@ -28,6 +87,7 @@ try {
     error_log("Starting contract closure process. Found " . count($expiredProperties) . " expired contracts.");
 
     $csushpinsa = new CSUSHPINSA();
+    $closedProperties = [];
 
     foreach ($expiredProperties as $property) {
         try {
@@ -142,6 +202,16 @@ try {
                 ])
             ]);
 
+            // Add to closed properties array for email notification
+            $closedProperties[] = [
+                'id' => $property['id'],
+                'address' => $property['address'],
+                'initial_index' => $property['initial_index'],
+                'closing_index' => $closingIndex,
+                'appreciation' => $appreciation['appreciation'],
+                'appreciation_rate' => $appreciation['appreciation_rate']
+            ];
+
             // Commit transaction
             $db->commit();
 
@@ -154,6 +224,11 @@ try {
             $db->rollBack();
             error_log("Error closing contract for property ID " . $property['id'] . ": " . $e->getMessage());
         }
+    }
+
+    // Send email notification if any properties were closed
+    if (!empty($closedProperties)) {
+        sendContractClosureEmail($closedProperties);
     }
 
     error_log("Contract closure process completed.");

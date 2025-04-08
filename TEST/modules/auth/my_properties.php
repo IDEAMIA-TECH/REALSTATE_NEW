@@ -405,17 +405,38 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         });
     });
 
-    // Add event listener for modal hidden event
-    document.getElementById('viewPropertyModal').addEventListener('hidden.bs.modal', function () {
-        // Remove the modal backdrop
+    // Improved modal closing logic
+    function closeModal() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('viewPropertyModal'));
+        if (modal) {
+            modal.hide();
+        }
+        
+        // Remove backdrop and reset body classes
         const backdrop = document.querySelector('.modal-backdrop');
         if (backdrop) {
             backdrop.remove();
         }
-        // Remove the modal-open class from body
+        
         document.body.classList.remove('modal-open');
-        // Reset the body padding
         document.body.style.paddingRight = '';
+        document.body.style.overflow = '';
+    }
+
+    // Add event listeners for all possible ways to close the modal
+    document.getElementById('viewPropertyModal').addEventListener('hidden.bs.modal', closeModal);
+    
+    // Close button in modal header
+    document.querySelector('#viewPropertyModal .btn-close').addEventListener('click', closeModal);
+    
+    // Close button in modal footer
+    document.querySelector('#viewPropertyModal .btn-secondary').addEventListener('click', closeModal);
+    
+    // Close when clicking outside the modal
+    document.getElementById('viewPropertyModal').addEventListener('click', function(event) {
+        if (event.target === this) {
+            closeModal();
+        }
     });
 
     function fetchValuationHistory(propertyId, propertyData) {
@@ -503,7 +524,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </script>
 
     <!-- View Property Modal -->
-    <div class="modal fade" id="viewPropertyModal" tabindex="-1">
+    <div class="modal fade" id="viewPropertyModal" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">

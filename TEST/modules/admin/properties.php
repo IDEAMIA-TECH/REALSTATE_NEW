@@ -1672,7 +1672,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 // Calculate values with null checks
                 const indexValue = parseFloat(valuation.index_value) || 0;
                 const difference = initialIndex > 0 ? ((indexValue - initialIndex) / initialIndex) * 100 : 0;
-                const appreciation = initialValue > 0 ? (difference / 100) * initialValue : 0;
+                const appreciation = parseFloat(valuation.appreciation) || 0; // Use appreciation directly from database
                 const appreciationShare = (agreedPercentage / 100) * appreciation;
                 const calculation = optionPrice + appreciationShare + totalFees;
                 

@@ -1588,7 +1588,8 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 },
                 body: JSON.stringify({
                     property_id: propertyId,
-                    valuation_date: valuationDate
+                    valuation_date: valuationDate,
+                    action: 'calculate_appreciation'
                 })
             })
             .then(response => {

@@ -12,31 +12,46 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit;
 }
 
-// Get JSON data from request body
-$json = file_get_contents('php://input');
-$data = json_decode($json, true);
-
-if (!$data || !isset($data['property_id']) || !isset($data['valuation_date'])) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'error' => 'Invalid request data']);
-    exit;
-}
+header('Content-Type: application/json');
 
 try {
-    $db = Database::getInstance()->getConnection();
+    // Get POST data
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!isset($data['property_id']) || !isset($data['valuation_date'])) {
+        throw new Exception('Missing required parameters');
+    }
+    
+    $propertyId = $data['property_id'];
+    $valuationDate = $data['valuation_date'];
+    
+    // Initialize CSUSHPINSA class
     $csushpinsa = new CSUSHPINSA();
     
-    // Update the property valuation
-    $result = $csushpinsa->updatePropertyValuation($data['property_id'], $data['valuation_date']);
+    // Calculate appreciation
+    $result = $csushpinsa->calculatePropertyAppreciation($propertyId, $valuationDate);
     
-    if ($result) {
-        header('Content-Type: application/json');
-        echo json_encode(['success' => true, 'message' => 'Valuation updated successfully']);
-    } else {
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'error' => 'Failed to update valuation']);
+    if (!$result) {
+        throw new Exception('Failed to calculate property appreciation');
     }
+    
+    // Update property valuation
+    $success = $csushpinsa->updatePropertyValuation($propertyId, $valuationDate);
+    
+    if (!$success) {
+        throw new Exception('Failed to update property valuation');
+    }
+    
+    echo json_encode([
+        'success' => true,
+        'message' => 'Valuation updated successfully',
+        'data' => $result
+    ]);
+    
 } catch (Exception $e) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
 } 

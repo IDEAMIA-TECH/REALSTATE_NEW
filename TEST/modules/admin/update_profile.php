@@ -1,9 +1,12 @@
 <?php
 require_once __DIR__ . '/../../config.php';
-require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../auth/AuthController.php';
 
 // Verificar autenticación
-checkAuth();
+$auth = new AuthController();
+if (!isset($_SESSION['user_id'])) {
+    $auth->redirectToLogin();
+}
 
 // Obtener conexión a la base de datos
 $db = getDBConnection();

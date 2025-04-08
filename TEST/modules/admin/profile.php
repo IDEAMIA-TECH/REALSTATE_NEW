@@ -53,6 +53,26 @@ require_once __DIR__ . '/../../includes/header.php';
                     <?php endif; ?>
 
                     <form action="update_profile.php" method="POST" class="needs-validation" novalidate>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       value="<?php echo htmlspecialchars($user['first_name'] ?? ''); ?>" required>
+                                <div class="invalid-feedback">
+                                    Please enter your first name.
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       value="<?php echo htmlspecialchars($user['last_name'] ?? ''); ?>" required>
+                                <div class="invalid-feedback">
+                                    Please enter your last name.
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mb-3">
                             <label for="username" class="form-label">Username</label>
                             <input type="text" class="form-control" id="username" name="username" 

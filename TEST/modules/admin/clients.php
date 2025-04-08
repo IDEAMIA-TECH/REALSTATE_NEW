@@ -23,27 +23,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $email = $_POST['email'];
                 $phone = $_POST['phone'];
                 $address = $_POST['address'];
-                $status = 'active'; // Set default status
+                $status = 'active';
                 $created_by = $_SESSION['user_id'];
 
-                // Start transaction
-                $db->beginTransaction();
-
                 try {
+                    // Start transaction
+                    $db->beginTransaction();
+
                     // Insert client
-                    $stmt = $db->prepare("INSERT INTO clients (name, email, phone, address, status, created_by) VALUES (?, ?, ?, ?, ?, ?)");
+                    $stmt = $db->prepare("
+                        INSERT INTO clients (
+                            name, email, phone, address, status, created_by, created_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, NOW())
+                    ");
                     $stmt->execute([$name, $email, $phone, $address, $status, $created_by]);
                     $clientId = $db->lastInsertId();
+
+                    if (!$clientId) {
+                        throw new Exception("Failed to create client");
+                    }
 
                     // Generate username from email
                     $username = explode('@', $email)[0];
                     // Generate a random password
-                    $password = bin2hex(random_bytes(4)); // 8 character password
+                    $password = bin2hex(random_bytes(4));
                     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
                     // Create user for the client
-                    $stmt = $db->prepare("INSERT INTO users (username, password, email, role, status, client_id, first_name, last_name) VALUES (?, ?, ?, 'owner', 'active', ?, ?, ?)");
-                    $stmt->execute([$username, $hashedPassword, $email, $clientId, $name, '']);
+                    $stmt = $db->prepare("
+                        INSERT INTO users (
+                            username, password, email, role, status, client_id, 
+                            first_name, last_name, created_at
+                        ) VALUES (?, ?, ?, 'owner', 'active', ?, ?, '', NOW())
+                    ");
+                    $stmt->execute([$username, $hashedPassword, $email, $clientId, $name]);
+
+                    if ($stmt->rowCount() === 0) {
+                        throw new Exception("Failed to create user");
+                    }
 
                     // Send welcome email with credentials
                     $to = $email;
@@ -58,11 +75,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $headers = "From: " . ADMIN_EMAIL . "\r\n";
                     mail($to, $subject, $message, $headers);
 
+                    // Commit transaction
                     $db->commit();
                     $_SESSION['success'] = "Client created successfully. Login credentials have been sent to their email.";
                 } catch (Exception $e) {
+                    // Rollback transaction on error
                     $db->rollBack();
                     $_SESSION['error'] = "Error creating client: " . $e->getMessage();
+                    error_log("Error creating client: " . $e->getMessage());
                 }
 
                 // Redirect after all processing is done

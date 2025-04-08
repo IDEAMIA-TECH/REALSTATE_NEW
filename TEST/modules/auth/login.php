@@ -56,14 +56,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #4A3728;
-            --secondary-color: #8B7355;
-            --accent-color: #D2B48C;
-            --background-color: #FAF6F1;
-            --text-color: #4A3728;
-            --border-color: #D2B48C;
-            --hover-color: #6B4423;
-            --shadow-color: rgba(74, 55, 40, 0.1);
+            --primary-color: #0F4B35;
+            --secondary-color: #15BE77;
+            --accent-color: #86D789;
+            --background-color: #FFFFFF;
+            --text-color: #1E1E1E;
+            --border-color: #E8F3F1;
+            --hover-color: #0D3D2C;
+            --shadow-color: rgba(15, 75, 53, 0.1);
         }
 
         body {
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            font-family: 'Playfair Display', 'Segoe UI', serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             color: var(--text-color);
         }
 
@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .login-content {
             display: flex;
             background: white;
-            border-radius: 20px;
+            border-radius: 24px;
             box-shadow: 0 20px 40px var(--shadow-color);
             overflow: hidden;
             width: 100%;
@@ -95,8 +95,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .login-image {
             flex: 1;
-            background: linear-gradient(rgba(74, 55, 40, 0.8), rgba(74, 55, 40, 0.8)), 
-                        url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80');
+            background: linear-gradient(rgba(15, 75, 53, 0.85), rgba(15, 75, 53, 0.85)), 
+                        url('<?php echo BASE_URL; ?>/assets/images/investment-team.jpg');
             background-size: cover;
             background-position: center;
             display: flex;
@@ -104,6 +104,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             justify-content: center;
             padding: 60px;
             color: white;
+            position: relative;
+        }
+
+        .login-image::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(to top, rgba(15, 75, 53, 0.95), transparent);
         }
 
         .login-form {
@@ -121,7 +132,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             max-width: 180px;
             height: auto;
             margin-bottom: 30px;
-            filter: brightness(0.9);
         }
 
         .login-header h1 {
@@ -129,35 +139,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 32px;
             font-weight: 700;
             margin-bottom: 15px;
-            font-family: 'Playfair Display', serif;
         }
 
         .login-header p {
-            color: var(--secondary-color);
-            font-size: 18px;
-            font-weight: 300;
+            color: var(--text-color);
+            font-size: 16px;
+            font-weight: 400;
+            opacity: 0.8;
         }
 
         .form-control {
             margin-bottom: 25px;
-            padding: 15px;
+            padding: 15px 20px;
             border-radius: 12px;
             border: 2px solid var(--border-color);
             transition: all 0.3s ease;
             height: 55px;
-            font-size: 16px;
+            font-size: 15px;
             background-color: #FFFFFF;
+            color: var(--text-color);
         }
 
         .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem var(--shadow-color);
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 4px rgba(21, 190, 119, 0.1);
+        }
+
+        .form-label {
+            color: var(--text-color);
+            font-weight: 500;
+            margin-bottom: 10px;
         }
 
         .input-group-text {
             height: 55px;
             border-radius: 12px 0 0 12px;
-            background-color: var(--background-color);
+            background-color: var(--border-color);
             border: 2px solid var(--border-color);
             border-right: none;
             padding: 0 20px;
@@ -167,38 +184,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .btn-login {
             width: 100%;
             padding: 15px;
-            font-size: 18px;
-            background-color: var(--primary-color);
+            font-size: 16px;
+            background-color: var(--secondary-color);
             border: none;
             border-radius: 12px;
             transition: all 0.3s ease;
             font-weight: 600;
-            letter-spacing: 0.5px;
+            color: white;
             margin-top: 20px;
         }
 
         .btn-login:hover {
-            background-color: var(--hover-color);
+            background-color: var(--primary-color);
             transform: translateY(-2px);
             box-shadow: 0 10px 20px var(--shadow-color);
         }
 
         .feature-list {
             margin-top: 40px;
+            z-index: 1;
+            position: relative;
         }
 
         .feature-item {
             display: flex;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             color: white;
-            font-size: 18px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
         }
 
         .feature-item i {
             margin-right: 15px;
-            color: var(--accent-color);
+            color: var(--secondary-color);
             font-size: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
         }
 
         .alert {
@@ -239,7 +269,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             .feature-item {
-                font-size: 16px;
+                font-size: 14px;
+                padding: 12px 15px;
+            }
+
+            .feature-item i {
+                font-size: 20px;
+                width: 35px;
+                height: 35px;
             }
         }
     </style>
@@ -249,30 +286,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="login-content">
             <div class="login-image">
                 <h2>Welcome to <?php echo APP_NAME; ?></h2>
-                <p>Elevating Real Estate Management to New Heights</p>
+                <p>Pioneering Strategies For Your Financial Success</p>
                 <div class="feature-list">
                     <div class="feature-item">
-                        <i class="fas fa-home"></i>
-                        <span>Premium Property Portfolio Management</span>
-                    </div>
-                    <div class="feature-item">
                         <i class="fas fa-chart-line"></i>
-                        <span>Real-Time Market Analytics</span>
-                    </div>
-                    <div class="feature-item">
-                        <i class="fas fa-handshake"></i>
-                        <span>Seamless Client Experience</span>
+                        <span>Smart Investment Planning</span>
                     </div>
                     <div class="feature-item">
                         <i class="fas fa-shield-alt"></i>
-                        <span>Secure Investment Management</span>
+                        <span>Personalized Risk Management</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-handshake"></i>
+                        <span>Strategic Portfolio Allocation</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Real-Time Market Analytics</span>
                     </div>
                 </div>
             </div>
             <div class="login-form">
                 <div class="login-header">
                     <img src="<?php echo BASE_URL; ?>/assets/images/parker-logo.png" alt="PARKER Logo" class="login-logo">
-                    <p>Access your account to manage your properties</p>
+                    <h1>Welcome Back</h1>
+                    <p>Enter your credentials to access your account</p>
                 </div>
                 
                 <?php if ($error): ?>
@@ -292,7 +330,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label for="username" class="form-label">Username</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-user"></i></span>
-                            <input type="text" class="form-control" id="username" name="username" required>
+                            <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required>
                         </div>
                     </div>
                     
@@ -300,12 +338,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label for="password" class="form-label">Password</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                            <input type="password" class="form-control" id="password" name="password" required>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
                         </div>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary btn-login">
-                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    <button type="submit" class="btn btn-login">
+                        Sign In <i class="fas fa-arrow-right ms-2"></i>
                     </button>
                 </form>
             </div>

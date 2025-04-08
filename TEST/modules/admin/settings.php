@@ -147,8 +147,8 @@ if (empty($settings)) {
     ];
 }
 
-// Set page title
-$page_title = 'System Settings - ' . $settings['app_name'];
+// Set page title with fallback to APP_NAME constant
+$page_title = 'System Settings - ' . ($settings['app_name'] ?? APP_NAME);
 ?>
 
 <!DOCTYPE html>

@@ -21,11 +21,11 @@ if (empty($settings)) {
     ];
 }
 
-// Set default page title if not already set
+// Set default page title if not already set, with fallback to APP_NAME constant
 if (!isset($page_title)) {
-    $page_title = $settings['app_name'];
+    $page_title = $settings['app_name'] ?? APP_NAME;
 } else {
-    $page_title = $page_title . ' - ' . $settings['app_name'];
+    $page_title = $page_title . ' - ' . ($settings['app_name'] ?? APP_NAME);
 }
 ?>
 <!DOCTYPE html>
@@ -37,12 +37,31 @@ if (!isset($page_title)) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="<?php echo BASE_URL; ?>/assets/css/global.css" rel="stylesheet">
+    <style>
+        .navbar-brand img {
+            height: 40px;
+            width: auto;
+            margin-right: 10px;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            padding: 1rem 0;
+        }
+        .navbar-dark .navbar-brand {
+            display: flex;
+            align-items: center;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 1.5rem;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="<?php echo BASE_URL; ?>">
-                <i class="fas fa-home me-2"></i><?php echo APP_NAME; ?>
+                <img src="<?php echo BASE_URL; ?>/assets/images/parker-logo.png" alt="PARKER Logo">
+                <?php echo ($settings['app_name'] ?? APP_NAME); ?>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>

@@ -1101,7 +1101,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="updateValuationBtn">Update Valuation</button>
+                    <button type="button" class="btn btn-primary" id="updateValuationBtn" style="display: none;">Update Valuation</button>
                 </div>
             </div>
         </div>
@@ -1175,6 +1175,18 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 const property = JSON.parse(this.getAttribute('data-property'));
                 
+                // Check if property is closed (either by status or expiration)
+                const effectiveDate = new Date(property.effective_date);
+                const expirationDate = new Date(effectiveDate);
+                expirationDate.setMonth(expirationDate.getMonth() + parseInt(property.term));
+                const today = new Date();
+                const isExpired = expirationDate < today;
+                const isClosed = property.status === 'closed' || isExpired;
+
+                // Show/hide update valuation button based on property status
+                const updateValuationBtn = document.getElementById('updateValuationBtn');
+                updateValuationBtn.style.display = isClosed ? 'none' : 'block';
+
                 // Basic Information
                 document.getElementById('view_id').textContent = property.id;
                 document.getElementById('view_client_name').textContent = property.client_name;

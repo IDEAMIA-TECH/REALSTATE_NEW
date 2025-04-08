@@ -223,6 +223,31 @@ $users = $user->getAll();
             border-color: var(--secondary-color);
             box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
         }
+
+        .user-avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .table .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-start;
+        }
+
+        .btn-group .btn-outline-primary.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .table > :not(caption) > * > * {
+            padding: 1rem 0.75rem;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
@@ -252,12 +277,23 @@ $users = $user->getAll();
 
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="h4 mb-0">All Users</h2>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
-                <i class="fas fa-user-plus me-2"></i>Create New User
-            </button>
+            <div class="d-flex gap-3">
+                <div class="btn-group" role="group" aria-label="View toggle">
+                    <button type="button" class="btn btn-outline-primary active" id="cardView">
+                        <i class="fas fa-th-large"></i> Cards
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="tableView">
+                        <i class="fas fa-table"></i> Table
+                    </button>
+                </div>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                    <i class="fas fa-user-plus me-2"></i>Create New User
+                </button>
+            </div>
         </div>
 
-        <div class="row">
+        <!-- Card View -->
+        <div class="row" id="cardViewContainer">
             <?php foreach ($users as $user): ?>
                 <div class="col-md-6 col-lg-4">
                     <div class="user-card">
@@ -300,6 +336,68 @@ $users = $user->getAll();
                     </div>
                 </div>
             <?php endforeach; ?>
+        </div>
+
+        <!-- Table View -->
+        <div class="table-responsive" id="tableViewContainer" style="display: none;">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Avatar</th>
+                        <th>Username</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($users as $user): ?>
+                    <tr>
+                        <td>
+                            <div class="user-avatar-small" style="background-image: url('https://ui-avatars.com/api/?name=<?php echo urlencode($user['username']); ?>&background=3498db&color=fff');"></div>
+                        </td>
+                        <td><?php echo htmlspecialchars($user['username']); ?></td>
+                        <td><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></td>
+                        <td><?php echo htmlspecialchars($user['email']); ?></td>
+                        <td>
+                            <span class="user-role role-<?php echo htmlspecialchars($user['role']); ?>">
+                                <?php echo htmlspecialchars($user['role']); ?>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="user-status status-<?php echo htmlspecialchars($user['status']); ?>">
+                                <?php echo htmlspecialchars($user['status']); ?>
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button type="button" class="action-button btn-edit" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editUserModal"
+                                        data-id="<?php echo $user['id']; ?>"
+                                        data-username="<?php echo htmlspecialchars($user['username']); ?>"
+                                        data-first-name="<?php echo htmlspecialchars($user['first_name']); ?>"
+                                        data-last-name="<?php echo htmlspecialchars($user['last_name']); ?>"
+                                        data-email="<?php echo htmlspecialchars($user['email']); ?>"
+                                        data-role="<?php echo htmlspecialchars($user['role']); ?>"
+                                        data-status="<?php echo htmlspecialchars($user['status']); ?>">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="action-button btn-delete" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteUserModal"
+                                        data-id="<?php echo $user['id']; ?>"
+                                        data-username="<?php echo htmlspecialchars($user['username']); ?>">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
     </div>
     
@@ -452,6 +550,38 @@ $users = $user->getAll();
                 modal.querySelector('#deleteUserId').value = button.dataset.id;
                 modal.querySelector('#deleteUsername').textContent = button.dataset.username;
             });
+        });
+
+        // View toggle functionality
+        const cardView = document.getElementById('cardView');
+        const tableView = document.getElementById('tableView');
+        const cardViewContainer = document.getElementById('cardViewContainer');
+        const tableViewContainer = document.getElementById('tableViewContainer');
+
+        cardView.addEventListener('click', () => {
+            cardView.classList.add('active');
+            tableView.classList.remove('active');
+            cardViewContainer.style.display = 'flex';
+            tableViewContainer.style.display = 'none';
+            // Save preference
+            localStorage.setItem('userViewPreference', 'card');
+        });
+
+        tableView.addEventListener('click', () => {
+            tableView.classList.add('active');
+            cardView.classList.remove('active');
+            tableViewContainer.style.display = 'block';
+            cardViewContainer.style.display = 'none';
+            // Save preference
+            localStorage.setItem('userViewPreference', 'table');
+        });
+
+        // Load saved preference
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedView = localStorage.getItem('userViewPreference');
+            if (savedView === 'table') {
+                tableView.click();
+            }
         });
     </script>
 </body>

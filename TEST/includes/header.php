@@ -144,7 +144,7 @@ if (!isset($page_title)) {
                                         <i class="fas fa-user me-2"></i>Profile
                                     </a>
                                 </li>
-                                <?php if ($_SESSION['role'] !== 'owner'): ?>
+                                <?php if ($_SESSION['role'] == 'property_owner' || $_SESSION['role'] == 'view_only'): ?>
                                 <li>
                                     <a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/settings.php">
                                         <i class="fas fa-cog me-2"></i>Settings

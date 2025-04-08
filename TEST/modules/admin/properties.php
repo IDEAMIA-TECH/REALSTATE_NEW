@@ -101,20 +101,99 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $admin = $adminStmt->fetch(PDO::FETCH_ASSOC);
                     
                     // Prepare email content
-                    $subject = "Nueva Propiedad Registrada - " . APP_NAME;
+                    $subject = "New Property Registered - " . APP_NAME;
                     $message = "
-                        <h2>Nueva Propiedad Registrada</h2>
-                        <p>Se ha registrado una nueva propiedad en el sistema:</p>
-                        <ul>
-                            <li><strong>Dirección:</strong> {$_POST['address']}</li>
-                            <li><strong>Valoración Inicial:</strong> $" . number_format($_POST['initial_valuation'], 2) . "</li>
-                            <li><strong>Porcentaje Acordado:</strong> {$_POST['agreed_pct']}%</li>
-                            <li><strong>Tarifas Totales:</strong> $" . number_format($_POST['total_fees'], 2) . "</li>
-                            <li><strong>Fecha Efectiva:</strong> {$_POST['effective_date']}</li>
-                            <li><strong>Plazo:</strong> {$_POST['term']} meses</li>
-                            <li><strong>Precio de Opción:</strong> $" . number_format($_POST['option_price'], 2) . "</li>
-                        </ul>
-                        <p>Puede ver los detalles de la propiedad en el sistema.</p>
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            body {
+                                font-family: 'Arial', sans-serif;
+                                line-height: 1.6;
+                                color: #333;
+                                max-width: 600px;
+                                margin: 0 auto;
+                                padding: 20px;
+                            }
+                            .header {
+                                background: linear-gradient(135deg, #2c3e50, #3498db);
+                                color: white;
+                                padding: 20px;
+                                text-align: center;
+                                border-radius: 5px 5px 0 0;
+                            }
+                            .content {
+                                background: #ffffff;
+                                padding: 20px;
+                                border: 1px solid #e0e0e0;
+                                border-radius: 0 0 5px 5px;
+                            }
+                            .property-details {
+                                background: #f8f9fa;
+                                padding: 15px;
+                                border-radius: 5px;
+                                margin: 20px 0;
+                            }
+                            .property-details li {
+                                margin-bottom: 10px;
+                                padding-bottom: 10px;
+                                border-bottom: 1px solid #e0e0e0;
+                            }
+                            .property-details li:last-child {
+                                border-bottom: none;
+                                margin-bottom: 0;
+                                padding-bottom: 0;
+                            }
+                            .footer {
+                                text-align: center;
+                                margin-top: 20px;
+                                color: #666;
+                                font-size: 12px;
+                            }
+                            .button {
+                                display: inline-block;
+                                padding: 10px 20px;
+                                background: #3498db;
+                                color: white;
+                                text-decoration: none;
+                                border-radius: 5px;
+                                margin-top: 20px;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class='header'>
+                            <h2>New Property Registration</h2>
+                        </div>
+                        <div class='content'>
+                            <p>Dear " . ($admin ? $admin['username'] : 'Administrator') . ",</p>
+                            <p>A new property has been successfully registered in the system:</p>
+                            
+                            <div class='property-details'>
+                                <ul style='list-style: none; padding: 0; margin: 0;'>
+                                    <li><strong>Address:</strong> {$_POST['address']}</li>
+                                    <li><strong>Initial Valuation:</strong> $" . number_format($_POST['initial_valuation'], 2) . "</li>
+                                    <li><strong>Agreed Percentage:</strong> {$_POST['agreed_pct']}%</li>
+                                    <li><strong>Total Fees:</strong> $" . number_format($_POST['total_fees'], 2) . "</li>
+                                    <li><strong>Effective Date:</strong> {$_POST['effective_date']}</li>
+                                    <li><strong>Term:</strong> {$_POST['term']} months</li>
+                                    <li><strong>Option Price:</strong> $" . number_format($_POST['option_price'], 2) . "</li>
+                                </ul>
+                            </div>
+                            
+                            <p>You can view the complete property details in the system.</p>
+                            
+                            <div style='text-align: center;'>
+                                <a href='" . BASE_URL . "/modules/admin/properties.php' class='button'>View Property Details</a>
+                            </div>
+                            
+                            <div class='footer'>
+                                <p>This is an automated message from " . APP_NAME . ".</p>
+                                <p>Please do not reply to this email.</p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
                     ";
                     
                     // Send email to admin

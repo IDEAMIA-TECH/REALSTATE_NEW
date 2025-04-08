@@ -23,7 +23,7 @@ try {
 }
 
 $page_title = "User Profile";
-require_once __DIR__ . '/../../includes/header.php';
+require_once INCLUDES_PATH . '/header.php';
 ?>
 
 <style>

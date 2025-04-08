@@ -76,20 +76,41 @@ try {
                     status = 'closed',
                     closing_date = ?,
                     closing_index = ?,
-                    final_appreciation = ?,
-                    final_share_appreciation = ?,
                     updated_at = NOW()
                 WHERE id = ?
             ");
             $updateStmt->execute([
                 $property['expiration_date'],
                 $closingIndex,
-                $appreciation['appreciation'],
-                $appreciation['share_appreciation'],
                 $property['id']
             ]);
 
-            // 5. Log the closure in activity_log
+            // 5. Insert final valuation record
+            $insertValuationStmt = $db->prepare("
+                INSERT INTO property_valuations (
+                    property_id,
+                    valuation_date,
+                    index_value,
+                    initial_index,
+                    diference,
+                    appreciation,
+                    created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, NOW())
+            ");
+
+            // Calculate the difference percentage
+            $difference = (($closingIndex - $property['initial_index']) / $property['initial_index']) * 100;
+
+            $insertValuationStmt->execute([
+                $property['id'],
+                $property['expiration_date'],
+                $closingIndex,
+                $property['initial_index'],
+                $difference,
+                $appreciation['appreciation']
+            ]);
+
+            // 6. Log the closure in activity_log
             $logStmt = $db->prepare("
                 INSERT INTO activity_log (
                     user_id,
@@ -115,7 +136,6 @@ try {
                     'closing_index' => $closingIndex,
                     'initial_valuation' => $property['initial_valuation'],
                     'final_appreciation' => $appreciation['appreciation'],
-                    'final_share_appreciation' => $appreciation['share_appreciation'],
                     'appreciation_rate' => $appreciation['appreciation_rate'],
                     'closure_type' => 'automatic',
                     'closed_by' => 'system'
@@ -128,7 +148,7 @@ try {
             error_log("Successfully closed contract for property ID: " . $property['id'] . 
                      " with closing index: " . $closingIndex . 
                      ", appreciation: " . $appreciation['appreciation'] . 
-                     ", share appreciation: " . $appreciation['share_appreciation']);
+                     ", appreciation rate: " . $appreciation['appreciation_rate'] . "%");
         } catch (Exception $e) {
             // Rollback transaction on error
             $db->rollBack();

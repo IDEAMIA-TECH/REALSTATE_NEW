@@ -1112,21 +1112,20 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     if (data.success && data.data && data.data.valuations && data.data.valuations.length > 0) {
                         const latestValuation = data.data.valuations[0];
                         const initialValue = parseFloat(property.initial_valuation);
-                        const appreciationRate = parseFloat(latestValuation.appreciation_rate);
+                        const latestAppreciation = parseFloat(latestValuation.appreciation || 0);
                         
                         console.log('Contract Details - Current Value Calculation:', {
                             initialValue,
-                            appreciationRate,
-                            calculation: `Current Value = ${initialValue} * (1 + (${appreciationRate} / 100))`,
-                            result: initialValue * (1 + (appreciationRate / 100))
+                            latestAppreciation,
+                            calculation: `Current Value = ${initialValue} + ${latestAppreciation}`,
+                            result: initialValue + latestAppreciation
                         });
 
-                        // Calculate current value: initial value * (1 + appreciation rate)
-                        const currentValue = initialValue * (1 + (appreciationRate / 100));
+                        // Calculate current value: initial value + latest appreciation
+                        const currentValue = initialValue + latestAppreciation;
                         const agreedPercentage = parseFloat(property.agreed_pct);
-                        const appreciation = currentValue - initialValue;
                         // Calculate user profit: if appreciation > 0, multiply by agreed percentage, otherwise 0
-                        const userProfit = appreciation > 0 ? appreciation * (agreedPercentage / 100) : 0;
+                        const userProfit = latestAppreciation > 0 ? latestAppreciation * (agreedPercentage / 100) : 0;
 
                         document.getElementById('view_current_value').textContent = '$' + currentValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                         document.getElementById('view_user_profit').textContent = '$' + userProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});

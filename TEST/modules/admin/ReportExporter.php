@@ -58,7 +58,8 @@ class ReportExporter {
                     $initialIndex = floatval($data['initial_index']);
                     $currentIndex = floatval($data['index_value']);
                     $difference = $initialIndex > 0 ? (($currentIndex - $initialIndex) / $initialIndex) * 100 : 0;
-                    $appreciation = $initialValue * ($difference / 100);
+                    $appreciation = floatval($data['appreciation']);
+                    $currentValue = $initialValue + $appreciation;
                     $shareAppreciation = $appreciation * ($data['agreed_pct'] / 100);
                     $calculation = $data['option_price'] + $shareAppreciation + $data['total_fees'];
                     

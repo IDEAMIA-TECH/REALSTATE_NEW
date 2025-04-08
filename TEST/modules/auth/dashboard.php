@@ -94,70 +94,233 @@ switch ($_SESSION['role']) {
     <title>Dashboard - <?php echo APP_NAME; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="<?php echo BASE_URL; ?>/assets/css/global.css" rel="stylesheet">
     <style>
-        .dashboard-container {
-            padding: 20px;
-        }
-        .welcome-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .dashboard-hero {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
-            padding: 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+            border-radius: var(--border-radius);
         }
-        .dashboard-card {
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-            height: 100%;
+
+        .stat-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+            border-left: 4px solid var(--secondary-color);
         }
-        .dashboard-card:hover {
+
+        .stat-card:hover {
             transform: translateY(-5px);
+            box-shadow: var(--box-shadow);
         }
-        .card-icon {
+
+        .stat-icon {
             font-size: 2.5rem;
-            margin-bottom: 15px;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
         }
-        .logout-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .activity-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .activity-item {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            transition: var(--transition);
+        }
+
+        .activity-item:hover {
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .property-card {
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .property-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--box-shadow);
+        }
+
+        .property-image {
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .property-details {
+            padding: 1.5rem;
+        }
+
+        .property-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .property-location {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .property-price {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-button {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            text-align: center;
+            transition: var(--transition);
+            border: none;
+            width: 100%;
+        }
+
+        .action-button:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--box-shadow);
+        }
+
+        .action-icon {
+            font-size: 2rem;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+        }
+
+        .action-label {
+            font-weight: 500;
+            color: var(--primary-color);
         }
     </style>
 </head>
 <body>
     <?php require_once INCLUDES_PATH . '/header.php'; ?>
     
-    <div class="container dashboard-container">
-        <div class="welcome-section">
-            <h1>Welcome, <?php echo htmlspecialchars($userData['username']); ?>!</h1>
-            <p class="lead">You are logged in as <?php echo htmlspecialchars($_SESSION['role']); ?></p>
-        </div>
-        
-        <div class="row">
-            <?php foreach ($dashboardItems as $item): ?>
-                <div class="col-md-4 mb-4">
-                    <a href="<?php echo $item['link']; ?>" class="text-decoration-none">
-                        <div class="card dashboard-card">
-                            <div class="card-body text-center">
-                                <div class="card-icon"><?php echo $item['icon']; ?></div>
-                                <h5 class="card-title"><?php echo $item['title']; ?></h5>
-                                <p class="card-text text-muted"><?php echo $item['description']; ?></p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            <?php endforeach; ?>
+    <div class="dashboard-hero">
+        <div class="container">
+            <h1 class="text-white"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
+            <p class="lead text-white">Welcome back, <?php echo htmlspecialchars($_SESSION['username']); ?></p>
         </div>
     </div>
-    
-    <a href="<?php echo BASE_URL; ?>/modules/auth/logout.php" class="btn btn-danger logout-btn">
-        <i class="fas fa-sign-out-alt"></i> Logout
-    </a>
-    
-    <?php require_once INCLUDES_PATH . '/footer.php'; ?>
-    
+
+    <div class="container">
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <?php foreach ($dashboardItems as $item): ?>
+                <a href="<?php echo $item['link']; ?>" class="action-button">
+                    <div class="action-icon"><?php echo $item['icon']; ?></div>
+                    <div class="action-label"><?php echo $item['title']; ?></div>
+                    <small class="text-muted"><?php echo $item['description']; ?></small>
+                </a>
+            <?php endforeach; ?>
+        </div>
+
+        <!-- Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-home"></i></div>
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">My Properties</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">Total Value</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-percentage"></i></div>
+                    <div class="stat-number">0%</div>
+                    <div class="stat-label">Appreciation</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">Valuations</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Recent Activity -->
+            <div class="col-md-6">
+                <div class="activity-card">
+                    <h3><i class="fas fa-history me-2"></i>Recent Activity</h3>
+                    <div class="activity-item">
+                        <p class="text-muted">No recent activity</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Properties -->
+            <div class="col-md-6">
+                <div class="activity-card">
+                    <h3><i class="fas fa-building me-2"></i>Recent Properties</h3>
+                    <div class="property-card mb-3">
+                        <div class="property-image" 
+                             style="background-image: url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80');">
+                        </div>
+                        <div class="property-details">
+                            <div class="property-title">No Properties Yet</div>
+                            <div class="property-location">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                Add your first property
+                            </div>
+                            <div class="property-price">
+                                $0.00
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html> 

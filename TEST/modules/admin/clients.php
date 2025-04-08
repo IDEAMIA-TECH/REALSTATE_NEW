@@ -72,8 +72,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $message .= "Please login at: " . BASE_URL . "/login.php\n\n";
                     $message .= "Best regards,\nParker Real Estate Team";
 
-                    $headers = "From: " . ADMIN_EMAIL . "\r\n";
+                    // Get all admin users' emails
+                    $stmt = $db->prepare("SELECT email FROM users WHERE role = 'admin'");
+                    $stmt->execute();
+                    $adminEmails = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+                    // Send email to the new client
+                    $headers = "From: Parker Real Estate <noreply@parkerrealestate.com>\r\n";
                     mail($to, $subject, $message, $headers);
+
+                    // Send notification to all admin users
+                    $adminSubject = "New Client Registration";
+                    $adminMessage = "A new client has been registered:\n\n";
+                    $adminMessage .= "Name: $name\n";
+                    $adminMessage .= "Email: $email\n";
+                    $adminMessage .= "Phone: $phone\n";
+                    $adminMessage .= "Address: $address\n\n";
+                    $adminMessage .= "Client ID: $clientId\n";
+
+                    foreach ($adminEmails as $adminEmail) {
+                        mail($adminEmail, $adminSubject, $adminMessage, $headers);
+                    }
 
                     // Commit transaction
                     $db->commit();

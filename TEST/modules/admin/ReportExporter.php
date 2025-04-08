@@ -18,53 +18,73 @@ class ReportExporter {
     }
     
     public function exportToExcel() {
-        // Set headers for Excel file
-        header('Content-Type: application/vnd.ms-excel');
-        header('Content-Disposition: attachment;filename="' . $this->title . '.xls"');
-        header('Cache-Control: max-age=0');
-
-        // Start output buffering
-        ob_start();
-
-        echo '<table border="1">';
-        echo '<tr><th colspan="10" style="background-color: #4CAF50; color: white;">' . $this->title . '</th></tr>';
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        // Set title
+        $sheet->setCellValue('A1', $this->title);
+        $sheet->mergeCells('A1:J1');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
         
         switch ($this->type) {
             case 'property_valuation':
-                echo '<tr>
-                    <th>Property</th>
-                    <th>Initial Value</th>
-                    <th>Initial Index</th>
-                    <th>Current Index</th>
-                    <th>Difference</th>
-                    <th>Appreciation</th>
-                    <th>Share Appreciation</th>
-                    <th>Option Price</th>
-                    <th>Total Fees</th>
-                    <th>Calculation</th>
-                </tr>';
+                // Set headers
+                $headers = [
+                    'Property',
+                    'Initial Value',
+                    'Initial Index',
+                    'Current Index',
+                    'Difference',
+                    'Appreciation',
+                    'Share Appreciation',
+                    'Option Price',
+                    'Total Fees',
+                    'Calculation'
+                ];
+                $sheet->fromArray($headers, NULL, 'A3');
                 
-                foreach ($this->data as $row) {
-                    $initialValue = floatval($row['initial_valuation']);
-                    $initialIndex = floatval($row['initial_index']);
-                    $currentIndex = floatval($row['index_value']);
+                // Style headers
+                $sheet->getStyle('A3:J3')->getFont()->setBold(true);
+                $sheet->getStyle('A3:J3')->getFill()
+                    ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                    ->getStartColor()->setRGB('4CAF50');
+                $sheet->getStyle('A3:J3')->getFont()->getColor()->setRGB('FFFFFF');
+                
+                // Add data
+                $row = 4;
+                foreach ($this->data as $data) {
+                    $initialValue = floatval($data['initial_valuation']);
+                    $initialIndex = floatval($data['initial_index']);
+                    $currentIndex = floatval($data['index_value']);
                     $difference = $initialIndex > 0 ? (($currentIndex - $initialIndex) / $initialIndex) * 100 : 0;
                     $appreciation = $initialValue * ($difference / 100);
-                    $shareAppreciation = $appreciation * ($row['agreed_pct'] / 100);
-                    $calculation = $row['option_price'] + $shareAppreciation + $row['total_fees'];
+                    $shareAppreciation = $appreciation * ($data['agreed_pct'] / 100);
+                    $calculation = $data['option_price'] + $shareAppreciation + $data['total_fees'];
                     
-                    echo '<tr>';
-                    echo '<td>' . htmlspecialchars($row['address']) . '</td>';
-                    echo '<td>$' . number_format($initialValue, 2) . '</td>';
-                    echo '<td>' . number_format($initialIndex, 2) . '</td>';
-                    echo '<td>' . number_format($currentIndex, 2) . '</td>';
-                    echo '<td>' . number_format($difference, 2) . '%</td>';
-                    echo '<td>$' . number_format($appreciation, 2) . '</td>';
-                    echo '<td>$' . number_format($shareAppreciation, 2) . '</td>';
-                    echo '<td>$' . number_format($row['option_price'], 2) . '</td>';
-                    echo '<td>$' . number_format($row['total_fees'], 2) . '</td>';
-                    echo '<td>$' . number_format($calculation, 2) . '</td>';
-                    echo '</tr>';
+                    $sheet->setCellValue('A'.$row, $data['address']);
+                    $sheet->setCellValue('B'.$row, $initialValue);
+                    $sheet->setCellValue('C'.$row, $initialIndex);
+                    $sheet->setCellValue('D'.$row, $currentIndex);
+                    $sheet->setCellValue('E'.$row, $difference);
+                    $sheet->setCellValue('F'.$row, $appreciation);
+                    $sheet->setCellValue('G'.$row, $shareAppreciation);
+                    $sheet->setCellValue('H'.$row, $data['option_price']);
+                    $sheet->setCellValue('I'.$row, $data['total_fees']);
+                    $sheet->setCellValue('J'.$row, $calculation);
+                    
+                    // Format numbers
+                    $sheet->getStyle('B'.$row)->getNumberFormat()->setFormatCode('"$"#,##0.00');
+                    $sheet->getStyle('C'.$row.':D'.$row)->getNumberFormat()->setFormatCode('#,##0.00');
+                    $sheet->getStyle('E'.$row)->getNumberFormat()->setFormatCode('#,##0.00"%"');
+                    $sheet->getStyle('F'.$row.':J'.$row)->getNumberFormat()->setFormatCode('"$"#,##0.00');
+                    
+                    $row++;
+                }
+                
+                // Auto-size columns
+                foreach (range('A', 'J') as $col) {
+                    $sheet->getColumnDimension($col)->setAutoSize(true);
                 }
                 break;
                 
@@ -131,17 +151,20 @@ class ReportExporter {
                 break;
         }
         
-        echo '</table>';
+        // Create Excel file
+        $writer = new Xlsx($spreadsheet);
         
-        // Get the contents of the output buffer
-        $output = ob_get_clean();
+        // Set headers
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $this->getFilename('xlsx') . '"');
+        header('Cache-Control: max-age=0');
         
-        // Clear any previous output
-        ob_clean();
+        // Clear any previous output and buffers
+        if (ob_get_length()) ob_end_clean();
         
-        // Output the Excel file
-        echo $output;
-        exit;
+        // Output file
+        $writer->save('php://output');
+        exit();
     }
     
     public function exportToPDF() {

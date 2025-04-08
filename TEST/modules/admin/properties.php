@@ -554,23 +554,76 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .status-expired {
-            background-color: rgba(108, 117, 125, 0.1);
-            color: #6c757d;
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .status-expired:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(52, 152, 219, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(52, 152, 219, 0);
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
         }
         
         .property-profit {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius);
             font-size: 1.1rem;
             font-weight: 600;
-            color: #2ecc71;
-            margin: 0.5rem 0;
+            margin: 0.75rem 0;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .property-profit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
         
         .text-danger {
             color: #e74c3c !important;
+            font-weight: 600;
         }
         
         .meta-item.text-danger i {
             color: #e74c3c;
+            animation: flash 2s infinite;
+        }
+
+        @keyframes flash {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
         }
     </style>
 </head>
@@ -619,10 +672,13 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             $today = new DateTime();
                             $isExpired = $expirationDate < $today;
                             
-                            $statusClass = $isExpired ? 'status-expired' : 'status-' . $property['status'];
-                            $statusText = $isExpired ? 'Contrato Cerrado' : ucfirst($property['status']);
+                            $statusClass = $isExpired ? 'status-expired pulse' : 'status-' . $property['status'];
+                            $statusText = $isExpired ? 'Contract Closed' : ucfirst($property['status']);
                             ?>
                             <span class="property-status <?php echo $statusClass; ?>">
+                                <?php if ($isExpired): ?>
+                                    <i class="fas fa-lock me-1"></i>
+                                <?php endif; ?>
                                 <?php echo $statusText; ?>
                             </span>
                         </div>

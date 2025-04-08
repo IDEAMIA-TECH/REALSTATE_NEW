@@ -70,6 +70,13 @@ $recentProperties = $db->query("
             background-color: var(--background-color);
             font-family: 'Playfair Display', 'Segoe UI', serif;
             color: var(--text-color);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
         .dashboard-hero {
@@ -78,7 +85,7 @@ $recentProperties = $db->query("
             padding: 4rem 0;
             margin-bottom: 3rem;
             border-radius: 20px;
-            box-shadow: 0 10px 30px var(--shadow-color);
+            box-shadow: 0 20px 40px var(--shadow-color);
         }
 
         .dashboard-hero h1 {
@@ -86,6 +93,13 @@ $recentProperties = $db->query("
             font-weight: 700;
             font-size: 2.5rem;
             margin-bottom: 1rem;
+            color: white;
+        }
+
+        .dashboard-hero p {
+            color: var(--accent-color);
+            font-size: 1.2rem;
+            opacity: 0.9;
         }
 
         .stat-card {
@@ -97,6 +111,7 @@ $recentProperties = $db->query("
             border: none;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 5px 15px var(--shadow-color);
         }
 
         .stat-card::before {
@@ -159,6 +174,7 @@ $recentProperties = $db->query("
             padding: 1.2rem;
             border-bottom: 1px solid var(--border-color);
             transition: all 0.3s ease;
+            color: var(--text-color);
         }
 
         .activity-item:hover {
@@ -166,8 +182,13 @@ $recentProperties = $db->query("
             border-radius: 10px;
         }
 
-        .activity-item:last-child {
-            border-bottom: none;
+        .activity-item strong {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .activity-item .text-muted {
+            color: var(--secondary-color) !important;
         }
 
         .property-card {
@@ -198,7 +219,7 @@ $recentProperties = $db->query("
             left: 0;
             right: 0;
             height: 50%;
-            background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+            background: linear-gradient(to top, rgba(74, 55, 40, 0.8), transparent);
         }
 
         .property-details {
@@ -249,6 +270,7 @@ $recentProperties = $db->query("
             transform: translateY(-5px);
             box-shadow: 0 15px 30px var(--shadow-color);
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            text-decoration: none;
         }
 
         .action-button:hover .action-icon,

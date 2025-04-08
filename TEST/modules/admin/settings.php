@@ -23,7 +23,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Start transaction
             $db->beginTransaction();
 
-            // Update email settings in settings table
+            // Update general settings
+            $generalSettings = [
+                'app_name' => $_POST['app_name'],
+                'base_url' => $_POST['base_url']
+            ];
+
+            foreach ($generalSettings as $key => $value) {
+                $stmt = $db->prepare("
+                    INSERT INTO system_settings (setting_key, setting_value, updated_at)
+                    VALUES (?, ?, NOW())
+                    ON DUPLICATE KEY UPDATE 
+                        setting_value = VALUES(setting_value),
+                        updated_at = NOW()
+                ");
+                $stmt->execute([$key, $value]);
+            }
+
+            // Update email settings
             $emailSettings = [
                 'smtp_host' => $_POST['smtp_host'],
                 'smtp_port' => $_POST['smtp_port'],
@@ -46,8 +63,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $configFile = __DIR__ . '/../../config.php';
             $configContent = file_get_contents($configFile);
             
-            // Update each email setting in the config file
-            foreach ($emailSettings as $key => $value) {
+            // Update all settings in the config file
+            $allSettings = array_merge($generalSettings, $emailSettings);
+            foreach ($allSettings as $key => $value) {
                 $constantName = strtoupper($key);
                 $pattern = "/define\('" . $constantName . "',\s*'[^']*'\);/";
                 $replacement = "define('" . $constantName . "', '" . addslashes($value) . "');";
@@ -82,6 +100,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user_id'],
                 json_encode([
                     'updated_settings' => [
+                        'app_name' => $_POST['app_name'],
+                        'base_url' => $_POST['base_url'],
                         'smtp_host' => $_POST['smtp_host'],
                         'smtp_port' => $_POST['smtp_port'],
                         'smtp_username' => $_POST['smtp_username'],
@@ -94,6 +114,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $db->commit();
             $message = 'Settings updated successfully';
 
+            // Redirect to refresh the page and apply new settings
+            header('Location: ' . $_SERVER['PHP_SELF'] . '?success=1');
+            exit;
+
         } catch (Exception $e) {
             // Rollback transaction on error
             $db->rollBack();
@@ -104,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get current settings from database
 try {
-    $stmt = $db->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('smtp_host', 'smtp_port', 'smtp_username', 'smtp_password')");
+    $stmt = $db->query("SELECT setting_key, setting_value FROM system_settings");
     $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 } catch (Exception $e) {
     $error = 'Error loading settings: ' . $e->getMessage();
@@ -114,12 +138,17 @@ try {
 // If no settings in database, use config.php values
 if (empty($settings)) {
     $settings = [
+        'app_name' => APP_NAME,
+        'base_url' => BASE_URL,
         'smtp_host' => SMTP_HOST,
         'smtp_port' => SMTP_PORT,
         'smtp_username' => SMTP_USERNAME,
         'smtp_password' => SMTP_PASSWORD
     ];
 }
+
+// Set page title
+$page_title = 'System Settings - ' . $settings['app_name'];
 ?>
 
 <!DOCTYPE html>
@@ -127,7 +156,7 @@ if (empty($settings)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Settings - <?php echo APP_NAME; ?></title>
+    <title><?php echo $page_title; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -175,12 +204,12 @@ if (empty($settings)) {
                     <div class="mb-3">
                         <label for="app_name" class="form-label">Application Name</label>
                         <input type="text" class="form-control" id="app_name" name="app_name" 
-                               value="<?php echo htmlspecialchars(APP_NAME); ?>" required>
+                               value="<?php echo htmlspecialchars($settings['app_name'] ?? ''); ?>" required>
                     </div>
                     <div class="mb-3">
                         <label for="base_url" class="form-label">Base URL</label>
                         <input type="text" class="form-control" id="base_url" name="base_url" 
-                               value="<?php echo htmlspecialchars(BASE_URL); ?>" required>
+                               value="<?php echo htmlspecialchars($settings['base_url'] ?? ''); ?>" required>
                     </div>
                 </div>
             </div>

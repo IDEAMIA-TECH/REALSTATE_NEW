@@ -20,13 +20,16 @@ $stmt = $db->prepare("
     SELECT 
         p.*,
         c.name as client_name,
-        pv.current_value,
-        pv.appreciation_percentage,
-        pv.valuation_date
+        p.initial_valuation as current_value,
+        p.initial_index,
+        p.effective_date as valuation_date,
+        p.option_price,
+        p.term,
+        p.agreed_pct
     FROM properties p
     LEFT JOIN clients c ON p.client_id = c.id
-    LEFT JOIN property_valuations pv ON p.id = pv.property_id
     WHERE p.client_id = :client_id
+    AND p.status = 'active'
     ORDER BY p.created_at DESC
 ");
 $stmt->execute([':client_id' => $userData['client_id']]);
@@ -35,18 +38,16 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Calculate statistics
 $totalProperties = count($properties);
 $totalValue = 0;
-$totalAppreciation = 0;
-$totalValuations = 0;
+$totalOptionPrice = 0;
+$totalFees = 0;
 
 foreach ($properties as $property) {
-    $totalValue += $property['current_value'] ?? 0;
-    $totalAppreciation += $property['appreciation_percentage'] ?? 0;
-    if ($property['valuation_date']) {
-        $totalValuations++;
-    }
+    $totalValue += $property['initial_valuation'];
+    $totalOptionPrice += $property['option_price'];
+    $totalFees += $property['total_fees'];
 }
 
-$averageAppreciation = $totalProperties > 0 ? $totalAppreciation / $totalProperties : 0;
+$averageAppreciation = $totalProperties > 0 ? $totalOptionPrice / $totalProperties : 0;
 
 // Get role-specific dashboard items
 $dashboardItems = [];
@@ -306,16 +307,16 @@ switch ($_SESSION['role']) {
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-percentage"></i></div>
-                    <div class="stat-number"><?php echo number_format($averageAppreciation, 2); ?>%</div>
-                    <div class="stat-label">Avg. Appreciation</div>
+                    <div class="stat-icon"><i class="fas fa-handshake"></i></div>
+                    <div class="stat-number">$<?php echo number_format($totalOptionPrice, 2); ?></div>
+                    <div class="stat-label">Option Price</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
-                    <div class="stat-number"><?php echo $totalValuations; ?></div>
-                    <div class="stat-label">Valuations</div>
+                    <div class="stat-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                    <div class="stat-number">$<?php echo number_format($totalFees, 2); ?></div>
+                    <div class="stat-label">Total Fees</div>
                 </div>
             </div>
         </div>
@@ -332,15 +333,15 @@ switch ($_SESSION['role']) {
                                     <div>
                                         <strong><?php echo htmlspecialchars($property['address']); ?></strong>
                                         <div class="text-muted">
-                                            Last valuation: <?php echo date('M d, Y', strtotime($property['valuation_date'])); ?>
+                                            Effective Date: <?php echo date('M d, Y', strtotime($property['effective_date'])); ?>
                                         </div>
                                     </div>
                                     <div class="text-end">
-                                        <div class="text-success">
-                                            <?php echo number_format($property['appreciation_percentage'], 2); ?>%
+                                        <div class="text-primary">
+                                            $<?php echo number_format($property['initial_valuation'], 2); ?>
                                         </div>
                                         <div class="text-muted">
-                                            $<?php echo number_format($property['current_value'], 2); ?>
+                                            Term: <?php echo $property['term']; ?> months
                                         </div>
                                     </div>
                                 </div>
@@ -362,18 +363,18 @@ switch ($_SESSION['role']) {
                         <?php foreach (array_slice($properties, 0, 3) as $property): ?>
                             <div class="property-card mb-3">
                                 <div class="property-image" 
-                                     style="background-image: url('<?php echo $property['image_url'] ?: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80'; ?>');">
+                                     style="background-image: url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80');">
                                 </div>
                                 <div class="property-details">
                                     <div class="property-title"><?php echo htmlspecialchars($property['address']); ?></div>
                                     <div class="property-location">
-                                        <i class="fas fa-map-marker-alt me-1"></i>
-                                        <?php echo htmlspecialchars($property['city'] . ', ' . $property['state']); ?>
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        Effective: <?php echo date('M d, Y', strtotime($property['effective_date'])); ?>
                                     </div>
                                     <div class="property-price">
-                                        $<?php echo number_format($property['current_value'], 2); ?>
-                                        <small class="text-success ms-2">
-                                            <?php echo number_format($property['appreciation_percentage'], 2); ?>%
+                                        $<?php echo number_format($property['initial_valuation'], 2); ?>
+                                        <small class="text-primary ms-2">
+                                            <?php echo $property['agreed_pct']; ?>% agreed
                                         </small>
                                     </div>
                                 </div>

@@ -18,40 +18,129 @@ class ReportExporter {
     }
     
     public function exportToExcel() {
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        
-        // Set title
-        $sheet->setCellValue('A1', $this->title);
-        $sheet->mergeCells('A1:J1');
-        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
-        
-        // Set headers based on report type
-        $headers = $this->getHeaders();
-        $sheet->fromArray($headers, NULL, 'A3');
-        
-        // Set data
-        $row = 4;
-        foreach ($this->data as $item) {
-            $values = $this->formatRowData($item);
-            $sheet->fromArray($values, NULL, 'A' . $row);
-            $row++;
-        }
-        
-        // Auto-size columns
-        foreach (range('A', 'J') as $column) {
-            $sheet->getColumnDimension($column)->setAutoSize(true);
-        }
-        
-        // Create Excel file
-        $writer = new Xlsx($spreadsheet);
-        $filename = $this->getFilename('xlsx');
-        
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        // Set headers for Excel file
+        header('Content-Type: application/vnd.ms-excel');
+        header('Content-Disposition: attachment;filename="' . $this->title . '.xls"');
         header('Cache-Control: max-age=0');
+
+        // Start output buffering
+        ob_start();
+
+        echo '<table border="1">';
+        echo '<tr><th colspan="10" style="background-color: #4CAF50; color: white;">' . $this->title . '</th></tr>';
         
-        $writer->save('php://output');
+        switch ($this->type) {
+            case 'property_valuation':
+                echo '<tr>
+                    <th>Property</th>
+                    <th>Initial Value</th>
+                    <th>Initial Index</th>
+                    <th>Current Index</th>
+                    <th>Difference</th>
+                    <th>Appreciation</th>
+                    <th>Share Appreciation</th>
+                    <th>Option Price</th>
+                    <th>Total Fees</th>
+                    <th>Calculation</th>
+                </tr>';
+                
+                foreach ($this->data as $row) {
+                    $initialValue = floatval($row['initial_valuation']);
+                    $initialIndex = floatval($row['initial_index']);
+                    $currentIndex = floatval($row['index_value']);
+                    $difference = $initialIndex > 0 ? (($currentIndex - $initialIndex) / $initialIndex) * 100 : 0;
+                    $appreciation = $initialValue * ($difference / 100);
+                    $shareAppreciation = $appreciation * ($row['agreed_pct'] / 100);
+                    $calculation = $row['option_price'] + $shareAppreciation + $row['total_fees'];
+                    
+                    echo '<tr>';
+                    echo '<td>' . htmlspecialchars($row['address']) . '</td>';
+                    echo '<td>$' . number_format($initialValue, 2) . '</td>';
+                    echo '<td>' . number_format($initialIndex, 2) . '</td>';
+                    echo '<td>' . number_format($currentIndex, 2) . '</td>';
+                    echo '<td>' . number_format($difference, 2) . '%</td>';
+                    echo '<td>$' . number_format($appreciation, 2) . '</td>';
+                    echo '<td>$' . number_format($shareAppreciation, 2) . '</td>';
+                    echo '<td>$' . number_format($row['option_price'], 2) . '</td>';
+                    echo '<td>$' . number_format($row['total_fees'], 2) . '</td>';
+                    echo '<td>$' . number_format($calculation, 2) . '</td>';
+                    echo '</tr>';
+                }
+                break;
+                
+            case 'client_activity':
+                echo '<tr>
+                    <th>Client ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Properties Count</th>
+                    <th>Total Valuation</th>
+                    <th>Last Activity</th>
+                    <th>Action</th>
+                </tr>';
+                
+                foreach ($this->data as $row) {
+                    echo '<tr>';
+                    echo '<td>' . htmlspecialchars($row['id']) . '</td>';
+                    echo '<td>' . htmlspecialchars($row['name']) . '</td>';
+                    echo '<td>' . htmlspecialchars($row['email']) . '</td>';
+                    echo '<td>' . htmlspecialchars($row['property_count']) . '</td>';
+                    echo '<td>' . htmlspecialchars('$' . number_format($row['total_valuation'], 2)) . '</td>';
+                    echo '<td>' . htmlspecialchars($row['created_at']) . '</td>';
+                    echo '<td>' . htmlspecialchars($row['action']) . '</td>';
+                    echo '</tr>';
+                }
+                break;
+                
+            case 'csushpinsa':
+                echo '<tr>
+                    <th>Date</th>
+                    <th>Index Value</th>
+                </tr>';
+                
+                foreach ($this->data as $row) {
+                    echo '<tr>';
+                    echo '<td>' . htmlspecialchars($row['date']) . '</td>';
+                    echo '<td>' . htmlspecialchars(number_format($row['value'], 2)) . '</td>';
+                    echo '</tr>';
+                }
+                break;
+                
+            case 'user_activity':
+                echo '<tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Action</th>
+                    <th>Entity Type</th>
+                    <th>Action Count</th>
+                    <th>Last Activity</th>
+                </tr>';
+                
+                foreach ($this->data as $row) {
+                    echo '<tr>';
+                    echo '<td>' . htmlspecialchars($row['username']) . '</td>';
+                    echo '<td>' . htmlspecialchars($row['email']) . '</td>';
+                    echo '<td>' . htmlspecialchars($row['role']) . '</td>';
+                    echo '<td>' . htmlspecialchars($row['action']) . '</td>';
+                    echo '<td>' . htmlspecialchars($row['entity_type']) . '</td>';
+                    echo '<td>' . htmlspecialchars($row['action_count']) . '</td>';
+                    echo '<td>' . htmlspecialchars($row['created_at']) . '</td>';
+                    echo '</tr>';
+                }
+                break;
+        }
+        
+        echo '</table>';
+        
+        // Get the contents of the output buffer
+        $output = ob_get_clean();
+        
+        // Clear any previous output
+        ob_clean();
+        
+        // Output the Excel file
+        echo $output;
         exit;
     }
     

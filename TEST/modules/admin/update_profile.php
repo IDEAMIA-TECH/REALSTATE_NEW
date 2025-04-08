@@ -19,6 +19,8 @@ $user_id = $_SESSION['user_id'];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // Obtener datos del formulario
+        $first_name = trim($_POST['first_name'] ?? '');
+        $last_name = trim($_POST['last_name'] ?? '');
         $username = trim($_POST['username'] ?? '');
         $email = trim($_POST['email'] ?? '');
         $current_password = $_POST['current_password'] ?? '';
@@ -26,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $confirm_password = $_POST['confirm_password'] ?? '';
 
         // Validar datos
-        if (empty($username) || empty($email)) {
-            throw new Exception("Username and email are required.");
+        if (empty($first_name) || empty($last_name) || empty($username) || empty($email)) {
+            throw new Exception("All fields are required.");
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -69,17 +71,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Actualizar con nueva contraseña
             $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-            $stmt = $db->prepare("UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?");
-            $stmt->execute([$username, $email, $hashed_password, $user_id]);
+            $stmt = $db->prepare("UPDATE users SET first_name = ?, last_name = ?, username = ?, email = ?, password = ? WHERE id = ?");
+            $stmt->execute([$first_name, $last_name, $username, $email, $hashed_password, $user_id]);
         } else {
             // Actualizar sin cambiar la contraseña
-            $stmt = $db->prepare("UPDATE users SET username = ?, email = ? WHERE id = ?");
-            $stmt->execute([$username, $email, $user_id]);
+            $stmt = $db->prepare("UPDATE users SET first_name = ?, last_name = ?, username = ?, email = ? WHERE id = ?");
+            $stmt->execute([$first_name, $last_name, $username, $email, $user_id]);
         }
 
         // Actualizar la sesión
         $_SESSION['username'] = $username;
         $_SESSION['email'] = $email;
+        $_SESSION['first_name'] = $first_name;
+        $_SESSION['last_name'] = $last_name;
 
         $_SESSION['success'] = "Profile updated successfully.";
     } catch (Exception $e) {

@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         INSERT INTO users (
                             username, password, email, role, status, client_id, 
                             first_name, last_name, created_at
-                        ) VALUES (?, ?, ?, 'owner', 'active', ?, ?, '', NOW())
+                        ) VALUES (?, ?, ?, 'property_owner', 'active', ?, ?, '', NOW())
                     ");
                     $stmt->execute([$username, $hashedPassword, $email, $clientId, $name]);
 

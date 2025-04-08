@@ -12,7 +12,23 @@ function sendContractClosureEmail($properties) {
         return;
     }
 
-    $to = ADMIN_EMAIL;
+    global $db;
+    
+    // Get all admin users
+    $stmt = $db->prepare("
+        SELECT email, first_name, last_name 
+        FROM users 
+        WHERE role = 'admin' 
+        AND status = 'active'
+    ");
+    $stmt->execute();
+    $adminUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    if (empty($adminUsers)) {
+        error_log("No active admin users found to send contract closure notification");
+        return;
+    }
+    
     $subject = 'Contract Closure Report - ' . date('Y-m-d');
     
     $message = "<h2>Contract Closure Report</h2>";
@@ -50,17 +66,27 @@ function sendContractClosureEmail($properties) {
             $mail->Port = SMTP_PORT;
             
             $mail->setFrom(SMTP_USERNAME, APP_NAME);
-            $mail->addAddress($to);
             $mail->isHTML(true);
             $mail->Subject = $subject;
             $mail->Body = $message;
             
+            // Add all admin users as recipients
+            foreach ($adminUsers as $admin) {
+                $mail->addAddress($admin['email'], $admin['first_name'] . ' ' . $admin['last_name']);
+            }
+            
             $mail->send();
+            error_log("Contract closure notification sent to " . count($adminUsers) . " admin users");
         } catch (Exception $e) {
             error_log("Email could not be sent. Mailer Error: {$mail->ErrorInfo}");
         }
     } else {
-        mail($to, $subject, $message, $headers);
+        // Send email to each admin user
+        foreach ($adminUsers as $admin) {
+            $to = $admin['email'];
+            mail($to, $subject, $message, $headers);
+        }
+        error_log("Contract closure notification sent to " . count($adminUsers) . " admin users using mail()");
     }
 }
 

@@ -25,7 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'username' => $_POST['username'],
                     'password' => $_POST['password'],
                     'email' => $_POST['email'],
-                    'role' => $_POST['role']
+                    'role' => $_POST['role'],
+                    'first_name' => $_POST['first_name'],
+                    'last_name' => $_POST['last_name']
                 ]);
                 if ($result['success']) {
                     $message = 'User created successfully';
@@ -38,7 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $result = $user->update($_POST['id'], [
                     'email' => $_POST['email'],
                     'role' => $_POST['role'],
-                    'status' => $_POST['status']
+                    'status' => $_POST['status'],
+                    'first_name' => $_POST['first_name'],
+                    'last_name' => $_POST['last_name']
                 ]);
                 if ($result['success']) {
                     $message = 'User updated successfully';
@@ -313,6 +317,14 @@ $users = $user->getAll();
                         <div class="mb-3">
                             <label for="username" class="form-label">Username</label>
                             <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="firstName" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="firstName" name="first_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="lastName" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="lastName" name="last_name" required>
                         </div>
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>

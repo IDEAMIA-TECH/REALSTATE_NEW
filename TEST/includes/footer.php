@@ -14,10 +14,22 @@
 
 <style>
 .footer {
+    width: 100%;
     background: var(--primary-color);
     color: white;
     box-shadow: 0 4px 20px var(--shadow-color);
     padding: 2rem 0;
+    position: relative;
+    bottom: 0;
+}
+
+.footer .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
 }
 
 .footer a {
@@ -42,12 +54,6 @@
 .footer p, .footer small {
     margin-bottom: 0;
     font-size: 0.9rem;
-}
-
-.footer .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
 }
 
 @media (max-width: 768px) {

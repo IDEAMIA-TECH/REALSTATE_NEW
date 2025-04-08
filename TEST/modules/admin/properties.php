@@ -30,27 +30,15 @@ function getClosestHomePriceIndex($db, $targetDate) {
         return $exactMatch;
     }
     
-    // If no exact match, get the closest dates before and after
+    // If no exact match, get the closest date before the target date
     $stmt = $db->prepare("
-        (
-            SELECT date, value, ABS(DATEDIFF(date, ?)) as diff
-            FROM home_price_index 
-            WHERE date < ?
-            ORDER BY date DESC
-            LIMIT 1
-        )
-        UNION ALL
-        (
-            SELECT date, value, ABS(DATEDIFF(date, ?)) as diff
-            FROM home_price_index 
-            WHERE date > ?
-            ORDER BY date ASC
-            LIMIT 1
-        )
-        ORDER BY diff ASC
+        SELECT date, value
+        FROM home_price_index 
+        WHERE date < ?
+        ORDER BY date DESC
         LIMIT 1
     ");
-    $stmt->execute([$targetDate, $targetDate, $targetDate, $targetDate]);
+    $stmt->execute([$targetDate]);
     $closestMatch = $stmt->fetch(PDO::FETCH_ASSOC);
     
     return $closestMatch;

@@ -12,6 +12,12 @@ function sendContractClosureEmail($properties) {
         return;
     }
 
+    // Check if ADMIN_EMAIL is defined
+    if (!defined('ADMIN_EMAIL') || empty(ADMIN_EMAIL)) {
+        error_log("ADMIN_EMAIL is not defined or empty. Cannot send contract closure notification.");
+        return;
+    }
+
     $to = ADMIN_EMAIL;
     $subject = 'Contract Closure Report - ' . date('Y-m-d');
     
@@ -56,11 +62,16 @@ function sendContractClosureEmail($properties) {
             $mail->Body = $message;
             
             $mail->send();
+            error_log("Contract closure notification email sent successfully to " . $to);
         } catch (Exception $e) {
             error_log("Email could not be sent. Mailer Error: {$mail->ErrorInfo}");
         }
     } else {
-        mail($to, $subject, $message, $headers);
+        if (mail($to, $subject, $message, $headers)) {
+            error_log("Contract closure notification email sent successfully to " . $to);
+        } else {
+            error_log("Failed to send contract closure notification email to " . $to);
+        }
     }
 }
 

@@ -363,79 +363,91 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
     });
 
     // View Property Modal
-    document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target="#viewPropertyModal"]').forEach(button => {
-        button.addEventListener('click', function(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            const property = JSON.parse(this.getAttribute('data-property'));
-            
-            // Basic Information
-            document.getElementById('view_id').textContent = property.id;
-            document.getElementById('view_address').textContent = property.address;
-            document.getElementById('view_status').textContent = property.status.charAt(0).toUpperCase() + property.status.slice(1);
-            
-            // Financial Information
-            document.getElementById('view_initial_valuation').textContent = '$' + parseFloat(property.initial_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('view_initial_index').textContent = property.initial_index ? parseFloat(property.initial_index).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'N/A';
-            document.getElementById('view_agreed_pct').textContent = property.agreed_pct + '%';
-            document.getElementById('view_total_fees').textContent = '$' + parseFloat(property.total_fees).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('view_option_price').textContent = '$' + parseFloat(property.option_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            
-            // Contract Details
-            document.getElementById('view_effective_date').textContent = property.effective_date;
-            document.getElementById('view_term').textContent = property.term + ' months';
-            
-            // Calculate and display expiration date
-            const effectiveDate = new Date(property.effective_date);
-            const expirationDate = new Date(effectiveDate);
-            expirationDate.setMonth(expirationDate.getMonth() + parseInt(property.term));
-            document.getElementById('view_expiration_date').textContent = expirationDate.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
+    document.addEventListener('DOMContentLoaded', function() {
+        const viewButtons = document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target="#viewPropertyModal"]');
+        viewButtons.forEach(button => {
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                const property = JSON.parse(this.getAttribute('data-property'));
+                
+                // Basic Information
+                document.getElementById('view_id').textContent = property.id;
+                document.getElementById('view_address').textContent = property.address;
+                document.getElementById('view_status').textContent = property.status.charAt(0).toUpperCase() + property.status.slice(1);
+                
+                // Financial Information
+                document.getElementById('view_initial_valuation').textContent = '$' + parseFloat(property.initial_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('view_initial_index').textContent = property.initial_index ? parseFloat(property.initial_index).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'N/A';
+                document.getElementById('view_agreed_pct').textContent = property.agreed_pct + '%';
+                document.getElementById('view_total_fees').textContent = '$' + parseFloat(property.total_fees).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('view_option_price').textContent = '$' + parseFloat(property.option_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                
+                // Contract Details
+                document.getElementById('view_effective_date').textContent = property.effective_date;
+                document.getElementById('view_term').textContent = property.term + ' months';
+                
+                // Calculate and display expiration date
+                const effectiveDate = new Date(property.effective_date);
+                const expirationDate = new Date(effectiveDate);
+                expirationDate.setMonth(expirationDate.getMonth() + parseInt(property.term));
+                document.getElementById('view_expiration_date').textContent = expirationDate.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                // Fetch valuation history
+                fetchValuationHistory(property.id, property);
+
+                // Show the modal
+                const modal = new bootstrap.Modal(document.getElementById('viewPropertyModal'));
+                modal.show();
             });
-
-            // Fetch valuation history
-            fetchValuationHistory(property.id, property);
-
-            // Show the modal
-            const modal = new bootstrap.Modal(document.getElementById('viewPropertyModal'));
-            modal.show();
         });
-    });
 
-    // Improved modal closing logic
-    function closeModal() {
-        const modal = bootstrap.Modal.getInstance(document.getElementById('viewPropertyModal'));
-        if (modal) {
-            modal.hide();
+        // Improved modal closing logic
+        function closeModal() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('viewPropertyModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Remove backdrop and reset body classes
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            
+            document.body.classList.remove('modal-open');
+            document.body.style.paddingRight = '';
+            document.body.style.overflow = '';
         }
-        
-        // Remove backdrop and reset body classes
-        const backdrop = document.querySelector('.modal-backdrop');
-        if (backdrop) {
-            backdrop.remove();
-        }
-        
-        document.body.classList.remove('modal-open');
-        document.body.style.paddingRight = '';
-        document.body.style.overflow = '';
-    }
 
-    // Add event listeners for all possible ways to close the modal
-    document.getElementById('viewPropertyModal').addEventListener('hidden.bs.modal', closeModal);
-    
-    // Close button in modal header
-    document.querySelector('#viewPropertyModal .btn-close').addEventListener('click', closeModal);
-    
-    // Close button in modal footer
-    document.querySelector('#viewPropertyModal .btn-secondary').addEventListener('click', closeModal);
-    
-    // Close when clicking outside the modal
-    document.getElementById('viewPropertyModal').addEventListener('click', function(event) {
-        if (event.target === this) {
-            closeModal();
+        // Add event listeners for all possible ways to close the modal
+        const modalElement = document.getElementById('viewPropertyModal');
+        if (modalElement) {
+            modalElement.addEventListener('hidden.bs.modal', closeModal);
+            
+            // Close button in modal header
+            const closeButton = modalElement.querySelector('.btn-close');
+            if (closeButton) {
+                closeButton.addEventListener('click', closeModal);
+            }
+            
+            // Close button in modal footer
+            const footerButton = modalElement.querySelector('.btn-secondary');
+            if (footerButton) {
+                footerButton.addEventListener('click', closeModal);
+            }
+            
+            // Close when clicking outside the modal
+            modalElement.addEventListener('click', function(event) {
+                if (event.target === this) {
+                    closeModal();
+                }
+            });
         }
     });
 
@@ -444,9 +456,15 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Show loading state
         const tbody = document.getElementById('valuationHistoryBody');
+        if (!tbody) {
+            console.error('Valuation history table body not found');
+            return;
+        }
+        
         tbody.innerHTML = '<tr><td colspan="10" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
         
-        fetch(`get_valuation_history.php?property_id=${propertyId}`, {
+        // Use the correct path for the API endpoint
+        fetch(`<?php echo BASE_URL; ?>/modules/properties/get_valuation_history.php?property_id=${propertyId}`, {
             credentials: 'same-origin',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -455,9 +473,16 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-            return response.json();
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error('Invalid JSON response:', text);
+                    throw new Error('Invalid JSON response from server');
+                }
+            });
         })
         .then(data => {
             console.log('Valuation history response:', data);
@@ -471,7 +496,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         })
         .catch(error => {
             console.error('Error fetching valuation history:', error);
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading valuation history</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading valuation history: ' + error.message + '</td></tr>';
         });
     }
 

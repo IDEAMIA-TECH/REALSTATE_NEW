@@ -91,6 +91,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     $propertyId = $db->lastInsertId();
                     
+                    // Get client and admin information for email
+                    $clientStmt = $db->prepare("SELECT email, name FROM clients WHERE id = ?");
+                    $clientStmt->execute([$_POST['client_id']]);
+                    $client = $clientStmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    $adminStmt = $db->prepare("SELECT email, username FROM users WHERE role = 'admin'");
+                    $adminStmt->execute();
+                    $admin = $adminStmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    // Prepare email content
+                    $subject = "Nueva Propiedad Registrada - " . APP_NAME;
+                    $message = "
+                        <h2>Nueva Propiedad Registrada</h2>
+                        <p>Se ha registrado una nueva propiedad en el sistema:</p>
+                        <ul>
+                            <li><strong>Dirección:</strong> {$_POST['address']}</li>
+                            <li><strong>Valoración Inicial:</strong> $" . number_format($_POST['initial_valuation'], 2) . "</li>
+                            <li><strong>Porcentaje Acordado:</strong> {$_POST['agreed_pct']}%</li>
+                            <li><strong>Tarifas Totales:</strong> $" . number_format($_POST['total_fees'], 2) . "</li>
+                            <li><strong>Fecha Efectiva:</strong> {$_POST['effective_date']}</li>
+                            <li><strong>Plazo:</strong> {$_POST['term']} meses</li>
+                            <li><strong>Precio de Opción:</strong> $" . number_format($_POST['option_price'], 2) . "</li>
+                        </ul>
+                        <p>Puede ver los detalles de la propiedad en el sistema.</p>
+                    ";
+                    
+                    // Send email to admin
+                    if ($admin) {
+                        $adminHeaders = "MIME-Version: 1.0\r\n";
+                        $adminHeaders .= "Content-type: text/html; charset=UTF-8\r\n";
+                        $adminHeaders .= "From: " . APP_NAME . " <noreply@" . $_SERVER['HTTP_HOST'] . ">\r\n";
+                        mail($admin['email'], $subject, $message, $adminHeaders);
+                    }
+                    
+                    // Send email to client
+                    if ($client) {
+                        $clientHeaders = "MIME-Version: 1.0\r\n";
+                        $clientHeaders .= "Content-type: text/html; charset=UTF-8\r\n";
+                        $clientHeaders .= "From: " . APP_NAME . " <noreply@" . $_SERVER['HTTP_HOST'] . ">\r\n";
+                        mail($client['email'], $subject, $message, $clientHeaders);
+                    }
+                    
                     // Create initial valuation
                     $csushpinsa = new CSUSHPINSA();
                     $csushpinsa->updatePropertyValuation($propertyId, $_POST['effective_date']);

@@ -78,19 +78,19 @@ switch ($_SESSION['role']) {
         $dashboardItems = [
             [
                 'title' => 'My Properties',
-                'icon' => '🏠',
+                'icon' => '<i class="fas fa-home"></i>',
                 'link' => BASE_URL . '/modules/properties/list.php',
                 'description' => 'Manage your property listings'
             ],
             [
                 'title' => 'Client Management',
-                'icon' => '👥',
+                'icon' => '<i class="fas fa-users"></i>',
                 'link' => BASE_URL . '/modules/clients/list.php',
                 'description' => 'Manage your clients'
             ],
             [
                 'title' => 'Property Valuations',
-                'icon' => '💰',
+                'icon' => '<i class="fas fa-chart-line"></i>',
                 'link' => BASE_URL . '/modules/valuations/list.php',
                 'description' => 'View property valuations'
             ]

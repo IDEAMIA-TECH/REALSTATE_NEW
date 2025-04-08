@@ -144,11 +144,13 @@ if (!isset($page_title)) {
                                         <i class="fas fa-user me-2"></i>Profile
                                     </a>
                                 </li>
+                                <?php if ($_SESSION['role'] !== 'owner'): ?>
                                 <li>
                                     <a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/settings.php">
                                         <i class="fas fa-cog me-2"></i>Settings
                                     </a>
                                 </li>
+                                <?php endif; ?>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/auth/logout.php">

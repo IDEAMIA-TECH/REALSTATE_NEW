@@ -14,6 +14,40 @@ if (!isset($_SESSION['user_id'])) {
 $user = new User();
 $userData = $user->getById($_SESSION['user_id']);
 
+// Get user's properties
+$db = Database::getInstance()->getConnection();
+$stmt = $db->prepare("
+    SELECT 
+        p.*,
+        c.name as client_name,
+        pv.current_value,
+        pv.appreciation_percentage,
+        pv.valuation_date
+    FROM properties p
+    LEFT JOIN clients c ON p.client_id = c.id
+    LEFT JOIN property_valuations pv ON p.id = pv.property_id
+    WHERE p.client_id = :client_id
+    ORDER BY p.created_at DESC
+");
+$stmt->execute([':client_id' => $userData['client_id']]);
+$properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Calculate statistics
+$totalProperties = count($properties);
+$totalValue = 0;
+$totalAppreciation = 0;
+$totalValuations = 0;
+
+foreach ($properties as $property) {
+    $totalValue += $property['current_value'] ?? 0;
+    $totalAppreciation += $property['appreciation_percentage'] ?? 0;
+    if ($property['valuation_date']) {
+        $totalValuations++;
+    }
+}
+
+$averageAppreciation = $totalProperties > 0 ? $totalAppreciation / $totalProperties : 0;
+
 // Get role-specific dashboard items
 $dashboardItems = [];
 switch ($_SESSION['role']) {
@@ -259,28 +293,28 @@ switch ($_SESSION['role']) {
             <div class="col-md-3">
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-home"></i></div>
-                    <div class="stat-number">0</div>
+                    <div class="stat-number"><?php echo $totalProperties; ?></div>
                     <div class="stat-label">My Properties</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
-                    <div class="stat-number">0</div>
+                    <div class="stat-number">$<?php echo number_format($totalValue, 2); ?></div>
                     <div class="stat-label">Total Value</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-percentage"></i></div>
-                    <div class="stat-number">0%</div>
-                    <div class="stat-label">Appreciation</div>
+                    <div class="stat-number"><?php echo number_format($averageAppreciation, 2); ?>%</div>
+                    <div class="stat-label">Avg. Appreciation</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
-                    <div class="stat-number">0</div>
+                    <div class="stat-number"><?php echo $totalValuations; ?></div>
                     <div class="stat-label">Valuations</div>
                 </div>
             </div>
@@ -291,9 +325,32 @@ switch ($_SESSION['role']) {
             <div class="col-md-6">
                 <div class="activity-card">
                     <h3><i class="fas fa-history me-2"></i>Recent Activity</h3>
-                    <div class="activity-item">
-                        <p class="text-muted">No recent activity</p>
-                    </div>
+                    <?php if (count($properties) > 0): ?>
+                        <?php foreach (array_slice($properties, 0, 5) as $property): ?>
+                            <div class="activity-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong><?php echo htmlspecialchars($property['address']); ?></strong>
+                                        <div class="text-muted">
+                                            Last valuation: <?php echo date('M d, Y', strtotime($property['valuation_date'])); ?>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="text-success">
+                                            <?php echo number_format($property['appreciation_percentage'], 2); ?>%
+                                        </div>
+                                        <div class="text-muted">
+                                            $<?php echo number_format($property['current_value'], 2); ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="activity-item">
+                            <p class="text-muted">No recent activity</p>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -301,21 +358,44 @@ switch ($_SESSION['role']) {
             <div class="col-md-6">
                 <div class="activity-card">
                     <h3><i class="fas fa-building me-2"></i>Recent Properties</h3>
-                    <div class="property-card mb-3">
-                        <div class="property-image" 
-                             style="background-image: url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80');">
-                        </div>
-                        <div class="property-details">
-                            <div class="property-title">No Properties Yet</div>
-                            <div class="property-location">
-                                <i class="fas fa-map-marker-alt me-1"></i>
-                                Add your first property
+                    <?php if (count($properties) > 0): ?>
+                        <?php foreach (array_slice($properties, 0, 3) as $property): ?>
+                            <div class="property-card mb-3">
+                                <div class="property-image" 
+                                     style="background-image: url('<?php echo $property['image_url'] ?: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80'; ?>');">
+                                </div>
+                                <div class="property-details">
+                                    <div class="property-title"><?php echo htmlspecialchars($property['address']); ?></div>
+                                    <div class="property-location">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        <?php echo htmlspecialchars($property['city'] . ', ' . $property['state']); ?>
+                                    </div>
+                                    <div class="property-price">
+                                        $<?php echo number_format($property['current_value'], 2); ?>
+                                        <small class="text-success ms-2">
+                                            <?php echo number_format($property['appreciation_percentage'], 2); ?>%
+                                        </small>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="property-price">
-                                $0.00
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="property-card mb-3">
+                            <div class="property-image" 
+                                 style="background-image: url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80');">
+                            </div>
+                            <div class="property-details">
+                                <div class="property-title">No Properties Yet</div>
+                                <div class="property-location">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    Add your first property
+                                </div>
+                                <div class="property-price">
+                                    $0.00
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

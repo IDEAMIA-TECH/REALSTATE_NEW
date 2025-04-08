@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $email = $_POST['email'];
                 $phone = $_POST['phone'];
                 $address = $_POST['address'];
-                $status = $_POST['status'];
+                $status = 'active'; // Set default status
                 $created_by = $_SESSION['user_id'];
 
                 // Start transaction
@@ -65,8 +65,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['error'] = "Error creating client: " . $e->getMessage();
                 }
 
-                header("Location: clients.php");
-                exit;
+                // Redirect after all processing is done
+                if (!headers_sent()) {
+                    header("Location: clients.php");
+                    exit;
+                } else {
+                    echo '<script>window.location.href = "clients.php";</script>';
+                    exit;
+                }
                 
             case 'update':
                 try {

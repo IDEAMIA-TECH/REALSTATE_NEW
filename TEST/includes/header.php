@@ -36,32 +36,156 @@ if (!isset($page_title)) {
     <title><?php echo htmlspecialchars($page_title); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="<?php echo BASE_URL; ?>/assets/css/global.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #4A3728;
+            --secondary-color: #8B7355;
+            --accent-color: #D2B48C;
+            --background-color: #FAF6F1;
+            --text-color: #4A3728;
+            --border-color: #D2B48C;
+            --hover-color: #6B4423;
+            --shadow-color: rgba(74, 55, 40, 0.1);
+        }
+
+        .navbar {
+            background: var(--primary-color);
+            padding: 1rem 0;
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            color: var(--background-color) !important;
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: 0.5px;
+        }
+
         .navbar-brand img {
-            height: 60px;
+            height: 50px;
             width: auto;
             margin-right: 15px;
             filter: brightness(0) invert(1);
+            transition: all 0.3s ease;
         }
-        .navbar {
-            background: linear-gradient(135deg, #2c3e50, #3498db);
-            padding: 0.8rem 0;
+
+        .navbar-dark .navbar-nav .nav-link {
+            color: var(--accent-color);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            position: relative;
         }
-        .navbar-dark .navbar-brand {
-            display: flex;
-            align-items: center;
-            color: #ffffff;
-            font-weight: 600;
-            font-size: 1.8rem;
+
+        .navbar-dark .navbar-nav .nav-link:hover,
+        .navbar-dark .navbar-nav .nav-link.active {
+            color: var(--background-color);
         }
-        
+
+        .navbar-dark .navbar-nav .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--accent-color);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+
+        .navbar-dark .navbar-nav .nav-link:hover::after,
+        .navbar-dark .navbar-nav .nav-link.active::after {
+            width: 80%;
+        }
+
+        .dropdown-menu {
+            background: var(--background-color);
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px var(--shadow-color);
+            padding: 1rem 0;
+            margin-top: 10px;
+        }
+
+        .dropdown-item {
+            color: var(--text-color);
+            padding: 0.7rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-item:hover {
+            background: var(--primary-color);
+            color: var(--background-color);
+        }
+
+        .dropdown-item i {
+            color: var(--secondary-color);
+            width: 20px;
+            text-align: center;
+            margin-right: 10px;
+        }
+
+        .dropdown-item:hover i {
+            color: var(--accent-color);
+        }
+
+        .dropdown-divider {
+            border-color: var(--border-color);
+            opacity: 0.1;
+            margin: 0.5rem 0;
+        }
+
+        .navbar-toggler {
+            border: 2px solid var(--accent-color);
+            padding: 0.5rem;
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: none;
+            border-color: var(--background-color);
+        }
+
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(210, 180, 140, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
         @media (max-width: 768px) {
-            .navbar-brand img {
-                height: 50px;
-            }
-            .navbar-dark .navbar-brand {
+            .navbar-brand {
                 font-size: 1.5rem;
+            }
+
+            .navbar-brand img {
+                height: 40px;
+            }
+
+            .dropdown-menu {
+                border-radius: 0;
+                box-shadow: none;
+                background: transparent;
+                padding: 0;
+            }
+
+            .dropdown-item {
+                color: var(--accent-color);
+                padding: 0.5rem 1rem;
+            }
+
+            .dropdown-item:hover {
+                background: transparent;
+                color: var(--background-color);
+            }
+
+            .dropdown-divider {
+                border-color: var(--accent-color);
+                opacity: 0.1;
             }
         }
     </style>

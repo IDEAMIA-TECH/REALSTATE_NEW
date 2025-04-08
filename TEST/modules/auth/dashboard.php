@@ -79,7 +79,7 @@ switch ($_SESSION['role']) {
             [
                 'title' => 'My Properties',
                 'icon' => '<i class="fas fa-home"></i>',
-                'link' => BASE_URL . '/modules/properties/list.php',
+                'link' => BASE_URL . '/modules/auth/my_properties.php',
                 'description' => 'Manage your property listings'
             ],
             [

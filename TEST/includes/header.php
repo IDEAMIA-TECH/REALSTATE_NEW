@@ -87,12 +87,12 @@ if (session_status() === PHP_SESSION_NONE) {
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
-                                    <a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/auth/profile.php">
+                                    <a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/profile.php">
                                         <i class="fas fa-user me-2"></i>Profile
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/auth/settings.php">
+                                    <a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/settings.php">
                                         <i class="fas fa-cog me-2"></i>Settings
                                     </a>
                                 </li>

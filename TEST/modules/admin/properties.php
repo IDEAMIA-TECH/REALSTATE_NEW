@@ -552,6 +552,26 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .debug-entry:last-child {
             border-bottom: none;
         }
+
+        .status-expired {
+            background-color: rgba(108, 117, 125, 0.1);
+            color: #6c757d;
+        }
+        
+        .property-profit {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2ecc71;
+            margin: 0.5rem 0;
+        }
+        
+        .text-danger {
+            color: #e74c3c !important;
+        }
+        
+        .meta-item.text-danger i {
+            color: #e74c3c;
+        }
     </style>
 </head>
 <body>
@@ -592,8 +612,18 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <div class="property-card">
                         <div class="property-header">
                             <h5 class="property-title"><?php echo htmlspecialchars($property['address']); ?></h5>
-                            <span class="property-status status-<?php echo htmlspecialchars($property['status']); ?>">
-                                <?php echo ucfirst(htmlspecialchars($property['status'])); ?>
+                            <?php
+                            $effectiveDate = new DateTime($property['effective_date']);
+                            $expirationDate = clone $effectiveDate;
+                            $expirationDate->modify('+' . $property['term'] . ' months');
+                            $today = new DateTime();
+                            $isExpired = $expirationDate < $today;
+                            
+                            $statusClass = $isExpired ? 'status-expired' : 'status-' . $property['status'];
+                            $statusText = $isExpired ? 'Contrato Cerrado' : ucfirst($property['status']);
+                            ?>
+                            <span class="property-status <?php echo $statusClass; ?>">
+                                <?php echo $statusText; ?>
                             </span>
                         </div>
 
@@ -601,6 +631,27 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <div class="property-value">
                                 $<?php echo number_format($property['initial_valuation'], 2); ?>
                             </div>
+                            <?php if ($isExpired): 
+                                // Fetch latest valuation for expired properties
+                                $valuationStmt = $db->prepare("
+                                    SELECT appreciation 
+                                    FROM property_valuations 
+                                    WHERE property_id = ? 
+                                    ORDER BY valuation_date DESC 
+                                    LIMIT 1
+                                ");
+                                $valuationStmt->execute([$property['id']]);
+                                $latestValuation = $valuationStmt->fetch(PDO::FETCH_ASSOC);
+                                
+                                if ($latestValuation) {
+                                    $appreciation = floatval($latestValuation['appreciation']);
+                                    $userProfit = $appreciation > 0 ? $appreciation * ($property['agreed_pct'] / 100) : 0;
+                                    ?>
+                                    <div class="property-profit">
+                                        User Profit: $<?php echo number_format($userProfit, 2); ?>
+                                    </div>
+                                <?php } ?>
+                            <?php endif; ?>
                             <div class="property-meta">
                                 <div class="meta-item">
                                     <i class="fas fa-user"></i>
@@ -620,14 +671,9 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <i class="fas fa-clock"></i>
                                     <?php echo htmlspecialchars($property['term']); ?> months
                                 </div>
-                                <div class="meta-item">
+                                <div class="meta-item <?php echo $isExpired ? 'text-danger' : ''; ?>">
                                     <i class="fas fa-calendar-times"></i>
-                                    <?php 
-                                        $effectiveDate = new DateTime($property['effective_date']);
-                                        $expirationDate = clone $effectiveDate;
-                                        $expirationDate->modify('+' . $property['term'] . ' months');
-                                        echo $expirationDate->format('Y-m-d');
-                                    ?>
+                                    <?php echo $expirationDate->format('Y-m-d'); ?>
                                 </div>
                             </div>
                         </div>
@@ -639,26 +685,28 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     data-property='<?php echo json_encode($property); ?>'>
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button type="button" class="action-button btn-edit" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#editPropertyModal"
-                                    data-property='<?php echo json_encode($property); ?>'>
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <?php if ($property['status'] === 'active'): ?>
-                            <button type="button" class="action-button btn-cancel"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#cancelContractModal"
-                                    data-property='<?php echo json_encode($property); ?>'>
-                                <i class="fas fa-times"></i>
-                            </button>
+                            <?php if (!$isExpired): ?>
+                                <button type="button" class="action-button btn-edit" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editPropertyModal"
+                                        data-property='<?php echo json_encode($property); ?>'>
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <?php if ($property['status'] === 'active'): ?>
+                                    <button type="button" class="action-button btn-cancel"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#cancelContractModal"
+                                            data-property='<?php echo json_encode($property); ?>'>
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                <?php endif; ?>
+                                <button type="button" class="action-button btn-delete"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deletePropertyModal"
+                                        data-property-id="<?php echo $property['id']; ?>">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             <?php endif; ?>
-                            <button type="button" class="action-button btn-delete"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#deletePropertyModal"
-                                    data-property-id="<?php echo $property['id']; ?>">
-                                <i class="fas fa-trash"></i>
-                            </button>
                         </div>
                     </div>
                 </div>

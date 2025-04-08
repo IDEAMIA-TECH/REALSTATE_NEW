@@ -13,6 +13,7 @@ try {
             p.id,
             p.effective_date,
             p.term,
+            p.status,
             DATE_ADD(p.effective_date, INTERVAL p.term MONTH) as expiration_date
         FROM properties p
         WHERE p.status = 'active'
@@ -29,7 +30,16 @@ try {
             // Start transaction
             $db->beginTransaction();
 
-            // 1. Update property status to 'closed'
+            // 1. Verify property exists and is active
+            $checkStmt = $db->prepare("SELECT status FROM properties WHERE id = ?");
+            $checkStmt->execute([$property['id']]);
+            $propertyStatus = $checkStmt->fetchColumn();
+            
+            if (!$propertyStatus || $propertyStatus !== 'active') {
+                throw new Exception("Property {$property['id']} not found or not active");
+            }
+
+            // 2. Update property status to 'closed'
             $updateStmt = $db->prepare("
                 UPDATE properties 
                 SET 
@@ -40,11 +50,11 @@ try {
             ");
             $updateStmt->execute([$property['expiration_date'], $property['id']]);
 
-            // 2. Get the CSUSHPINSA index for the closing date
+            // 3. Get the CSUSHPINSA index for the closing date
             $csushpinsa = new CSUSHPINSA();
             $csushpinsa->updatePropertyValuation($property['id'], $property['expiration_date']);
 
-            // 3. Log the closure in activity_log
+            // 4. Log the closure in activity_log
             $logStmt = $db->prepare("
                 INSERT INTO activity_log (
                     user_id,
@@ -54,7 +64,7 @@ try {
                     details,
                     created_at
                 ) VALUES (
-                    0,
+                    NULL,
                     'contract_closed',
                     'property',
                     ?,

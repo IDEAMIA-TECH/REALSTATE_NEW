@@ -24,27 +24,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $db->beginTransaction();
 
             // Update email settings in settings table
-            $stmt = $db->prepare("
-                INSERT INTO system_settings (setting_key, setting_value, updated_at)
-                VALUES 
-                    ('smtp_host', ?, NOW()),
-                    ('smtp_port', ?, NOW()),
-                    ('smtp_username', ?, NOW()),
-                    ('smtp_password', ?, NOW())
-                ON DUPLICATE KEY UPDATE 
-                    setting_value = VALUES(setting_value),
-                    updated_at = NOW()
-            ");
-
-            // Execute for each email setting
             $emailSettings = [
-                ['smtp_host', $_POST['smtp_host']],
-                ['smtp_port', $_POST['smtp_port']],
-                ['smtp_username', $_POST['smtp_username']],
-                ['smtp_password', $_POST['smtp_password']]
+                'smtp_host' => $_POST['smtp_host'],
+                'smtp_port' => $_POST['smtp_port'],
+                'smtp_username' => $_POST['smtp_username'],
+                'smtp_password' => $_POST['smtp_password']
             ];
 
-            foreach ($emailSettings as $setting) {
+            foreach ($emailSettings as $key => $value) {
                 $stmt = $db->prepare("
                     INSERT INTO system_settings (setting_key, setting_value, updated_at)
                     VALUES (?, ?, NOW())
@@ -52,7 +39,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         setting_value = VALUES(setting_value),
                         updated_at = NOW()
                 ");
-                $stmt->execute($setting);
+                $stmt->execute([$key, $value]);
+            }
+
+            // Update config.php file
+            $configFile = __DIR__ . '/../../config.php';
+            $configContent = file_get_contents($configFile);
+            
+            // Update each email setting in the config file
+            foreach ($emailSettings as $key => $value) {
+                $constantName = strtoupper($key);
+                $pattern = "/define\('" . $constantName . "',\s*'[^']*'\);/";
+                $replacement = "define('" . $constantName . "', '" . addslashes($value) . "');";
+                $configContent = preg_replace($pattern, $replacement, $configContent);
+            }
+            
+            // Write the updated content back to the file
+            if (file_put_contents($configFile, $configContent) === false) {
+                throw new Exception("Failed to update config file");
             }
 
             // Log the activity
@@ -105,6 +109,16 @@ try {
 } catch (Exception $e) {
     $error = 'Error loading settings: ' . $e->getMessage();
     $settings = [];
+}
+
+// If no settings in database, use config.php values
+if (empty($settings)) {
+    $settings = [
+        'smtp_host' => SMTP_HOST,
+        'smtp_port' => SMTP_PORT,
+        'smtp_username' => SMTP_USERNAME,
+        'smtp_password' => SMTP_PASSWORD
+    ];
 }
 ?>
 

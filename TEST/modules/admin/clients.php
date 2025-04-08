@@ -500,7 +500,7 @@ $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <h5 class="modal-title">Add New Client</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form method="POST" action="">
+                <form method="POST" action="clients.php">
                     <div class="modal-body">
                         <input type="hidden" name="action" value="create">
                         
@@ -657,6 +657,15 @@ $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
             const savedView = localStorage.getItem('clientViewPreference');
             if (savedView === 'table') {
                 tableView.click();
+            }
+        });
+
+        // Add debug logging for form submission
+        document.querySelector('form').addEventListener('submit', function(e) {
+            console.log('Form submitted');
+            const formData = new FormData(this);
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
             }
         });
     </script>

@@ -39,21 +39,30 @@ if (!isset($page_title)) {
     <link href="<?php echo BASE_URL; ?>/assets/css/global.css" rel="stylesheet">
     <style>
         .navbar-brand img {
-            height: 40px;
+            height: 60px;
             width: auto;
-            margin-right: 10px;
+            margin-right: 15px;
             filter: brightness(0) invert(1);
         }
         .navbar {
             background: linear-gradient(135deg, #2c3e50, #3498db);
-            padding: 1rem 0;
+            padding: 0.8rem 0;
         }
         .navbar-dark .navbar-brand {
             display: flex;
             align-items: center;
             color: #ffffff;
             font-weight: 600;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
+        }
+        
+        @media (max-width: 768px) {
+            .navbar-brand img {
+                height: 50px;
+            }
+            .navbar-dark .navbar-brand {
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>

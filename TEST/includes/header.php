@@ -42,6 +42,7 @@ if (!isset($page_title)) {
             height: 40px;
             width: auto;
             margin-right: 10px;
+            filter: brightness(0) invert(1);
         }
         .navbar {
             background: linear-gradient(135deg, #2c3e50, #3498db);

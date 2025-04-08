@@ -216,13 +216,13 @@ $users = $db->query("SELECT id, username FROM users WHERE status = 'active'")->f
         }
 
         .badge-action {
-            background: rgba(41, 128, 185, 0.1);
-            color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
         }
 
         .badge-entity {
-            background: rgba(52, 152, 219, 0.1);
-            color: #3498db;
+            background: var(--secondary-color);
+            color: white;
         }
 
         .activity-details {

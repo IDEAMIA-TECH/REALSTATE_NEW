@@ -3,6 +3,7 @@
 session_start();
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../auth/User.php';
+require_once __DIR__ . '/../../config/database.php';
 
 // Check if user is logged in and is admin
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -13,13 +14,97 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 // Initialize variables
 $message = '';
 $error = '';
+$db = Database::getInstance()->getConnection();
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action']) && $_POST['action'] === 'update_settings') {
-        // Here you would typically update settings in a database or config file
-        $message = 'Settings updated successfully';
+        try {
+            // Start transaction
+            $db->beginTransaction();
+
+            // Update email settings in settings table
+            $stmt = $db->prepare("
+                INSERT INTO system_settings (setting_key, setting_value, updated_at)
+                VALUES 
+                    ('smtp_host', ?, NOW()),
+                    ('smtp_port', ?, NOW()),
+                    ('smtp_username', ?, NOW()),
+                    ('smtp_password', ?, NOW())
+                ON DUPLICATE KEY UPDATE 
+                    setting_value = VALUES(setting_value),
+                    updated_at = NOW()
+            ");
+
+            // Execute for each email setting
+            $emailSettings = [
+                ['smtp_host', $_POST['smtp_host']],
+                ['smtp_port', $_POST['smtp_port']],
+                ['smtp_username', $_POST['smtp_username']],
+                ['smtp_password', $_POST['smtp_password']]
+            ];
+
+            foreach ($emailSettings as $setting) {
+                $stmt = $db->prepare("
+                    INSERT INTO system_settings (setting_key, setting_value, updated_at)
+                    VALUES (?, ?, NOW())
+                    ON DUPLICATE KEY UPDATE 
+                        setting_value = VALUES(setting_value),
+                        updated_at = NOW()
+                ");
+                $stmt->execute($setting);
+            }
+
+            // Log the activity
+            $logStmt = $db->prepare("
+                INSERT INTO activity_log (
+                    user_id,
+                    action,
+                    entity_type,
+                    entity_id,
+                    details,
+                    created_at
+                ) VALUES (
+                    ?,
+                    'update_settings',
+                    'system',
+                    0,
+                    ?,
+                    NOW()
+                )
+            ");
+
+            $logStmt->execute([
+                $_SESSION['user_id'],
+                json_encode([
+                    'updated_settings' => [
+                        'smtp_host' => $_POST['smtp_host'],
+                        'smtp_port' => $_POST['smtp_port'],
+                        'smtp_username' => $_POST['smtp_username'],
+                        'smtp_password' => '********' // No registrar la contraseña real
+                    ]
+                ])
+            ]);
+
+            // Commit transaction
+            $db->commit();
+            $message = 'Settings updated successfully';
+
+        } catch (Exception $e) {
+            // Rollback transaction on error
+            $db->rollBack();
+            $error = 'Error updating settings: ' . $e->getMessage();
+        }
     }
+}
+
+// Get current settings from database
+try {
+    $stmt = $db->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('smtp_host', 'smtp_port', 'smtp_username', 'smtp_password')");
+    $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+} catch (Exception $e) {
+    $error = 'Error loading settings: ' . $e->getMessage();
+    $settings = [];
 }
 ?>
 
@@ -49,11 +134,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         
         <?php if ($message): ?>
-            <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
+            <div class="alert alert-success alert-dismissible fade show">
+                <i class="fas fa-check-circle me-2"></i>
+                <?php echo htmlspecialchars($message); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         <?php endif; ?>
         
         <?php if ($error): ?>
-            <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
+            <div class="alert alert-danger alert-dismissible fade show">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <?php echo htmlspecialchars($error); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         <?php endif; ?>
         
         <form method="POST" action="">
@@ -87,22 +180,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="mb-3">
                         <label for="smtp_host" class="form-label">SMTP Host</label>
                         <input type="text" class="form-control" id="smtp_host" name="smtp_host" 
-                               value="<?php echo htmlspecialchars(SMTP_HOST ?? ''); ?>">
+                               value="<?php echo htmlspecialchars($settings['smtp_host'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
                         <label for="smtp_port" class="form-label">SMTP Port</label>
                         <input type="number" class="form-control" id="smtp_port" name="smtp_port" 
-                               value="<?php echo htmlspecialchars(SMTP_PORT ?? ''); ?>">
+                               value="<?php echo htmlspecialchars($settings['smtp_port'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
                         <label for="smtp_username" class="form-label">SMTP Username</label>
                         <input type="text" class="form-control" id="smtp_username" name="smtp_username" 
-                               value="<?php echo htmlspecialchars(SMTP_USERNAME ?? ''); ?>">
+                               value="<?php echo htmlspecialchars($settings['smtp_username'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
                         <label for="smtp_password" class="form-label">SMTP Password</label>
                         <input type="password" class="form-control" id="smtp_password" name="smtp_password" 
-                               value="<?php echo htmlspecialchars(SMTP_PASSWORD ?? ''); ?>">
+                               value="<?php echo htmlspecialchars($settings['smtp_password'] ?? ''); ?>">
                     </div>
                 </div>
             </div>
@@ -128,7 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div class="text-end">
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Save Settings
+                    <i class="fas fa-save me-2"></i> Save Settings
                 </button>
             </div>
         </form>

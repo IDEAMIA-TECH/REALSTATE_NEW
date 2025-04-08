@@ -14,6 +14,8 @@ try {
             p.effective_date,
             p.term,
             p.status,
+            p.initial_index,
+            p.initial_valuation,
             DATE_ADD(p.effective_date, INTERVAL p.term MONTH) as expiration_date
         FROM properties p
         WHERE p.status = 'active'
@@ -24,6 +26,8 @@ try {
 
     // Log the start of the process
     error_log("Starting contract closure process. Found " . count($expiredProperties) . " expired contracts.");
+
+    $csushpinsa = new CSUSHPINSA();
 
     foreach ($expiredProperties as $property) {
         try {
@@ -39,22 +43,53 @@ try {
                 throw new Exception("Property {$property['id']} not found or not active");
             }
 
-            // 2. Update property status to 'closed'
+            // 2. Get the closing index value
+            // First ensure we have the latest data
+            $csushpinsa->fetchHistoricalData($property['effective_date'], $property['expiration_date']);
+            
+            // Get the index value for the closing date
+            $indexStmt = $db->prepare("
+                SELECT value 
+                FROM home_price_index 
+                WHERE date <= ?
+                ORDER BY date DESC
+                LIMIT 1
+            ");
+            $indexStmt->execute([$property['expiration_date']]);
+            $closingIndex = $indexStmt->fetchColumn();
+            
+            if (!$closingIndex) {
+                throw new Exception("Could not get closing index value for property {$property['id']}");
+            }
+
+            // 3. Calculate final appreciation
+            $appreciation = $csushpinsa->calculatePropertyAppreciation($property['id'], $property['expiration_date']);
+            
+            if (!$appreciation) {
+                throw new Exception("Could not calculate final appreciation for property {$property['id']}");
+            }
+
+            // 4. Update property status to 'closed' and add closing index
             $updateStmt = $db->prepare("
                 UPDATE properties 
                 SET 
                     status = 'closed',
                     closing_date = ?,
+                    closing_index = ?,
+                    final_appreciation = ?,
+                    final_share_appreciation = ?,
                     updated_at = NOW()
                 WHERE id = ?
             ");
-            $updateStmt->execute([$property['expiration_date'], $property['id']]);
+            $updateStmt->execute([
+                $property['expiration_date'],
+                $closingIndex,
+                $appreciation['appreciation'],
+                $appreciation['share_appreciation'],
+                $property['id']
+            ]);
 
-            // 3. Get the CSUSHPINSA index for the closing date
-            $csushpinsa = new CSUSHPINSA();
-            $csushpinsa->updatePropertyValuation($property['id'], $property['expiration_date']);
-
-            // 4. Log the closure in activity_log
+            // 5. Log the closure in activity_log
             $logStmt = $db->prepare("
                 INSERT INTO activity_log (
                     user_id,
@@ -76,6 +111,12 @@ try {
                 $property['id'],
                 json_encode([
                     'expiration_date' => $property['expiration_date'],
+                    'initial_index' => $property['initial_index'],
+                    'closing_index' => $closingIndex,
+                    'initial_valuation' => $property['initial_valuation'],
+                    'final_appreciation' => $appreciation['appreciation'],
+                    'final_share_appreciation' => $appreciation['share_appreciation'],
+                    'appreciation_rate' => $appreciation['appreciation_rate'],
                     'closure_type' => 'automatic',
                     'closed_by' => 'system'
                 ])
@@ -84,7 +125,10 @@ try {
             // Commit transaction
             $db->commit();
 
-            error_log("Successfully closed contract for property ID: " . $property['id']);
+            error_log("Successfully closed contract for property ID: " . $property['id'] . 
+                     " with closing index: " . $closingIndex . 
+                     ", appreciation: " . $appreciation['appreciation'] . 
+                     ", share appreciation: " . $appreciation['share_appreciation']);
         } catch (Exception $e) {
             // Rollback transaction on error
             $db->rollBack();

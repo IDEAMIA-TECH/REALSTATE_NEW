@@ -277,6 +277,8 @@ $users = $user->getAll();
                                         data-bs-target="#editUserModal"
                                         data-id="<?php echo $user['id']; ?>"
                                         data-username="<?php echo htmlspecialchars($user['username']); ?>"
+                                        data-first-name="<?php echo htmlspecialchars($user['first_name']); ?>"
+                                        data-last-name="<?php echo htmlspecialchars($user['last_name']); ?>"
                                         data-email="<?php echo htmlspecialchars($user['email']); ?>"
                                         data-role="<?php echo htmlspecialchars($user['role']); ?>"
                                         data-status="<?php echo htmlspecialchars($user['status']); ?>">
@@ -355,6 +357,14 @@ $users = $user->getAll();
                             <input type="text" class="form-control" id="editUsername" readonly>
                         </div>
                         <div class="mb-3">
+                            <label for="editFirstName" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="editFirstName" name="first_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editLastName" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="editLastName" name="last_name" required>
+                        </div>
+                        <div class="mb-3">
                             <label for="editEmail" class="form-label">Email</label>
                             <input type="email" class="form-control" id="editEmail" name="email" required>
                         </div>
@@ -415,6 +425,8 @@ $users = $user->getAll();
                 const modal = document.getElementById('editUserModal');
                 modal.querySelector('#editUserId').value = button.dataset.id;
                 modal.querySelector('#editUsername').value = button.dataset.username;
+                modal.querySelector('#editFirstName').value = button.dataset.firstName;
+                modal.querySelector('#editLastName').value = button.dataset.lastName;
                 modal.querySelector('#editEmail').value = button.dataset.email;
                 modal.querySelector('#editRole').value = button.dataset.role;
                 modal.querySelector('#editStatus').value = button.dataset.status;

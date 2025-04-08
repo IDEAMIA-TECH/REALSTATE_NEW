@@ -282,7 +282,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         </div>
                                     </div>
                                     <div class="property-actions">
-                                        <button class="btn btn-outline-primary" onclick="window.location.href='<?php echo BASE_URL; ?>/modules/properties/view.php?id=<?php echo $property['id']; ?>'">
+                                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#viewPropertyModal" data-property='<?php echo json_encode($property); ?>'>
                                             <i class="fas fa-eye me-2"></i>View Details
                                         </button>
                                     </div>
@@ -317,7 +317,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <td><?php echo $property['term']; ?> months</td>
                                 <td><span class="status-badge">Active</span></td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary" onclick="window.location.href='<?php echo BASE_URL; ?>/modules/properties/view.php?id=<?php echo $property['id']; ?>'">
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#viewPropertyModal" data-property='<?php echo json_encode($property); ?>'>
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </td>
@@ -361,6 +361,126 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             button.click();
         }
     });
+
+    // View Property Modal
+    document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target="#viewPropertyModal"]').forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const property = JSON.parse(this.getAttribute('data-property'));
+            
+            // Basic Information
+            document.getElementById('view_id').textContent = property.id;
+            document.getElementById('view_address').textContent = property.address;
+            document.getElementById('view_status').textContent = property.status.charAt(0).toUpperCase() + property.status.slice(1);
+            
+            // Financial Information
+            document.getElementById('view_initial_valuation').textContent = '$' + parseFloat(property.initial_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('view_initial_index').textContent = property.initial_index ? parseFloat(property.initial_index).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'N/A';
+            document.getElementById('view_agreed_pct').textContent = property.agreed_pct + '%';
+            document.getElementById('view_total_fees').textContent = '$' + parseFloat(property.total_fees).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('view_option_price').textContent = '$' + parseFloat(property.option_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
+            // Contract Details
+            document.getElementById('view_effective_date').textContent = property.effective_date;
+            document.getElementById('view_term').textContent = property.term + ' months';
+            
+            // Calculate and display expiration date
+            const effectiveDate = new Date(property.effective_date);
+            const expirationDate = new Date(effectiveDate);
+            expirationDate.setMonth(expirationDate.getMonth() + parseInt(property.term));
+            document.getElementById('view_expiration_date').textContent = expirationDate.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('viewPropertyModal'));
+            modal.show();
+        });
+    });
     </script>
+
+    <!-- View Property Modal -->
+    <div class="modal fade" id="viewPropertyModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Property Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h6>Property Details</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>ID:</th>
+                                    <td id="view_id"></td>
+                                </tr>
+                                <tr>
+                                    <th>Address:</th>
+                                    <td id="view_address"></td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td id="view_status"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <h6>Financial Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Initial Valuation:</th>
+                                    <td id="view_initial_valuation"></td>
+                                </tr>
+                                <tr>
+                                    <th>Initial Index:</th>
+                                    <td id="view_initial_index"></td>
+                                </tr>
+                                <tr>
+                                    <th>Agreed Percentage:</th>
+                                    <td id="view_agreed_pct"></td>
+                                </tr>
+                                <tr>
+                                    <th>Total Fees:</th>
+                                    <td id="view_total_fees"></td>
+                                </tr>
+                                <tr>
+                                    <th>Option Price:</th>
+                                    <td id="view_option_price"></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Contract Details</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Effective Date:</th>
+                                    <td id="view_effective_date"></td>
+                                </tr>
+                                <tr>
+                                    <th>Term:</th>
+                                    <td id="view_term"></td>
+                                </tr>
+                                <tr>
+                                    <th>Expiration Date:</th>
+                                    <td id="view_expiration_date"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html> 

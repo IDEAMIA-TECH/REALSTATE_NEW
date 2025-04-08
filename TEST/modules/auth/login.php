@@ -130,11 +130,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 8px;
             border: 1px solid #ddd;
             transition: all 0.3s ease;
+            height: 45px;
         }
 
-        .form-control:focus {
+        .input-group-text {
+            height: 45px;
+            border-radius: 8px 0 0 8px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-right: none;
+            padding: 0 15px;
+        }
+
+        .input-group .form-control {
+            border-radius: 0 8px 8px 0;
+            border-left: none;
+        }
+
+        .input-group .form-control:focus {
+            border-color: #ddd;
+            box-shadow: none;
+        }
+
+        .input-group:focus-within .input-group-text {
             border-color: var(--secondary-color);
-            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .input-group:focus-within .form-control {
+            border-color: var(--secondary-color);
         }
 
         .btn-login {
@@ -268,10 +291,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <i class="fas fa-sign-in-alt"></i> Sign In
                     </button>
                 </form>
-                
-                <div class="register-link">
-                    <p>Don't have an account? <a href="<?php echo BASE_URL; ?>/modules/auth/register.php">Create one</a></p>
-                </div>
             </div>
         </div>
     </div>

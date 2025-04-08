@@ -613,6 +613,47 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 opacity: 0.5;
             }
         }
+
+        .property-avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: var(--secondary-color);
+        }
+
+        .table .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-start;
+        }
+
+        .btn-group .btn-outline-primary.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .table > :not(caption) > * > * {
+            padding: 1rem 0.75rem;
+            vertical-align: middle;
+        }
+
+        .table .property-value {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .table .property-meta {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -642,12 +683,23 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="h4 mb-0">All Properties</h2>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPropertyModal">
-                <i class="fas fa-plus me-2"></i>Add New Property
-            </button>
+            <div class="d-flex gap-3">
+                <div class="btn-group" role="group" aria-label="View toggle">
+                    <button type="button" class="btn btn-outline-primary active" id="cardView">
+                        <i class="fas fa-th-large"></i> Cards
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="tableView">
+                        <i class="fas fa-table"></i> Table
+                    </button>
+                </div>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPropertyModal">
+                    <i class="fas fa-plus me-2"></i>Add New Property
+                </button>
+            </div>
         </div>
 
-        <div class="row">
+        <!-- Card View -->
+        <div class="row" id="cardViewContainer">
             <?php foreach ($properties as $property): ?>
                 <div class="col-md-6 col-lg-4">
                     <div class="property-card">
@@ -755,6 +807,101 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                 </div>
             <?php endforeach; ?>
+        </div>
+
+        <!-- Table View -->
+        <div class="table-responsive" id="tableViewContainer" style="display: none;">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Address</th>
+                        <th>Client</th>
+                        <th>Financial Details</th>
+                        <th>Contract Details</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($properties as $property): 
+                        $effectiveDate = new DateTime($property['effective_date']);
+                        $expirationDate = clone $effectiveDate;
+                        $expirationDate->modify('+' . $property['term'] . ' months');
+                        $today = new DateTime();
+                        $isExpired = $expirationDate < $today;
+                        
+                        $statusClass = $isExpired ? 'status-expired pulse' : 'status-' . $property['status'];
+                        $statusText = $isExpired ? 'Contract Closed' : ucfirst($property['status']);
+                    ?>
+                    <tr>
+                        <td>
+                            <strong><?php echo htmlspecialchars($property['address']); ?></strong>
+                        </td>
+                        <td><?php echo htmlspecialchars($property['client_name']); ?></td>
+                        <td>
+                            <div class="property-value">
+                                $<?php echo number_format($property['initial_valuation'], 2); ?>
+                            </div>
+                            <div class="property-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-percentage"></i>
+                                    <?php echo number_format($property['agreed_pct'], 2); ?>%
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-dollar-sign"></i>
+                                    $<?php echo number_format($property['total_fees'], 2); ?>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div><i class="fas fa-calendar"></i> <?php echo htmlspecialchars($property['effective_date']); ?></div>
+                            <div><i class="fas fa-clock"></i> <?php echo htmlspecialchars($property['term']); ?> months</div>
+                            <div><i class="fas fa-calendar-times"></i> <?php echo $expirationDate->format('Y-m-d'); ?></div>
+                        </td>
+                        <td>
+                            <span class="property-status <?php echo $statusClass; ?>">
+                                <?php if ($isExpired): ?>
+                                    <i class="fas fa-lock me-1"></i>
+                                <?php endif; ?>
+                                <?php echo $statusText; ?>
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button type="button" class="action-button btn-view" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#viewPropertyModal"
+                                        data-property='<?php echo json_encode($property); ?>'>
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <?php if (!$isExpired): ?>
+                                    <button type="button" class="action-button btn-edit" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editPropertyModal"
+                                            data-property='<?php echo json_encode($property); ?>'>
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <?php if ($property['status'] === 'active'): ?>
+                                        <button type="button" class="action-button btn-cancel"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#cancelContractModal"
+                                                data-property='<?php echo json_encode($property); ?>'>
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                    <button type="button" class="action-button btn-delete"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deletePropertyModal"
+                                            data-property-id="<?php echo $property['id']; ?>">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
     </div>
     
@@ -1691,6 +1838,38 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 tbody.appendChild(row);
             });
         }
+
+        // View toggle functionality
+        const cardView = document.getElementById('cardView');
+        const tableView = document.getElementById('tableView');
+        const cardViewContainer = document.getElementById('cardViewContainer');
+        const tableViewContainer = document.getElementById('tableViewContainer');
+
+        cardView.addEventListener('click', () => {
+            cardView.classList.add('active');
+            tableView.classList.remove('active');
+            cardViewContainer.style.display = 'flex';
+            tableViewContainer.style.display = 'none';
+            // Save preference
+            localStorage.setItem('propertyViewPreference', 'card');
+        });
+
+        tableView.addEventListener('click', () => {
+            tableView.classList.add('active');
+            cardView.classList.remove('active');
+            tableViewContainer.style.display = 'block';
+            cardViewContainer.style.display = 'none';
+            // Save preference
+            localStorage.setItem('propertyViewPreference', 'table');
+        });
+
+        // Load saved preference
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedView = localStorage.getItem('propertyViewPreference');
+            if (savedView === 'table') {
+                tableView.click();
+            }
+        });
     </script>
 </body>
 </html> 

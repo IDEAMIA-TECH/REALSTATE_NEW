@@ -245,6 +245,45 @@ $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
             margin-right: 0.5rem;
             margin-bottom: 0.5rem;
         }
+
+        .client-avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: var(--secondary-color);
+        }
+
+        .table .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-start;
+        }
+
+        .btn-group .btn-outline-primary.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .table > :not(caption) > * > * {
+            padding: 1rem 0.75rem;
+            vertical-align: middle;
+        }
+
+        .table .property-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .table .property-badge {
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -274,12 +313,23 @@ $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="h4 mb-0">All Clients</h2>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createClientModal">
-                <i class="fas fa-plus me-2"></i>Add New Client
-            </button>
+            <div class="d-flex gap-3">
+                <div class="btn-group" role="group" aria-label="View toggle">
+                    <button type="button" class="btn btn-outline-primary active" id="cardView">
+                        <i class="fas fa-th-large"></i> Cards
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="tableView">
+                        <i class="fas fa-table"></i> Table
+                    </button>
+                </div>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createClientModal">
+                    <i class="fas fa-plus me-2"></i>Add New Client
+                </button>
+            </div>
         </div>
 
-        <div class="row">
+        <!-- Card View -->
+        <div class="row" id="cardViewContainer">
             <?php foreach ($clients as $client): ?>
                 <div class="col-md-6 col-lg-4">
                     <div class="client-card">
@@ -334,6 +384,77 @@ $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                 </div>
             <?php endforeach; ?>
+        </div>
+
+        <!-- Table View -->
+        <div class="table-responsive" id="tableViewContainer" style="display: none;">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Name</th>
+                        <th>Contact Info</th>
+                        <th>Status</th>
+                        <th>Properties</th>
+                        <th>Created By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($clients as $client): ?>
+                    <tr>
+                        <td>
+                            <div class="client-avatar-small">
+                                <i class="fas fa-user-tie"></i>
+                            </div>
+                        </td>
+                        <td><?php echo htmlspecialchars($client['name']); ?></td>
+                        <td>
+                            <div><i class="fas fa-envelope me-1"></i><?php echo htmlspecialchars($client['email']); ?></div>
+                            <div><i class="fas fa-phone me-1"></i><?php echo htmlspecialchars($client['phone']); ?></div>
+                        </td>
+                        <td>
+                            <span class="client-status status-<?php echo htmlspecialchars($client['status']); ?>">
+                                <?php echo ucfirst(htmlspecialchars($client['status'])); ?>
+                            </span>
+                        </td>
+                        <td>
+                            <div class="property-badges">
+                                <?php
+                                $stmt = $db->prepare("SELECT * FROM properties WHERE client_id = ? AND status = 'active'");
+                                $stmt->execute([$client['id']]);
+                                $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                
+                                foreach ($properties as $property):
+                                ?>
+                                    <span class="property-badge">
+                                        <i class="fas fa-home me-1"></i>
+                                        <?php echo htmlspecialchars($property['address']); ?>
+                                    </span>
+                                <?php endforeach; ?>
+                            </div>
+                        </td>
+                        <td><?php echo htmlspecialchars($client['created_by_name']); ?></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button type="button" class="action-button btn-edit" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editClientModal"
+                                        data-client='<?php echo json_encode($client); ?>'>
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="action-button btn-delete"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteClientModal"
+                                        data-client-id="<?php echo $client['id']; ?>">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
     </div>
     
@@ -471,6 +592,38 @@ $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
             const button = event.relatedTarget;
             const clientId = button.getAttribute('data-client-id');
             document.getElementById('delete_client_id').value = clientId;
+        });
+
+        // View toggle functionality
+        const cardView = document.getElementById('cardView');
+        const tableView = document.getElementById('tableView');
+        const cardViewContainer = document.getElementById('cardViewContainer');
+        const tableViewContainer = document.getElementById('tableViewContainer');
+
+        cardView.addEventListener('click', () => {
+            cardView.classList.add('active');
+            tableView.classList.remove('active');
+            cardViewContainer.style.display = 'flex';
+            tableViewContainer.style.display = 'none';
+            // Save preference
+            localStorage.setItem('clientViewPreference', 'card');
+        });
+
+        tableView.addEventListener('click', () => {
+            tableView.classList.add('active');
+            cardView.classList.remove('active');
+            tableViewContainer.style.display = 'block';
+            cardViewContainer.style.display = 'none';
+            // Save preference
+            localStorage.setItem('clientViewPreference', 'table');
+        });
+
+        // Load saved preference
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedView = localStorage.getItem('clientViewPreference');
+            if (savedView === 'table') {
+                tableView.click();
+            }
         });
     </script>
 </body>

@@ -56,19 +56,21 @@ $recentProperties = $db->query("
     <link href="<?php echo BASE_URL; ?>/assets/css/global.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #4A3728;
-            --secondary-color: #8B7355;
-            --accent-color: #D2B48C;
-            --background-color: #FAF6F1;
-            --text-color: #4A3728;
-            --border-color: #D2B48C;
-            --hover-color: #6B4423;
-            --shadow-color: rgba(74, 55, 40, 0.1);
+            --primary-color: #0F4B35;
+            --secondary-color: #15BE77;
+            --accent-color: #86D789;
+            --background-color: #FFFFFF;
+            --text-color: #1E1E1E;
+            --border-color: #E8F3F1;
+            --hover-color: #0D3D2C;
+            --shadow-color: rgba(15, 75, 53, 0.1);
+            --gradient-start: #15BE77;
+            --gradient-end: #0F4B35;
         }
 
         body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--background-color);
-            font-family: 'Playfair Display', 'Segoe UI', serif;
             color: var(--text-color);
             min-height: 100vh;
         }
@@ -80,133 +82,126 @@ $recentProperties = $db->query("
         }
 
         .dashboard-hero {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
             color: white;
-            padding: 4rem 0;
-            margin-bottom: 3rem;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
             border-radius: 20px;
-            box-shadow: 0 20px 40px var(--shadow-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="rgba(255,255,255,0.1)"/></svg>') no-repeat center;
+            opacity: 0.1;
         }
 
         .dashboard-hero h1 {
-            font-family: 'Playfair Display', serif;
             font-weight: 700;
             font-size: 2.5rem;
             margin-bottom: 1rem;
-            color: white;
         }
 
         .dashboard-hero p {
-            color: var(--accent-color);
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             opacity: 0.9;
         }
 
         .stat-card {
             background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            margin-bottom: 2rem;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
             transition: all 0.3s ease;
-            border: none;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 5px 15px var(--shadow-color);
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            border: 1px solid var(--border-color);
         }
 
         .stat-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 15px 30px var(--shadow-color);
+            box-shadow: 0 10px 30px var(--shadow-color);
         }
 
         .stat-icon {
-            font-size: 3rem;
+            width: 50px;
+            height: 50px;
+            background: var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
             color: var(--primary-color);
-            margin-bottom: 1.5rem;
-            opacity: 0.9;
+            margin-bottom: 1rem;
         }
 
         .stat-number {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 700;
             color: var(--primary-color);
-            font-family: 'Playfair Display', serif;
             margin-bottom: 0.5rem;
+            line-height: 1;
         }
 
         .stat-label {
-            color: var(--secondary-color);
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            color: var(--text-color);
+            font-size: 0.9rem;
             font-weight: 500;
+            opacity: 0.7;
         }
 
         .activity-card {
             background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 5px 15px var(--shadow-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
         }
 
         .activity-card h3 {
+            font-weight: 700;
             color: var(--primary-color);
-            font-family: 'Playfair Display', serif;
-            font-weight: 600;
-            font-size: 1.5rem;
             margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .activity-item {
-            padding: 1.2rem;
+            padding: 1rem;
             border-bottom: 1px solid var(--border-color);
             transition: all 0.3s ease;
-            color: var(--text-color);
         }
 
         .activity-item:hover {
-            background-color: var(--background-color);
-            border-radius: 10px;
+            background: var(--border-color);
+            border-radius: 8px;
         }
 
-        .activity-item strong {
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-
-        .activity-item .text-muted {
-            color: var(--secondary-color) !important;
+        .activity-item:last-child {
+            border-bottom: none;
         }
 
         .property-card {
             background: white;
-            border-radius: 15px;
+            border-radius: 16px;
             overflow: hidden;
             transition: all 0.3s ease;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 5px 15px var(--shadow-color);
+            border: 1px solid var(--border-color);
         }
 
         .property-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 15px 30px var(--shadow-color);
+            box-shadow: 0 10px 30px var(--shadow-color);
         }
 
         .property-image {
-            height: 250px;
+            height: 200px;
             background-size: cover;
             background-position: center;
             position: relative;
@@ -219,96 +214,99 @@ $recentProperties = $db->query("
             left: 0;
             right: 0;
             height: 50%;
-            background: linear-gradient(to top, rgba(74, 55, 40, 0.8), transparent);
+            background: linear-gradient(to top, rgba(15, 75, 53, 0.8), transparent);
         }
 
         .property-details {
-            padding: 2rem;
-            background: white;
+            padding: 1.5rem;
         }
 
         .property-title {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 600;
             color: var(--primary-color);
-            margin-bottom: 0.8rem;
-            font-family: 'Playfair Display', serif;
+            margin-bottom: 0.5rem;
         }
 
         .property-location {
-            color: var(--secondary-color);
-            font-size: 1rem;
+            color: var(--text-color);
+            font-size: 0.9rem;
+            opacity: 0.7;
             margin-bottom: 1rem;
         }
 
         .property-price {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 700;
-            color: var(--primary-color);
-            font-family: 'Playfair Display', serif;
+            color: var(--secondary-color);
         }
 
         .quick-actions {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 3rem;
+            gap: 1rem;
+            margin-bottom: 2rem;
         }
 
         .action-button {
             background: white;
-            border-radius: 15px;
-            padding: 2rem;
+            border-radius: 16px;
+            padding: 1.5rem;
             text-align: center;
             transition: all 0.3s ease;
-            border: none;
+            border: 1px solid var(--border-color);
             text-decoration: none;
-            box-shadow: 0 5px 15px var(--shadow-color);
+            color: var(--text-color);
         }
 
         .action-button:hover {
             transform: translateY(-5px);
-            box-shadow: 0 15px 30px var(--shadow-color);
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 10px 30px var(--shadow-color);
+            border-color: var(--secondary-color);
+            color: var(--text-color);
             text-decoration: none;
         }
 
-        .action-button:hover .action-icon,
-        .action-button:hover .action-label {
-            color: white;
+        .action-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin: 0 auto 1rem;
+            transition: all 0.3s ease;
         }
 
-        .action-icon {
-            font-size: 2.5rem;
-            color: var(--primary-color);
-            margin-bottom: 1.2rem;
-            transition: all 0.3s ease;
+        .action-button:hover .action-icon {
+            background: var(--secondary-color);
+            color: white;
         }
 
         .action-label {
             font-weight: 600;
-            color: var(--primary-color);
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
         }
 
         @media (max-width: 768px) {
             .dashboard-hero {
-                padding: 3rem 0;
-                margin-bottom: 2rem;
+                padding: 2rem 0;
+                margin-bottom: 1.5rem;
+            }
+
+            .dashboard-hero h1 {
+                font-size: 2rem;
             }
 
             .stat-card {
-                padding: 1.5rem;
+                padding: 1rem;
             }
 
             .property-image {
-                height: 200px;
-            }
-
-            .quick-actions {
-                grid-template-columns: 1fr;
+                height: 150px;
             }
         }
     </style>
@@ -319,8 +317,8 @@ $recentProperties = $db->query("
     <div class="container">
         <div class="dashboard-hero">
             <div class="container">
-                <h1><i class="fas fa-tachometer-alt me-2"></i>Welcome to Your Dashboard</h1>
-                <p class="lead">Managing Excellence in Real Estate, <?php echo htmlspecialchars($_SESSION['username']); ?></p>
+                <h1>Welcome Back!</h1>
+                <p>Track your real estate portfolio and performance metrics</p>
             </div>
         </div>
 

@@ -1101,7 +1101,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="updateValuationBtn">Update Valuation</button>
+                    <button type="button" class="btn btn-primary" id="updateValuationBtn" style="display: none;">Update Valuation</button>
                 </div>
             </div>
         </div>
@@ -1174,6 +1174,10 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 event.stopPropagation();
                 
                 const property = JSON.parse(this.getAttribute('data-property'));
+                
+                // Show/Hide Update Valuation button based on status
+                const updateValuationBtn = document.getElementById('updateValuationBtn');
+                updateValuationBtn.style.display = property.status === 'closed' ? 'none' : 'block';
                 
                 // Basic Information
                 document.getElementById('view_id').textContent = property.id;

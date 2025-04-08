@@ -198,6 +198,9 @@ switch ($_SESSION['role']) {
             border-radius: var(--border-radius);
             overflow: hidden;
             transition: var(--transition);
+            display: flex;
+            align-items: center;
+            padding: 1rem;
         }
 
         .property-card:hover {
@@ -205,32 +208,62 @@ switch ($_SESSION['role']) {
             box-shadow: var(--box-shadow);
         }
 
-        .property-image {
-            height: 200px;
-            background-size: cover;
-            background-position: center;
+        .property-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .property-icon i {
+            font-size: 2rem;
+            color: white;
         }
 
         .property-details {
-            padding: 1.5rem;
+            flex-grow: 1;
         }
 
         .property-title {
             font-size: 1.2rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
+            color: var(--primary-color);
         }
 
         .property-location {
             color: #666;
             font-size: 0.9rem;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
 
         .property-price {
             font-size: 1.5rem;
             font-weight: 600;
             color: var(--secondary-color);
+        }
+
+        .property-meta {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .property-meta-item {
+            display: flex;
+            align-items: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .property-meta-item i {
+            margin-right: 0.5rem;
+            color: var(--primary-color);
         }
 
         .quick-actions {
@@ -362,14 +395,20 @@ switch ($_SESSION['role']) {
                     <?php if (count($properties) > 0): ?>
                         <?php foreach (array_slice($properties, 0, 3) as $property): ?>
                             <div class="property-card mb-3">
-                                <div class="property-image" 
-                                     style="background-image: url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80');">
+                                <div class="property-icon">
+                                    <i class="fas fa-home"></i>
                                 </div>
                                 <div class="property-details">
                                     <div class="property-title"><?php echo htmlspecialchars($property['address']); ?></div>
-                                    <div class="property-location">
-                                        <i class="fas fa-calendar-alt me-1"></i>
-                                        Effective: <?php echo date('M d, Y', strtotime($property['effective_date'])); ?>
+                                    <div class="property-meta">
+                                        <div class="property-meta-item">
+                                            <i class="fas fa-calendar-alt"></i>
+                                            <?php echo date('M d, Y', strtotime($property['effective_date'])); ?>
+                                        </div>
+                                        <div class="property-meta-item">
+                                            <i class="fas fa-clock"></i>
+                                            <?php echo $property['term']; ?> months
+                                        </div>
                                     </div>
                                     <div class="property-price">
                                         $<?php echo number_format($property['initial_valuation'], 2); ?>
@@ -382,13 +421,13 @@ switch ($_SESSION['role']) {
                         <?php endforeach; ?>
                     <?php else: ?>
                         <div class="property-card mb-3">
-                            <div class="property-image" 
-                                 style="background-image: url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80');">
+                            <div class="property-icon">
+                                <i class="fas fa-home"></i>
                             </div>
                             <div class="property-details">
                                 <div class="property-title">No Properties Yet</div>
                                 <div class="property-location">
-                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    <i class="fas fa-plus-circle me-1"></i>
                                     Add your first property
                                 </div>
                                 <div class="property-price">

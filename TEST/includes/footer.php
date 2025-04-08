@@ -59,6 +59,7 @@
 
 .footer .col-md-6:last-child {
     text-align: right;
+    flex: 1;
 }
 
 @media (max-width: 768px) {
@@ -69,6 +70,7 @@
 
     .footer .col-md-6:last-child {
         text-align: center;
+        flex: none;
     }
 
     .footer h5, .footer p {

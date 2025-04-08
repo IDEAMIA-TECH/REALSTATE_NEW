@@ -65,31 +65,162 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Send welcome email with credentials
                     $to = $email;
                     $subject = "Welcome to Parker Real Estate";
-                    $message = "Hello $name,\n\n";
-                    $message .= "Your account has been created with the following credentials:\n";
-                    $message .= "Username: $username\n";
-                    $message .= "Password: $password\n\n";
-                    $message .= "Please login at: " . BASE_URL . "/login.php\n\n";
-                    $message .= "Best regards,\nParker Real Estate Team";
+                    
+                    // HTML email template for client
+                    $clientMessage = '
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            body {
+                                font-family: Arial, sans-serif;
+                                line-height: 1.6;
+                                color: #333;
+                                max-width: 600px;
+                                margin: 0 auto;
+                                padding: 20px;
+                            }
+                            .header {
+                                background-color: #2c3e50;
+                                color: white;
+                                padding: 20px;
+                                text-align: center;
+                                border-radius: 5px 5px 0 0;
+                            }
+                            .content {
+                                background-color: #f9f9f9;
+                                padding: 20px;
+                                border-radius: 0 0 5px 5px;
+                            }
+                            .credentials {
+                                background-color: #fff;
+                                border: 1px solid #ddd;
+                                padding: 15px;
+                                margin: 20px 0;
+                                border-radius: 5px;
+                            }
+                            .button {
+                                display: inline-block;
+                                background-color: #3498db;
+                                color: white;
+                                padding: 10px 20px;
+                                text-decoration: none;
+                                border-radius: 5px;
+                                margin-top: 20px;
+                            }
+                            .footer {
+                                text-align: center;
+                                margin-top: 20px;
+                                font-size: 12px;
+                                color: #666;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <h1>Welcome to Parker Real Estate</h1>
+                        </div>
+                        <div class="content">
+                            <p>Hello ' . htmlspecialchars($name) . ',</p>
+                            <p>Your account has been successfully created. Below are your login credentials:</p>
+                            
+                            <div class="credentials">
+                                <p><strong>Username:</strong> ' . htmlspecialchars($username) . '</p>
+                                <p><strong>Password:</strong> ' . htmlspecialchars($password) . '</p>
+                            </div>
+                            
+                            <p>Please use these credentials to log in to your account:</p>
+                            <a href="' . BASE_URL . '/login.php" class="button">Login to Your Account</a>
+                            
+                            <p>For security reasons, we recommend changing your password after your first login.</p>
+                            
+                            <div class="footer">
+                                <p>This is an automated message, please do not reply.</p>
+                                <p>&copy; ' . date('Y') . ' Parker Real Estate. All rights reserved.</p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>';
+
+                    // HTML email template for admin notification
+                    $adminMessage = '
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            body {
+                                font-family: Arial, sans-serif;
+                                line-height: 1.6;
+                                color: #333;
+                                max-width: 600px;
+                                margin: 0 auto;
+                                padding: 20px;
+                            }
+                            .header {
+                                background-color: #2c3e50;
+                                color: white;
+                                padding: 20px;
+                                text-align: center;
+                                border-radius: 5px 5px 0 0;
+                            }
+                            .content {
+                                background-color: #f9f9f9;
+                                padding: 20px;
+                                border-radius: 0 0 5px 5px;
+                            }
+                            .client-info {
+                                background-color: #fff;
+                                border: 1px solid #ddd;
+                                padding: 15px;
+                                margin: 20px 0;
+                                border-radius: 5px;
+                            }
+                            .footer {
+                                text-align: center;
+                                margin-top: 20px;
+                                font-size: 12px;
+                                color: #666;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <h1>New Client Registration</h1>
+                        </div>
+                        <div class="content">
+                            <p>A new client has been registered in the system:</p>
+                            
+                            <div class="client-info">
+                                <p><strong>Name:</strong> ' . htmlspecialchars($name) . '</p>
+                                <p><strong>Email:</strong> ' . htmlspecialchars($email) . '</p>
+                                <p><strong>Phone:</strong> ' . htmlspecialchars($phone) . '</p>
+                                <p><strong>Address:</strong> ' . htmlspecialchars($address) . '</p>
+                                <p><strong>Client ID:</strong> ' . $clientId . '</p>
+                            </div>
+                            
+                            <div class="footer">
+                                <p>This is an automated notification for administrators.</p>
+                                <p>&copy; ' . date('Y') . ' Parker Real Estate. All rights reserved.</p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>';
 
                     // Get all admin users' emails
                     $stmt = $db->prepare("SELECT email FROM users WHERE role = 'admin'");
                     $stmt->execute();
                     $adminEmails = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
+                    // Headers for HTML email
+                    $headers = "MIME-Version: 1.0\r\n";
+                    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+                    $headers .= "From: Parker Real Estate <noreply@parkerrealestate.com>\r\n";
+
                     // Send email to the new client
-                    $headers = "From: Parker Real Estate <noreply@parkerrealestate.com>\r\n";
-                    mail($to, $subject, $message, $headers);
+                    mail($to, $subject, $clientMessage, $headers);
 
                     // Send notification to all admin users
-                    $adminSubject = "New Client Registration";
-                    $adminMessage = "A new client has been registered:\n\n";
-                    $adminMessage .= "Name: $name\n";
-                    $adminMessage .= "Email: $email\n";
-                    $adminMessage .= "Phone: $phone\n";
-                    $adminMessage .= "Address: $address\n\n";
-                    $adminMessage .= "Client ID: $clientId\n";
-
+                    $adminSubject = "New Client Registration - Parker Real Estate";
                     foreach ($adminEmails as $adminEmail) {
                         mail($adminEmail, $adminSubject, $adminMessage, $headers);
                     }

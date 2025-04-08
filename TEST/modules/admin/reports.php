@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             switch ($reportType) {
                 case 'property_valuation':
-                    // Property Valuation Report
+                    // Property Valuation Report - Latest valuation for each property
                     $stmt = $db->prepare("
                         SELECT 
                             p.id,
@@ -43,9 +43,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             pv.diference,
                             pv.appreciation
                         FROM properties p
-                        LEFT JOIN property_valuations pv ON p.id = pv.property_id
-                        WHERE pv.valuation_date IS NOT NULL
-                        AND pv.valuation_date BETWEEN ? AND ?
+                        INNER JOIN (
+                            SELECT property_id, MAX(valuation_date) as max_date
+                            FROM property_valuations
+                            GROUP BY property_id
+                        ) latest ON p.id = latest.property_id
+                        INNER JOIN property_valuations pv ON p.id = pv.property_id 
+                            AND pv.valuation_date = latest.max_date
+                        WHERE pv.valuation_date BETWEEN ? AND ?
                         ORDER BY pv.valuation_date DESC
                     ");
                     
@@ -59,10 +64,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     error_log("Property Valuation Report - Number of records: " . count($reports['property_valuation']));
                     if (count($reports['property_valuation']) === 0) {
                         error_log("Property Valuation Report - No records found. Checking if there are any valuations in the date range...");
-                        $checkStmt = $db->prepare("SELECT COUNT(*) as count FROM property_valuations WHERE valuation_date BETWEEN ? AND ?");
+                        $checkStmt = $db->prepare("
+                            SELECT COUNT(*) as count 
+                            FROM (
+                                SELECT property_id, MAX(valuation_date) as max_date
+                                FROM property_valuations
+                                GROUP BY property_id
+                            ) latest
+                            INNER JOIN property_valuations pv ON pv.property_id = latest.property_id 
+                                AND pv.valuation_date = latest.max_date
+                            WHERE pv.valuation_date BETWEEN ? AND ?
+                        ");
                         $checkStmt->execute([$startDate, $endDate]);
                         $count = $checkStmt->fetch(PDO::FETCH_ASSOC)['count'];
-                        error_log("Property Valuation Report - Total valuations in date range: " . $count);
+                        error_log("Property Valuation Report - Total latest valuations in date range: " . $count);
                     }
                     break;
                     

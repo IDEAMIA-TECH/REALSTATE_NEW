@@ -396,11 +396,110 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 day: 'numeric'
             });
 
+            // Fetch valuation history
+            fetchValuationHistory(property.id, property);
+
             // Show the modal
             const modal = new bootstrap.Modal(document.getElementById('viewPropertyModal'));
             modal.show();
         });
     });
+
+    // Add event listener for modal hidden event
+    document.getElementById('viewPropertyModal').addEventListener('hidden.bs.modal', function () {
+        // Remove the modal backdrop
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.remove();
+        }
+        // Remove the modal-open class from body
+        document.body.classList.remove('modal-open');
+        // Reset the body padding
+        document.body.style.paddingRight = '';
+    });
+
+    function fetchValuationHistory(propertyId, propertyData) {
+        console.log('Fetching valuation history for property:', propertyId);
+        
+        // Show loading state
+        const tbody = document.getElementById('valuationHistoryBody');
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+        
+        fetch(`get_valuation_history.php?property_id=${propertyId}`, {
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Valuation history response:', data);
+            
+            if (data.success && data.data && data.data.valuations) {
+                updateValuationHistoryTable(data.data.valuations, propertyData);
+            } else {
+                console.error('Invalid data structure:', data);
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center">No valuation history available</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching valuation history:', error);
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading valuation history</td></tr>';
+        });
+    }
+
+    function updateValuationHistoryTable(valuations, propertyData) {
+        if (!propertyData) {
+            console.error('Property data is required for valuation history table');
+            return;
+        }
+
+        const tbody = document.getElementById('valuationHistoryBody');
+        tbody.innerHTML = '';
+        
+        if (!valuations || !Array.isArray(valuations) || valuations.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No valuation history available</td></tr>';
+            return;
+        }
+        
+        // Get the original values from property data with null checks
+        const initialValue = parseFloat(propertyData.initial_valuation) || 0;
+        const initialIndex = parseFloat(propertyData.initial_index) || 0;
+        const agreedPercentage = parseFloat(propertyData.agreed_pct) || 0;
+        const optionPrice = parseFloat(propertyData.option_price) || 0;
+        const totalFees = parseFloat(propertyData.total_fees) || 0;
+
+        valuations.forEach((valuation, index) => {
+            const row = document.createElement('tr');
+            
+            // Calculate values with null checks
+            const indexValue = parseFloat(valuation.index_value) || 0;
+            const difference = initialIndex > 0 ? ((indexValue - initialIndex) / initialIndex) * 100 : 0;
+            const appreciation = parseFloat(valuation.appreciation) || 0;
+            const appreciationShare = (agreedPercentage / 100) * appreciation;
+            const calculation = optionPrice + appreciationShare + totalFees;
+
+            row.innerHTML = `
+                <td>${new Date(valuation.valuation_date).toLocaleDateString()}</td>
+                <td>$${initialValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td>${initialIndex.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td>${indexValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td>${difference.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
+                <td>$${optionPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td>$${appreciation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td>${agreedPercentage.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
+                <td>$${appreciationShare.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td>$${calculation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
     </script>
 
     <!-- View Property Modal -->
@@ -473,6 +572,34 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <td id="view_expiration_date"></td>
                                 </tr>
                             </table>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <h6>Valuation History</h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Initial Value</th>
+                                            <th>Beginning Index</th>
+                                            <th>Update Index</th>
+                                            <th>Difference</th>
+                                            <th>Option Premium</th>
+                                            <th>Appreciation</th>
+                                            <th>Appreciation Participation</th>
+                                            <th>Appreciation Share</th>
+                                            <th>Calculation</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="valuationHistoryBody">
+                                        <tr>
+                                            <td colspan="10" class="text-center">Loading valuation history...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -365,90 +365,69 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
     // View Property Modal
     document.addEventListener('DOMContentLoaded', function() {
         const viewButtons = document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target="#viewPropertyModal"]');
+        const modal = document.getElementById('viewPropertyModal');
+        
+        if (!modal) {
+            console.error('Modal element not found');
+            return;
+        }
+
+        // Initialize Bootstrap modal
+        const bsModal = new bootstrap.Modal(modal);
+        
+        // Handle modal show/hide events
+        modal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            if (!button) return;
+            
+            const property = JSON.parse(button.getAttribute('data-property'));
+            if (!property) return;
+            
+            // Basic Information
+            document.getElementById('view_id').textContent = property.id;
+            document.getElementById('view_address').textContent = property.address;
+            document.getElementById('view_status').textContent = property.status.charAt(0).toUpperCase() + property.status.slice(1);
+            
+            // Financial Information
+            document.getElementById('view_initial_valuation').textContent = '$' + parseFloat(property.initial_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('view_initial_index').textContent = property.initial_index ? parseFloat(property.initial_index).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'N/A';
+            document.getElementById('view_agreed_pct').textContent = property.agreed_pct + '%';
+            document.getElementById('view_total_fees').textContent = '$' + parseFloat(property.total_fees).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('view_option_price').textContent = '$' + parseFloat(property.option_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
+            // Contract Details
+            document.getElementById('view_effective_date').textContent = property.effective_date;
+            document.getElementById('view_term').textContent = property.term + ' months';
+            
+            // Calculate and display expiration date
+            const effectiveDate = new Date(property.effective_date);
+            const expirationDate = new Date(effectiveDate);
+            expirationDate.setMonth(expirationDate.getMonth() + parseInt(property.term));
+            document.getElementById('view_expiration_date').textContent = expirationDate.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            // Fetch valuation history
+            fetchValuationHistory(property.id, property);
+        });
+
+        modal.addEventListener('hidden.bs.modal', function() {
+            // Clear the valuation history table
+            const tbody = document.getElementById('valuationHistoryBody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center">Loading valuation history...</td></tr>';
+            }
+        });
+
+        // Add click handlers for view buttons
         viewButtons.forEach(button => {
             button.addEventListener('click', function(event) {
                 event.preventDefault();
-                event.stopPropagation();
-                
-                const property = JSON.parse(this.getAttribute('data-property'));
-                
-                // Basic Information
-                document.getElementById('view_id').textContent = property.id;
-                document.getElementById('view_address').textContent = property.address;
-                document.getElementById('view_status').textContent = property.status.charAt(0).toUpperCase() + property.status.slice(1);
-                
-                // Financial Information
-                document.getElementById('view_initial_valuation').textContent = '$' + parseFloat(property.initial_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                document.getElementById('view_initial_index').textContent = property.initial_index ? parseFloat(property.initial_index).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'N/A';
-                document.getElementById('view_agreed_pct').textContent = property.agreed_pct + '%';
-                document.getElementById('view_total_fees').textContent = '$' + parseFloat(property.total_fees).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                document.getElementById('view_option_price').textContent = '$' + parseFloat(property.option_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                
-                // Contract Details
-                document.getElementById('view_effective_date').textContent = property.effective_date;
-                document.getElementById('view_term').textContent = property.term + ' months';
-                
-                // Calculate and display expiration date
-                const effectiveDate = new Date(property.effective_date);
-                const expirationDate = new Date(effectiveDate);
-                expirationDate.setMonth(expirationDate.getMonth() + parseInt(property.term));
-                document.getElementById('view_expiration_date').textContent = expirationDate.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-
-                // Fetch valuation history
-                fetchValuationHistory(property.id, property);
-
-                // Show the modal
-                const modal = new bootstrap.Modal(document.getElementById('viewPropertyModal'));
-                modal.show();
+                bsModal.show();
             });
         });
-
-        // Improved modal closing logic
-        function closeModal() {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('viewPropertyModal'));
-            if (modal) {
-                modal.hide();
-            }
-            
-            // Remove backdrop and reset body classes
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) {
-                backdrop.remove();
-            }
-            
-            document.body.classList.remove('modal-open');
-            document.body.style.paddingRight = '';
-            document.body.style.overflow = '';
-        }
-
-        // Add event listeners for all possible ways to close the modal
-        const modalElement = document.getElementById('viewPropertyModal');
-        if (modalElement) {
-            modalElement.addEventListener('hidden.bs.modal', closeModal);
-            
-            // Close button in modal header
-            const closeButton = modalElement.querySelector('.btn-close');
-            if (closeButton) {
-                closeButton.addEventListener('click', closeModal);
-            }
-            
-            // Close button in modal footer
-            const footerButton = modalElement.querySelector('.btn-secondary');
-            if (footerButton) {
-                footerButton.addEventListener('click', closeModal);
-            }
-            
-            // Close when clicking outside the modal
-            modalElement.addEventListener('click', function(event) {
-                if (event.target === this) {
-                    closeModal();
-                }
-            });
-        }
     });
 
     function fetchValuationHistory(propertyId, propertyData) {
@@ -549,12 +528,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </script>
 
     <!-- View Property Modal -->
-    <div class="modal fade" id="viewPropertyModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal fade" id="viewPropertyModal" tabindex="-1" data-bs-backdrop="static" role="dialog" aria-labelledby="viewPropertyModalLabel">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Property Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="viewPropertyModalLabel">Property Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row">

@@ -33,7 +33,6 @@ define('SMTP_HOST', '');
 define('SMTP_PORT', '');
 define('SMTP_USERNAME', '');
 define('SMTP_PASSWORD', '');
-define('ADMIN_EMAIL', 'realestate@ideamia-dev.com');
 
 // Security configuration
 define('SESSION_TIMEOUT', 30); // minutes

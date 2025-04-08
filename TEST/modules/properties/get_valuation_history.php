@@ -13,8 +13,8 @@ $response = [
 ];
 
 try {
-    // Check if user is logged in and is admin
-    if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    // Check if user is logged in
+    if (!isset($_SESSION['user_id'])) {
         throw new Exception('Unauthorized access');
     }
 
@@ -24,7 +24,24 @@ try {
     }
 
     $propertyId = (int)$_GET['property_id'];
+    $userId = $_SESSION['user_id'];
+    $userRole = $_SESSION['role'];
     $db = Database::getInstance()->getConnection();
+
+    // If user is not admin, verify they own the property
+    if ($userRole !== 'admin') {
+        $stmt = $db->prepare("
+            SELECT p.id 
+            FROM properties p
+            JOIN clients c ON p.client_id = c.id
+            JOIN users u ON c.id = u.client_id
+            WHERE p.id = ? AND u.id = ?
+        ");
+        $stmt->execute([$propertyId, $userId]);
+        if (!$stmt->fetch()) {
+            throw new Exception('Unauthorized access to this property');
+        }
+    }
 
     // Get property details for initial values
     $stmt = $db->prepare("

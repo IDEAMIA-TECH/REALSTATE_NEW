@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS property_valuations (
     property_id INT NOT NULL,
     valuation_date DATE NOT NULL,
     current_value DECIMAL(15,2) NOT NULL,
-    appreciation DECIMAL(15,2) NOT NULL,
+    index_value DECIMAL(15,2) NOT NULL,
     share_appreciation DECIMAL(15,2) NOT NULL,
     terminal_value DECIMAL(15,2) NOT NULL,
     projected_payoff DECIMAL(15,2) NOT NULL,

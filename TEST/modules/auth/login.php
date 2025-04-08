@@ -56,19 +56,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --accent-color: #e74c3c;
-            --text-color: #2c3e50;
-            --light-bg: #f8f9fa;
+            --primary-color: #4A3728;
+            --secondary-color: #8B7355;
+            --accent-color: #D2B48C;
+            --background-color: #FAF6F1;
+            --text-color: #4A3728;
+            --border-color: #D2B48C;
+            --hover-color: #6B4423;
+            --shadow-color: rgba(74, 55, 40, 0.1);
         }
 
         body {
-            background-color: var(--light-bg);
+            background-color: var(--background-color);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Playfair Display', 'Segoe UI', serif;
+            color: var(--text-color);
         }
 
         .login-container {
@@ -83,142 +87,137 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .login-content {
             display: flex;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px var(--shadow-color);
             overflow: hidden;
             width: 100%;
         }
 
         .login-image {
             flex: 1;
-            background: linear-gradient(rgba(44, 62, 80, 0.7), rgba(44, 62, 80, 0.7)), 
-                        url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80');
+            background: linear-gradient(rgba(74, 55, 40, 0.8), rgba(74, 55, 40, 0.8)), 
+                        url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80');
             background-size: cover;
             background-position: center;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 40px;
+            padding: 60px;
             color: white;
         }
 
         .login-form {
             flex: 1;
-            padding: 40px;
+            padding: 60px;
+            background: white;
         }
 
         .login-header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
 
         .login-logo {
-            max-width: 200px;
+            max-width: 180px;
             height: auto;
-            margin-bottom: 20px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
+            margin-bottom: 30px;
+            filter: brightness(0.9);
         }
 
         .login-header h1 {
             color: var(--primary-color);
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 10px;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            font-family: 'Playfair Display', serif;
         }
 
         .login-header p {
-            color: #666;
-            font-size: 16px;
+            color: var(--secondary-color);
+            font-size: 18px;
+            font-weight: 300;
         }
 
         .form-control {
-            margin-bottom: 20px;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
+            margin-bottom: 25px;
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
             transition: all 0.3s ease;
-            height: 45px;
+            height: 55px;
+            font-size: 16px;
+            background-color: #FFFFFF;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem var(--shadow-color);
         }
 
         .input-group-text {
-            height: 45px;
-            border-radius: 8px 0 0 8px;
-            background-color: #f8f9fa;
-            border: 1px solid #ddd;
+            height: 55px;
+            border-radius: 12px 0 0 12px;
+            background-color: var(--background-color);
+            border: 2px solid var(--border-color);
             border-right: none;
-            padding: 0 15px;
-        }
-
-        .input-group .form-control {
-            border-radius: 0 8px 8px 0;
-            border-left: none;
-        }
-
-        .input-group .form-control:focus {
-            border-color: #ddd;
-            box-shadow: none;
-        }
-
-        .input-group:focus-within .input-group-text {
-            border-color: var(--secondary-color);
-        }
-
-        .input-group:focus-within .form-control {
-            border-color: var(--secondary-color);
+            padding: 0 20px;
+            color: var(--primary-color);
         }
 
         .btn-login {
             width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            background-color: var(--secondary-color);
-            border: none;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-login:hover {
-            background-color: #2980b9;
-            transform: translateY(-2px);
-        }
-
-        .alert {
-            margin-bottom: 20px;
-            border-radius: 8px;
             padding: 15px;
-        }
-
-        .register-link {
-            text-align: center;
+            font-size: 18px;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            letter-spacing: 0.5px;
             margin-top: 20px;
         }
 
-        .register-link a {
-            color: var(--secondary-color);
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .register-link a:hover {
-            text-decoration: underline;
+        .btn-login:hover {
+            background-color: var(--hover-color);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px var(--shadow-color);
         }
 
         .feature-list {
-            margin-top: 30px;
+            margin-top: 40px;
         }
 
         .feature-item {
             display: flex;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             color: white;
+            font-size: 18px;
         }
 
         .feature-item i {
-            margin-right: 10px;
-            color: var(--secondary-color);
+            margin-right: 15px;
+            color: var(--accent-color);
+            font-size: 24px;
+        }
+
+        .alert {
+            margin-bottom: 25px;
+            border-radius: 12px;
+            padding: 20px;
+            border: none;
+        }
+
+        .alert-danger {
+            background-color: #FDF2F2;
+            color: #9B1C1C;
+            border-left: 4px solid #9B1C1C;
+        }
+
+        .alert-success {
+            background-color: #F3FAF7;
+            color: #03543F;
+            border-left: 4px solid #03543F;
         }
 
         @media (max-width: 768px) {
@@ -227,11 +226,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             .login-image {
-                display: none;
+                min-height: 300px;
+                padding: 40px;
             }
             
             .login-form {
-                padding: 20px;
+                padding: 40px;
+            }
+
+            .feature-list {
+                margin-top: 30px;
+            }
+
+            .feature-item {
+                font-size: 16px;
             }
         }
     </style>
@@ -241,23 +249,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="login-content">
             <div class="login-image">
                 <h2>Welcome to <?php echo APP_NAME; ?></h2>
-                <p>Your comprehensive real estate management solution</p>
+                <p>Elevating Real Estate Management to New Heights</p>
                 <div class="feature-list">
                     <div class="feature-item">
                         <i class="fas fa-home"></i>
-                        <span>Manage Properties Efficiently</span>
+                        <span>Premium Property Portfolio Management</span>
                     </div>
                     <div class="feature-item">
                         <i class="fas fa-chart-line"></i>
-                        <span>Track Market Trends</span>
+                        <span>Real-Time Market Analytics</span>
                     </div>
                     <div class="feature-item">
-                        <i class="fas fa-users"></i>
-                        <span>Handle Client Relationships</span>
+                        <i class="fas fa-handshake"></i>
+                        <span>Seamless Client Experience</span>
                     </div>
                     <div class="feature-item">
-                        <i class="fas fa-file-alt"></i>
-                        <span>Generate Detailed Reports</span>
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Secure Investment Management</span>
                     </div>
                 </div>
             </div>

@@ -55,62 +55,115 @@ $recentProperties = $db->query("
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="<?php echo BASE_URL; ?>/assets/css/global.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #4A3728;
+            --secondary-color: #8B7355;
+            --accent-color: #D2B48C;
+            --background-color: #FAF6F1;
+            --text-color: #4A3728;
+            --border-color: #D2B48C;
+            --hover-color: #6B4423;
+            --shadow-color: rgba(74, 55, 40, 0.1);
+        }
+
+        body {
+            background-color: var(--background-color);
+            font-family: 'Playfair Display', 'Segoe UI', serif;
+            color: var(--text-color);
+        }
+
         .dashboard-hero {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
-            padding: 3rem 0;
-            margin-bottom: 2rem;
-            border-radius: var(--border-radius);
+            padding: 4rem 0;
+            margin-bottom: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px var(--shadow-color);
+        }
+
+        .dashboard-hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
         }
 
         .stat-card {
             background: white;
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            transition: var(--transition);
-            border-left: 4px solid var(--secondary-color);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
         }
 
         .stat-card:hover {
             transform: translateY(-5px);
-            box-shadow: var(--box-shadow);
+            box-shadow: 0 15px 30px var(--shadow-color);
         }
 
         .stat-icon {
-            font-size: 2.5rem;
-            color: var(--secondary-color);
-            margin-bottom: 1rem;
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            opacity: 0.9;
         }
 
         .stat-number {
-            font-size: 2rem;
-            font-weight: 600;
+            font-size: 2.5rem;
+            font-weight: 700;
             color: var(--primary-color);
+            font-family: 'Playfair Display', serif;
+            margin-bottom: 0.5rem;
         }
 
         .stat-label {
-            color: #666;
-            font-size: 0.9rem;
+            color: var(--secondary-color);
+            font-size: 1rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            font-weight: 500;
         }
 
         .activity-card {
             background: white;
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px var(--shadow-color);
+        }
+
+        .activity-card h3 {
+            color: var(--primary-color);
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            font-size: 1.5rem;
             margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--accent-color);
         }
 
         .activity-item {
-            padding: 1rem;
-            border-bottom: 1px solid #eee;
-            transition: var(--transition);
+            padding: 1.2rem;
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.3s ease;
         }
 
         .activity-item:hover {
-            background-color: rgba(52, 152, 219, 0.05);
+            background-color: var(--background-color);
+            border-radius: 10px;
         }
 
         .activity-item:last-child {
@@ -119,89 +172,136 @@ $recentProperties = $db->query("
 
         .property-card {
             background: white;
-            border-radius: var(--border-radius);
+            border-radius: 15px;
             overflow: hidden;
-            transition: var(--transition);
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 5px 15px var(--shadow-color);
         }
 
         .property-card:hover {
             transform: translateY(-5px);
-            box-shadow: var(--box-shadow);
+            box-shadow: 0 15px 30px var(--shadow-color);
         }
 
         .property-image {
-            height: 200px;
+            height: 250px;
             background-size: cover;
             background-position: center;
+            position: relative;
+        }
+
+        .property-image::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
         }
 
         .property-details {
-            padding: 1.5rem;
+            padding: 2rem;
+            background: white;
         }
 
         .property-title {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+            margin-bottom: 0.8rem;
+            font-family: 'Playfair Display', serif;
         }
 
         .property-location {
-            color: #666;
-            font-size: 0.9rem;
+            color: var(--secondary-color);
+            font-size: 1rem;
             margin-bottom: 1rem;
         }
 
         .property-price {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--secondary-color);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            font-family: 'Playfair Display', serif;
         }
 
         .quick-actions {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
         }
 
         .action-button {
             background: white;
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
+            border-radius: 15px;
+            padding: 2rem;
             text-align: center;
-            transition: var(--transition);
+            transition: all 0.3s ease;
             border: none;
-            width: 100%;
+            text-decoration: none;
+            box-shadow: 0 5px 15px var(--shadow-color);
         }
 
         .action-button:hover {
             transform: translateY(-5px);
-            box-shadow: var(--box-shadow);
+            box-shadow: 0 15px 30px var(--shadow-color);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .action-button:hover .action-icon,
+        .action-button:hover .action-label {
+            color: white;
         }
 
         .action-icon {
-            font-size: 2rem;
-            color: var(--secondary-color);
-            margin-bottom: 1rem;
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1.2rem;
+            transition: all 0.3s ease;
         }
 
         .action-label {
-            font-weight: 500;
+            font-weight: 600;
             color: var(--primary-color);
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            font-family: 'Playfair Display', serif;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-hero {
+                padding: 3rem 0;
+                margin-bottom: 2rem;
+            }
+
+            .stat-card {
+                padding: 1.5rem;
+            }
+
+            .property-image {
+                height: 200px;
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <?php require_once INCLUDES_PATH . '/header.php'; ?>
     
-    <div class="dashboard-hero">
-        <div class="container">
-            <h1 class="text-white"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
-            <p class="lead text-white">Welcome back, <?php echo htmlspecialchars($_SESSION['username']); ?></p>
-        </div>
-    </div>
-
     <div class="container">
+        <div class="dashboard-hero">
+            <div class="container">
+                <h1><i class="fas fa-tachometer-alt me-2"></i>Welcome to Your Dashboard</h1>
+                <p class="lead">Managing Excellence in Real Estate, <?php echo htmlspecialchars($_SESSION['username']); ?></p>
+            </div>
+        </div>
+
         <!-- Quick Actions -->
         <div class="quick-actions">
             <a href="<?php echo BASE_URL; ?>/modules/admin/users.php" class="action-button">

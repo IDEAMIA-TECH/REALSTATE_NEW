@@ -69,6 +69,27 @@ if (isset($_GET['download']) && isset($_GET['file'])) {
     }
 }
 
+// Handle backup deletion
+if (isset($_GET['delete']) && isset($_GET['file'])) {
+    $file = __DIR__ . '/../../backups/' . basename($_GET['file']);
+    if (file_exists($file) && is_file($file)) {
+        if (unlink($file)) {
+            $message = "Backup deleted successfully.";
+            
+            // Log the activity
+            $stmt = $db->prepare("
+                INSERT INTO activity_log (user_id, action, entity_type, details)
+                VALUES (?, 'delete', 'backup', ?)
+            ");
+            $stmt->execute([$_SESSION['user_id'], "Backup deleted: " . basename($file)]);
+        } else {
+            $error = "Failed to delete backup file.";
+        }
+    } else {
+        $error = "Backup file not found.";
+    }
+}
+
 // Get list of existing backups
 $backups = [];
 $backupDir = __DIR__ . '/../../backups';
@@ -309,8 +330,14 @@ if (file_exists($backupDir)) {
                         </h5>
                         <div class="action-buttons">
                             <a href="?download=1&file=<?php echo urlencode($backup['filename']); ?>" 
-                               class="action-button btn-download">
+                               class="action-button btn-download" title="Download Backup">
                                 <i class="fas fa-download"></i>
+                            </a>
+                            <a href="?delete=1&file=<?php echo urlencode($backup['filename']); ?>" 
+                               class="action-button btn-delete" 
+                               title="Delete Backup"
+                               onclick="return confirm('Are you sure you want to delete this backup? This action cannot be undone.');">
+                                <i class="fas fa-trash"></i>
                             </a>
                         </div>
                     </div>

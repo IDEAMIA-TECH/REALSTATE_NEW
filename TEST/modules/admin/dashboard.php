@@ -57,14 +57,14 @@ $recentProperties = $db->query("
 
 // Get recent valuations
 $recentValuations = $db->query("
-    SELECT 
-        pv.*,
-        p.address,
-        p.initial_valuation
-    FROM property_valuations pv
-    JOIN properties p ON pv.property_id = p.id
-    ORDER BY pv.valuation_date DESC, pv.created_at DESC
-    LIMIT 5
+   SELECT 
+    pv.*,
+    p.address,
+    p.initial_valuation
+FROM property_valuations pv
+JOIN properties p ON pv.property_id = p.id
+ORDER BY pv.valuation_date DESC, pv.created_at DESC
+LIMIT 5
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 // Get home price index data for the last 6 months

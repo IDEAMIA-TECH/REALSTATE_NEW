@@ -63,34 +63,34 @@ $query = "
 $params = [];
 
 if ($filters['action']) {
-    $query .= " AND action = ?";
+    $query .= " AND a.action = ?";
     $params[] = $filters['action'];
 }
 
 if ($filters['entity_type']) {
-    $query .= " AND entity_type = ?";
+    $query .= " AND a.entity_type = ?";
     $params[] = $filters['entity_type'];
 }
 
 if ($filters['start_date']) {
-    $query .= " AND DATE(created_at) >= ?";
+    $query .= " AND DATE(a.created_at) >= ?";
     $params[] = $filters['start_date'];
 }
 
 if ($filters['end_date']) {
-    $query .= " AND DATE(created_at) <= ?";
+    $query .= " AND DATE(a.created_at) <= ?";
     $params[] = $filters['end_date'];
 }
 
 if ($filters['search']) {
-    $query .= " AND (details LIKE ? OR action LIKE ? OR entity_type LIKE ?)";
+    $query .= " AND (a.details LIKE ? OR a.action LIKE ? OR a.entity_type LIKE ?)";
     $searchTerm = "%{$filters['search']}%";
     $params[] = $searchTerm;
     $params[] = $searchTerm;
     $params[] = $searchTerm;
 }
 
-$query .= " ORDER BY created_at DESC";
+$query .= " ORDER BY a.created_at DESC";
 
 // Get logs
 try {

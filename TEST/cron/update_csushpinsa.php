@@ -3,6 +3,24 @@ require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../modules/csushpinsa/CSUSHPINSA.php';
 
+// --- Last Tuesday Validation ---
+$today = new DateTime();
+$month = (int)$today->format('m');
+$nextWeek = (int)$today->modify('+7 days')->format('m');
+
+if ($month !== $nextWeek) {
+    // Today is the last Tuesday of the month
+    // Reset date back to today (since we moved it with modify())
+    $today = new DateTime();
+    if ($today->format('N') != 2) {
+        error_log("Not Tuesday – skipping CSUSHPINSA update.");
+        return;
+    }
+} else {
+    error_log("Not the last Tuesday of the month – skipping CSUSHPINSA update.");
+    return;
+}
+
 // Initialize CSUSHPINSA class
 $csushpinsa = new CSUSHPINSA();
 
@@ -22,8 +40,7 @@ $endDate = date('Y-m-d');
 
 // Fetch and store new data
 if ($csushpinsa->fetchHistoricalData($startDate, $endDate)) {
-    // Log success
     error_log("CSUSHPINSA data updated successfully from $startDate to $endDate");
 } else {
     error_log("Failed to update CSUSHPINSA data");
-} 
+}

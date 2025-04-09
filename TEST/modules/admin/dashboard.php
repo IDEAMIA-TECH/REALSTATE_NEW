@@ -25,9 +25,9 @@ $valuationStats = $db->query("
     SELECT 
         COUNT(DISTINCT property_id) as total_properties,
         COUNT(*) as total_valuations,
-        AVG(appreciation) as avg_appreciation,
-        MAX(appreciation) as max_appreciation,
-        MIN(appreciation) as min_appreciation
+        COALESCE(AVG(appreciation), 0) as avg_appreciation,
+        COALESCE(MAX(appreciation), 0) as max_appreciation,
+        COALESCE(MIN(appreciation), 0) as min_appreciation
     FROM property_valuations
     WHERE valuation_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
 ")->fetch(PDO::FETCH_ASSOC);
@@ -439,28 +439,28 @@ foreach ($indexData as $data) {
             <div class="col-md-3">
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
-                    <div class="stat-number"><?php echo number_format($valuationStats['total_valuations']); ?></div>
+                    <div class="stat-number"><?php echo number_format($valuationStats['total_valuations'] ?? 0); ?></div>
                     <div class="stat-label">Monthly Valuations</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-percentage"></i></div>
-                    <div class="stat-number"><?php echo number_format($valuationStats['avg_appreciation'], 2); ?>%</div>
+                    <div class="stat-number"><?php echo number_format(floatval($valuationStats['avg_appreciation'] ?? 0), 2); ?>%</div>
                     <div class="stat-label">Avg. Appreciation</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
-                    <div class="stat-number"><?php echo number_format($valuationStats['max_appreciation'], 2); ?>%</div>
+                    <div class="stat-number"><?php echo number_format(floatval($valuationStats['max_appreciation'] ?? 0), 2); ?>%</div>
                     <div class="stat-label">Highest Appreciation</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
-                    <div class="stat-number"><?php echo number_format($valuationStats['min_appreciation'], 2); ?>%</div>
+                    <div class="stat-number"><?php echo number_format(floatval($valuationStats['min_appreciation'] ?? 0), 2); ?>%</div>
                     <div class="stat-label">Lowest Appreciation</div>
                 </div>
             </div>
@@ -482,7 +482,7 @@ foreach ($indexData as $data) {
                                 <div class="valuation-stat">
                                     <div class="stat-value text-success">
                                         <i class="fas fa-arrow-up"></i>
-                                        <?php echo number_format($valuationStats['max_appreciation'], 2); ?>%
+                                        <?php echo number_format(floatval($valuationStats['max_appreciation'] ?? 0), 2); ?>%
                                     </div>
                                     <div class="stat-label">Highest Appreciation</div>
                                 </div>
@@ -491,7 +491,7 @@ foreach ($indexData as $data) {
                                 <div class="valuation-stat">
                                     <div class="stat-value text-danger">
                                         <i class="fas fa-arrow-down"></i>
-                                        <?php echo number_format($valuationStats['min_appreciation'], 2); ?>%
+                                        <?php echo number_format(floatval($valuationStats['min_appreciation'] ?? 0), 2); ?>%
                                     </div>
                                     <div class="stat-label">Lowest Appreciation</div>
                                 </div>
@@ -500,7 +500,7 @@ foreach ($indexData as $data) {
                                 <div class="valuation-stat">
                                     <div class="stat-value text-primary">
                                         <i class="fas fa-building"></i>
-                                        <?php echo number_format($valuationStats['total_properties']); ?>
+                                        <?php echo number_format($valuationStats['total_properties'] ?? 0); ?>
                                     </div>
                                     <div class="stat-label">Properties Tracked</div>
                                 </div>

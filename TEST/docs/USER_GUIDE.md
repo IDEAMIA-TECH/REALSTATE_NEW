@@ -65,7 +65,77 @@ Navigate to the 'My Properties' section (link might be in the header or dashboar
 
 ## 4. Admin Dashboard
 
-*(Content to be added)*
+Administrators have access to a comprehensive dashboard and management tools to oversee the entire application.
+
+### Admin Dashboard Overview (`dashboard.php`)
+
+*   **Welcome Section:** Greets the administrator.
+*   **Quick Actions:** Provides buttons for quickly navigating to key management sections:
+    *   Manage Users
+    *   Manage Clients
+    *   Manage Properties
+    *   View Reports
+*   **Statistics:** Displays key system-wide metrics:
+    *   Active Clients
+    *   Active Properties
+    *   Active Users
+    *   Total Valuations
+*   **Recent Activity:** Shows a log of recent actions performed by users across the system.
+*   **Recent Properties:** Lists the most recently added or updated properties in the system.
+
+### Managing Users (`users.php`)
+
+*   **View Users:** Displays a table of all registered users with their username, email, role, and status.
+*   **Add User:** Allows adding a new user by providing username, email, password, and role.
+*   **Edit User:** Enables modification of an existing user's details (username, email, role, status). Password changes might be restricted or require a separate process.
+*   **Delete User:** Removes a user from the system (may be a soft delete or permanent).
+
+### Managing Clients (`clients.php`)
+
+*   **View Clients:** Shows a list of all clients with details like name, email, phone, address, and status.
+*   **Add Client:** Allows creating a new client record, potentially linking them to a new user account with a 'property_owner' role. Includes fields for contact information and address.
+    *   **Welcome Email:** Upon creation, the new client receives a welcome email with their login credentials (username and generated password).
+    *   **Admin Notification:** All administrators receive an email notification about the new client registration.
+*   **Edit Client:** Allows updating client information.
+*   **View Client Details:** Shows comprehensive information about a specific client, potentially including linked properties.
+
+### Managing Properties (`properties.php`)
+
+*   **View Properties:** Displays a table of all properties, often filterable or searchable, showing address, client, initial valuation, status, etc.
+*   **Add Property:** Allows adding a new property, linking it to a client, and entering details like address, initial valuation, agreed percentage, term, and status.
+*   **Edit Property:** Enables modification of property details.
+*   **View Property Details:** Shows comprehensive information for a specific property, including:
+    *   **Valuation History:** Track changes in property value over time. Admins can likely add new valuations (`update_valuation.php`).
+    *   **Documents:** Manage documents associated with the property (uploading via `upload_document.php`, deleting via `delete_document.php`).
+
+### Generating Reports (`reports.php`)
+
+*   Provides options to generate various reports based on system data (e.g., client reports, property reports, valuation summaries).
+*   Allows filtering reports by date ranges or other criteria.
+*   Offers options to export reports in different formats (e.g., CSV, PDF - likely using `ReportExporter.php`).
+
+### System Settings (`settings.php`)
+
+*   Allows administrators to configure various application settings, such as:
+    *   Application Name (`app_name`)
+    *   Base URL (`base_url`)
+    *   Email configuration
+    *   Other system parameters.
+
+### Viewing Activity Logs (`activity_log.php` / `logs.php`)
+
+*   Displays a detailed log of actions performed within the application for auditing and monitoring purposes.
+*   May offer filtering or searching capabilities.
+
+### Performing Backups (`backup.php`)
+
+*   Provides functionality to create backups of the application's database or files.
+*   May include options for scheduling or downloading backup files.
+
+### Managing Your Admin Profile (`profile.php`)
+
+*   Accessed via the user dropdown in the header.
+*   Allows administrators to update their own email address and change their password, similar to regular users.
 
 ## 5. Logging Out
 

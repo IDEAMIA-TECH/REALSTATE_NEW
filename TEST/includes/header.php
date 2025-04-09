@@ -205,6 +205,11 @@ if (!isset($page_title)) {
                                             <i class="fas fa-chart-bar"></i>Reports
                                         </a>
                                     </li>
+                                    <li>
+                                        <a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/logs.php">
+                                            <i class="fas fa-history"></i>Activity Logs
+                                        </a>
+                                    </li>
                                 </ul>
                             </li>
                         <?php endif; ?>

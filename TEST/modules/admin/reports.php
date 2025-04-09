@@ -43,21 +43,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             pv.diference,
                             pv.appreciation
                         FROM properties p
-                        INNER JOIN (
+                        LEFT JOIN (
                             SELECT property_id, MAX(valuation_date) as max_date
                             FROM property_valuations
                             GROUP BY property_id
                         ) latest ON p.id = latest.property_id
-                        INNER JOIN property_valuations pv ON p.id = pv.property_id 
+                        LEFT JOIN property_valuations pv ON p.id = pv.property_id 
                             AND pv.valuation_date = latest.max_date
-                        WHERE pv.valuation_date BETWEEN ? AND ?
-                        ORDER BY pv.valuation_date DESC
+                        WHERE p.status = 'active'
+                        ORDER BY p.created_at DESC
                     ");
                     
-                    // Debug logging
-                    error_log("Property Valuation Report - Date Range: " . $startDate . " to " . $endDate);
-                    
-                    $stmt->execute([$startDate, $endDate]);
+                    $stmt->execute();
                     $reports['property_valuation'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     
                     // Debug logging

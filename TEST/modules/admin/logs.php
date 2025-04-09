@@ -92,7 +92,107 @@ try {
     $logs = [];
     $levels = [];
 }
+
+if (empty($logs)) {
+    // Add function to insert test logs
+    function insertTestLogs($db) {
+        $testLogs = [
+            [
+                'level' => 'info',
+                'message' => 'Usuario ha iniciado sesión exitosamente',
+                'context' => json_encode(['user_id' => 1, 'ip' => '192.168.1.1'])
+            ],
+            [
+                'level' => 'warning',
+                'message' => 'Intento fallido de inicio de sesión',
+                'context' => json_encode(['username' => 'test@example.com', 'ip' => '192.168.1.2'])
+            ],
+            [
+                'level' => 'error',
+                'message' => 'Error al procesar la solicitud de pago',
+                'context' => json_encode(['payment_id' => 'PAY123', 'error' => 'Invalid card'])
+            ],
+            [
+                'level' => 'debug',
+                'message' => 'Depuración de proceso de sincronización',
+                'context' => json_encode(['process' => 'sync', 'status' => 'completed'])
+            ]
+        ];
+
+        $stmt = $db->prepare("INSERT INTO system_logs (level, message, context) VALUES (?, ?, ?)");
+        
+        foreach ($testLogs as $log) {
+            try {
+                $stmt->execute([$log['level'], $log['message'], $log['context']]);
+            } catch (PDOException $e) {
+                // Continue with next log if one fails
+                continue;
+            }
+        }
+    }
+
+    // Check if logs table is empty
+    $countStmt = $db->query("SELECT COUNT(*) FROM system_logs");
+    $logCount = $countStmt->fetchColumn();
+
+    if ($logCount == 0 && isset($_POST['generate_test_logs'])) {
+        insertTestLogs($db);
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit;
+    }
 ?>
+    <div class="no-logs">
+        <i class="fas fa-clipboard-list"></i>
+        <h4>No hay registros encontrados</h4>
+        <p>No hay registros de actividad en el sistema</p>
+        
+        <form method="POST" class="mt-3">
+            <button type="submit" name="generate_test_logs" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Generar Registros de Prueba
+            </button>
+        </form>
+    </div>
+<?php } else { ?>
+    <?php foreach ($logs as $log): ?>
+        <div class="log-card <?php echo $log['level']; ?>">
+            <div class="log-header">
+                <span class="log-level <?php echo $log['level']; ?>">
+                    <?php echo ucfirst($log['level']); ?>
+                </span>
+                <span class="log-timestamp">
+                    <?php echo date('Y-m-d H:i:s', strtotime($log['created_at'])); ?>
+                </span>
+            </div>
+            
+            <div class="log-message">
+                <?php echo htmlspecialchars($log['message']); ?>
+            </div>
+            
+            <?php if ($log['context']): ?>
+                <button type="button" class="btn btn-sm btn-outline-secondary" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#contextModal<?php echo $log['id']; ?>">
+                    <i class="fas fa-eye me-2"></i>View Context
+                </button>
+                
+                <!-- Context Modal -->
+                <div class="modal fade" id="contextModal<?php echo $log['id']; ?>" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Log Context</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <pre class="log-context"><?php echo htmlspecialchars($log['context']); ?></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endforeach; ?>
+<?php } ?>
 
 <!DOCTYPE html>
 <html lang="en">

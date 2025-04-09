@@ -24,28 +24,6 @@ $endDate = date('Y-m-d');
 if ($csushpinsa->fetchHistoricalData($startDate, $endDate)) {
     // Log success
     error_log("CSUSHPINSA data updated successfully from $startDate to $endDate");
-    
-    // Update property valuations
-    $stmt = $db->query("
-        SELECT p.id, p.effective_date
-        FROM properties p
-        WHERE p.status = 'active'
-        AND NOT EXISTS (
-            SELECT 1 FROM property_valuations pv
-            WHERE pv.property_id = p.id
-            AND pv.valuation_date = CURDATE()
-        )
-    ");
-    
-    $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    foreach ($properties as $property) {
-        if ($csushpinsa->updatePropertyValuation($property['id'], $endDate)) {
-            error_log("Property valuation updated for property ID: " . $property['id']);
-        } else {
-            error_log("Failed to update property valuation for property ID: " . $property['id']);
-        }
-    }
 } else {
     error_log("Failed to update CSUSHPINSA data");
 } 

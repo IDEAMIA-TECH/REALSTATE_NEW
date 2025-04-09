@@ -408,48 +408,51 @@ foreach ($indexData as $data) {
             </div>
         </div>
 
+        <!-- Recent Properties Table -->
         <div class="row">
-            <!-- Recent Activity -->
-            <div class="col-md-6">
-                <div class="activity-card">
-                    <h3><i class="fas fa-history me-2"></i>Recent Activity</h3>
-                    <?php foreach ($recentActivity as $activity): ?>
-                        <div class="activity-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong><?php echo htmlspecialchars($activity['username']); ?></strong>
-                                    <?php echo htmlspecialchars($activity['action']); ?>
-                                </div>
-                                <small class="text-muted">
-                                    <?php echo date('M d, Y H:i', strtotime($activity['created_at'])); ?>
-                                </small>
-                            </div>
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-building me-2"></i>
+                            Recent Properties
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Address</th>
+                                        <th>Initial Value</th>
+                                        <th>Status</th>
+                                        <th>Created Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($recentProperties as $property): ?>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars($property['address']); ?></td>
+                                            <td>$<?php echo number_format(floatval($property['initial_valuation']), 2); ?></td>
+                                            <td>
+                                                <span class="badge bg-<?php echo $property['status'] === 'active' ? 'success' : 'secondary'; ?>">
+                                                    <?php echo ucfirst($property['status']); ?>
+                                                </span>
+                                            </td>
+                                            <td><?php echo date('M d, Y', strtotime($property['created_at'])); ?></td>
+                                            <td>
+                                                <a href="<?php echo BASE_URL; ?>/modules/admin/properties.php?action=view&id=<?php echo $property['id']; ?>" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
                         </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <!-- Recent Properties -->
-            <div class="col-md-6">
-                <div class="activity-card">
-                    <h3><i class="fas fa-building me-2"></i>Recent Properties</h3>
-                    <?php foreach ($recentProperties as $property): ?>
-                        <div class="property-card mb-3">
-                            <div class="property-image" 
-                                 style="background-image: url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80');">
-                            </div>
-                            <div class="property-details">
-                                <div class="property-title"><?php echo htmlspecialchars($property['title'] ?? 'No Address'); ?></div>
-                                <div class="property-location">
-                                    <i class="fas fa-map-marker-alt me-1"></i>
-                                    <?php echo htmlspecialchars($property['location'] ?? 'No Location'); ?>
-                                </div>
-                                <div class="property-price">
-                                    $<?php echo number_format(floatval($property['price'] ?? 0), 2); ?>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
+                    </div>
                 </div>
             </div>
         </div>

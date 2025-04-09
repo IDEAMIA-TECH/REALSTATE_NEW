@@ -14,34 +14,39 @@ $db = Database::getInstance()->getConnection();
 $message = '';
 $error = '';
 
-// Check if system_logs table exists, if not create it
+// Check if activity_log table exists, if not create it
 try {
-    $db->query("SELECT 1 FROM system_logs LIMIT 1");
+    $db->query("SELECT 1 FROM activity_log LIMIT 1");
 } catch (PDOException $e) {
-    // Create system_logs table
+    // Create activity_log table if it doesn't exist
     $createTableSQL = "
-        CREATE TABLE IF NOT EXISTS system_logs (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            level ENUM('error', 'warning', 'info', 'debug') NOT NULL,
-            message TEXT NOT NULL,
-            context TEXT,
+        CREATE TABLE IF NOT EXISTS activity_log (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            user_id INT,
+            action VARCHAR(50) NOT NULL,
+            entity_type VARCHAR(50) NOT NULL,
+            entity_id INT,
+            details TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            INDEX idx_level (level),
-            INDEX idx_created_at (created_at)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+            INDEX idx_activity_user (user_id),
+            INDEX idx_activity_entity (entity_type, entity_id),
+            INDEX idx_activity_date (created_at)
+        );
     ";
     
     try {
         $db->exec($createTableSQL);
-        $message = "System logs table created successfully";
+        $message = "Activity log table created successfully";
     } catch (PDOException $e) {
-        $error = "Failed to create system logs table: " . $e->getMessage();
+        $error = "Failed to create activity log table: " . $e->getMessage();
     }
 }
 
 // Handle filters
 $filters = [
-    'level' => $_GET['level'] ?? null,
+    'action' => $_GET['action'] ?? null,
+    'entity_type' => $_GET['entity_type'] ?? null,
     'start_date' => $_GET['start_date'] ?? null,
     'end_date' => $_GET['end_date'] ?? null,
     'search' => $_GET['search'] ?? null
@@ -49,15 +54,22 @@ $filters = [
 
 // Build query with filters
 $query = "
-    SELECT * FROM system_logs
+    SELECT a.*, u.username 
+    FROM activity_log a 
+    LEFT JOIN users u ON a.user_id = u.id
     WHERE 1=1
 ";
 
 $params = [];
 
-if ($filters['level']) {
-    $query .= " AND level = ?";
-    $params[] = $filters['level'];
+if ($filters['action']) {
+    $query .= " AND action = ?";
+    $params[] = $filters['action'];
+}
+
+if ($filters['entity_type']) {
+    $query .= " AND entity_type = ?";
+    $params[] = $filters['entity_type'];
 }
 
 if ($filters['start_date']) {
@@ -71,8 +83,9 @@ if ($filters['end_date']) {
 }
 
 if ($filters['search']) {
-    $query .= " AND (message LIKE ? OR context LIKE ?)";
+    $query .= " AND (details LIKE ? OR action LIKE ? OR entity_type LIKE ?)";
     $searchTerm = "%{$filters['search']}%";
+    $params[] = $searchTerm;
     $params[] = $searchTerm;
     $params[] = $searchTerm;
 }
@@ -85,114 +98,16 @@ try {
     $stmt->execute($params);
     $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Get unique log levels
-    $levels = $db->query("SELECT DISTINCT level FROM system_logs")->fetchAll(PDO::FETCH_COLUMN);
+    // Get unique actions and entity types for filters
+    $actions = $db->query("SELECT DISTINCT action FROM activity_log")->fetchAll(PDO::FETCH_COLUMN);
+    $entityTypes = $db->query("SELECT DISTINCT entity_type FROM activity_log")->fetchAll(PDO::FETCH_COLUMN);
 } catch (PDOException $e) {
     $error = "Error fetching logs: " . $e->getMessage();
     $logs = [];
-    $levels = [];
+    $actions = [];
+    $entityTypes = [];
 }
-
-if (empty($logs)) {
-    // Add function to insert test logs
-    function insertTestLogs($db) {
-        $testLogs = [
-            [
-                'level' => 'info',
-                'message' => 'Usuario ha iniciado sesión exitosamente',
-                'context' => json_encode(['user_id' => 1, 'ip' => '192.168.1.1'])
-            ],
-            [
-                'level' => 'warning',
-                'message' => 'Intento fallido de inicio de sesión',
-                'context' => json_encode(['username' => 'test@example.com', 'ip' => '192.168.1.2'])
-            ],
-            [
-                'level' => 'error',
-                'message' => 'Error al procesar la solicitud de pago',
-                'context' => json_encode(['payment_id' => 'PAY123', 'error' => 'Invalid card'])
-            ],
-            [
-                'level' => 'debug',
-                'message' => 'Depuración de proceso de sincronización',
-                'context' => json_encode(['process' => 'sync', 'status' => 'completed'])
-            ]
-        ];
-
-        $stmt = $db->prepare("INSERT INTO system_logs (level, message, context) VALUES (?, ?, ?)");
-        
-        foreach ($testLogs as $log) {
-            try {
-                $stmt->execute([$log['level'], $log['message'], $log['context']]);
-            } catch (PDOException $e) {
-                // Continue with next log if one fails
-                continue;
-            }
-        }
-    }
-
-    // Check if logs table is empty
-    $countStmt = $db->query("SELECT COUNT(*) FROM system_logs");
-    $logCount = $countStmt->fetchColumn();
-
-    if ($logCount == 0 && isset($_POST['generate_test_logs'])) {
-        insertTestLogs($db);
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit;
-    }
 ?>
-    <div class="no-logs">
-        <i class="fas fa-clipboard-list"></i>
-        <h4>No hay registros encontrados</h4>
-        <p>No hay registros de actividad en el sistema</p>
-        
-        <form method="POST" class="mt-3">
-            <button type="submit" name="generate_test_logs" class="btn btn-primary">
-                <i class="fas fa-plus-circle me-2"></i>Generar Registros de Prueba
-            </button>
-        </form>
-    </div>
-<?php } else { ?>
-    <?php foreach ($logs as $log): ?>
-        <div class="log-card <?php echo $log['level']; ?>">
-            <div class="log-header">
-                <span class="log-level <?php echo $log['level']; ?>">
-                    <?php echo ucfirst($log['level']); ?>
-                </span>
-                <span class="log-timestamp">
-                    <?php echo date('Y-m-d H:i:s', strtotime($log['created_at'])); ?>
-                </span>
-            </div>
-            
-            <div class="log-message">
-                <?php echo htmlspecialchars($log['message']); ?>
-            </div>
-            
-            <?php if ($log['context']): ?>
-                <button type="button" class="btn btn-sm btn-outline-secondary" 
-                        data-bs-toggle="modal" 
-                        data-bs-target="#contextModal<?php echo $log['id']; ?>">
-                    <i class="fas fa-eye me-2"></i>View Context
-                </button>
-                
-                <!-- Context Modal -->
-                <div class="modal fade" id="contextModal<?php echo $log['id']; ?>" tabindex="-1">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Log Context</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <pre class="log-context"><?php echo htmlspecialchars($log['context']); ?></pre>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            <?php endif; ?>
-        </div>
-    <?php endforeach; ?>
-<?php } ?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -385,34 +300,46 @@ if (empty($logs)) {
         <div class="filters-card">
             <form method="GET" action="" class="row g-3">
                 <div class="col-md-3">
-                    <label for="level" class="form-label">Log Level</label>
-                    <select class="form-select" id="level" name="level">
-                        <option value="">All Levels</option>
-                        <?php foreach ($levels as $level): ?>
-                            <option value="<?php echo $level; ?>" <?php echo $filters['level'] == $level ? 'selected' : ''; ?>>
-                                <?php echo ucfirst($level); ?>
+                    <label for="action" class="form-label">Action</label>
+                    <select class="form-select" id="action" name="action">
+                        <option value="">All Actions</option>
+                        <?php foreach ($actions as $action): ?>
+                            <option value="<?php echo $action; ?>" <?php echo $filters['action'] == $action ? 'selected' : ''; ?>>
+                                <?php echo ucfirst($action); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 
                 <div class="col-md-3">
+                    <label for="entity_type" class="form-label">Entity Type</label>
+                    <select class="form-select" id="entity_type" name="entity_type">
+                        <option value="">All Types</option>
+                        <?php foreach ($entityTypes as $type): ?>
+                            <option value="<?php echo $type; ?>" <?php echo $filters['entity_type'] == $type ? 'selected' : ''; ?>>
+                                <?php echo ucfirst($type); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
                     <label for="start_date" class="form-label">Start Date</label>
                     <input type="date" class="form-control" id="start_date" name="start_date" 
                            value="<?php echo $filters['start_date']; ?>">
                 </div>
                 
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="end_date" class="form-label">End Date</label>
                     <input type="date" class="form-control" id="end_date" name="end_date" 
                            value="<?php echo $filters['end_date']; ?>">
                 </div>
                 
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="search" class="form-label">Search</label>
                     <input type="text" class="form-control" id="search" name="search" 
                            value="<?php echo htmlspecialchars($filters['search'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" 
-                           placeholder="Search in messages...">
+                           placeholder="Search...">
                 </div>
                 
                 <div class="col-12">
@@ -429,45 +356,40 @@ if (empty($logs)) {
         <?php if (empty($logs)): ?>
             <div class="no-logs">
                 <i class="fas fa-clipboard-list"></i>
-                <h4>No logs found</h4>
+                <h4>No activity logs found</h4>
                 <p>Try adjusting your filters or check back later</p>
             </div>
         <?php else: ?>
             <?php foreach ($logs as $log): ?>
-                <div class="log-card <?php echo $log['level']; ?>">
+                <div class="log-card">
                     <div class="log-header">
-                        <span class="log-level <?php echo $log['level']; ?>">
-                            <?php echo ucfirst($log['level']); ?>
-                        </span>
+                        <div>
+                            <span class="log-action">
+                                <i class="fas fa-circle me-2"></i><?php echo ucfirst($log['action']); ?>
+                            </span>
+                            <span class="log-entity">
+                                <i class="fas fa-tag ms-3 me-2"></i><?php echo ucfirst($log['entity_type']); ?>
+                            </span>
+                            <?php if ($log['username']): ?>
+                                <span class="log-user">
+                                    <i class="fas fa-user ms-3 me-2"></i><?php echo htmlspecialchars($log['username']); ?>
+                                </span>
+                            <?php endif; ?>
+                        </div>
                         <span class="log-timestamp">
-                            <?php echo date('Y-m-d H:i:s', strtotime($log['created_at'])); ?>
+                            <i class="fas fa-clock me-2"></i><?php echo date('Y-m-d H:i:s', strtotime($log['created_at'])); ?>
                         </span>
                     </div>
                     
-                    <div class="log-message">
-                        <?php echo htmlspecialchars($log['message']); ?>
+                    <div class="log-message mt-3">
+                        <?php echo htmlspecialchars($log['details']); ?>
                     </div>
                     
-                    <?php if ($log['context']): ?>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#contextModal<?php echo $log['id']; ?>">
-                            <i class="fas fa-eye me-2"></i>View Context
-                        </button>
-                        
-                        <!-- Context Modal -->
-                        <div class="modal fade" id="contextModal<?php echo $log['id']; ?>" tabindex="-1">
-                            <div class="modal-dialog modal-lg">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Log Context</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <pre class="log-context"><?php echo htmlspecialchars($log['context']); ?></pre>
-                                    </div>
-                                </div>
-                            </div>
+                    <?php if ($log['entity_id']): ?>
+                        <div class="log-entity-id mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-hashtag me-1"></i>ID: <?php echo $log['entity_id']; ?>
+                            </small>
                         </div>
                     <?php endif; ?>
                 </div>

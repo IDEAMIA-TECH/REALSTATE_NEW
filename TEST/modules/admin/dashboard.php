@@ -43,6 +43,23 @@ $recentProperties = $db->query("
     ORDER BY p.created_at DESC 
     LIMIT 3
 ")->fetchAll(PDO::FETCH_ASSOC);
+
+// Get home price index data for the last 6 months
+$sixMonthsAgo = date('Y-m-d', strtotime('-6 months'));
+$indexData = $db->query("
+    SELECT date, value 
+    FROM home_price_index 
+    WHERE date >= '$sixMonthsAgo' 
+    ORDER BY date ASC
+")->fetchAll(PDO::FETCH_ASSOC);
+
+// Prepare data for the chart
+$chartLabels = [];
+$chartValues = [];
+foreach ($indexData as $data) {
+    $chartLabels[] = date('M Y', strtotime($data['date']));
+    $chartValues[] = $data['value'];
+}
 ?>
 
 <!DOCTYPE html>
@@ -374,6 +391,23 @@ $recentProperties = $db->query("
             </div>
         </div>
 
+        <!-- Home Price Index Chart -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Home Price Index - Last 6 Months
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="priceIndexChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <!-- Recent Activity -->
             <div class="col-md-6">
@@ -424,5 +458,79 @@ $recentProperties = $db->query("
     <?php require_once INCLUDES_PATH . '/footer.php'; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Home Price Index Chart
+        const ctx = document.getElementById('priceIndexChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: <?php echo json_encode($chartLabels); ?>,
+                datasets: [{
+                    label: 'Home Price Index',
+                    data: <?php echo json_encode($chartValues); ?>,
+                    borderColor: '#15BE77',
+                    backgroundColor: 'rgba(21, 190, 119, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#15BE77',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleFont: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Index Value: ' + context.parsed.y.toFixed(2);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html> 

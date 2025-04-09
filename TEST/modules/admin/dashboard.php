@@ -20,18 +20,6 @@ $stats = [
     'valuations' => $db->query("SELECT COUNT(*) FROM property_valuations")->fetchColumn()
 ];
 
-// Get valuation statistics
-$valuationStats = $db->query("
-    SELECT 
-        COUNT(DISTINCT property_id) as total_properties,
-        COUNT(*) as total_valuations,
-        COALESCE(AVG(appreciation), 0) as avg_appreciation,
-        COALESCE(MAX(appreciation), 0) as max_appreciation,
-        COALESCE(MIN(appreciation), 0) as min_appreciation
-    FROM property_valuations
-    WHERE valuation_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-")->fetch(PDO::FETCH_ASSOC);
-
 // Get recent activity
 $recentActivity = $db->query("
     SELECT a.*, u.username 
@@ -53,18 +41,6 @@ $recentProperties = $db->query("
     WHERE p.status = 'active' 
     ORDER BY p.created_at DESC 
     LIMIT 5
-")->fetchAll(PDO::FETCH_ASSOC);
-
-// Get recent valuations
-$recentValuations = $db->query("
-   SELECT 
-    pv.*,
-    p.address,
-    p.initial_valuation
-FROM property_valuations pv
-JOIN properties p ON pv.property_id = p.id
-ORDER BY pv.valuation_date DESC, pv.created_at DESC
-LIMIT 5
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 // Get home price index data for the last 6 months
@@ -349,26 +325,6 @@ foreach ($indexData as $data) {
                 height: 150px;
             }
         }
-
-        .valuation-stat {
-            text-align: center;
-            padding: 1.5rem;
-            background: #f8f9fa;
-            border-radius: 10px;
-            margin-bottom: 1rem;
-        }
-        .valuation-stat .stat-value {
-            font-size: 1.8rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        .valuation-stat .stat-label {
-            color: #6c757d;
-            font-size: 0.9rem;
-        }
-        .valuation-stat i {
-            margin-right: 0.5rem;
-        }
     </style>
 </head>
 <body>
@@ -430,132 +386,6 @@ foreach ($indexData as $data) {
                     <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
                     <div class="stat-number"><?php echo number_format($stats['valuations']); ?></div>
                     <div class="stat-label">Total Valuations</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Valuation Statistics -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
-                    <div class="stat-number"><?php echo number_format($valuationStats['total_valuations'] ?? 0); ?></div>
-                    <div class="stat-label">Monthly Valuations</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-percentage"></i></div>
-                    <div class="stat-number"><?php echo number_format(floatval($valuationStats['avg_appreciation'] ?? 0), 2); ?>%</div>
-                    <div class="stat-label">Avg. Appreciation</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
-                    <div class="stat-number"><?php echo number_format(floatval($valuationStats['max_appreciation'] ?? 0), 2); ?>%</div>
-                    <div class="stat-label">Highest Appreciation</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
-                    <div class="stat-number"><?php echo number_format(floatval($valuationStats['min_appreciation'] ?? 0), 2); ?>%</div>
-                    <div class="stat-label">Lowest Appreciation</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Valuation Statistics -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-white">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-chart-bar me-2"></i>
-                            Valuation Performance
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="valuation-stat">
-                                    <div class="stat-value text-success">
-                                        <i class="fas fa-arrow-up"></i>
-                                        <?php echo number_format(floatval($valuationStats['max_appreciation'] ?? 0), 2); ?>%
-                                    </div>
-                                    <div class="stat-label">Highest Appreciation</div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="valuation-stat">
-                                    <div class="stat-value text-danger">
-                                        <i class="fas fa-arrow-down"></i>
-                                        <?php echo number_format(floatval($valuationStats['min_appreciation'] ?? 0), 2); ?>%
-                                    </div>
-                                    <div class="stat-label">Lowest Appreciation</div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="valuation-stat">
-                                    <div class="stat-value text-primary">
-                                        <i class="fas fa-building"></i>
-                                        <?php echo number_format($valuationStats['total_properties'] ?? 0); ?>
-                                    </div>
-                                    <div class="stat-label">Properties Tracked</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent Valuations -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-white">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-list me-2"></i>
-                            Recent Valuations
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Property</th>
-                                        <th>Valuation Date</th>
-                                        <th>Index Value</th>
-                                        <th>Appreciation</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($recentValuations as $valuation): ?>
-                                        <tr>
-                                            <td><?php echo htmlspecialchars($valuation['address']); ?></td>
-                                            <td><?php echo date('M d, Y', strtotime($valuation['valuation_date'])); ?></td>
-                                            <td>$<?php echo number_format(floatval($valuation['index_value']), 2); ?></td>
-                                            <td>
-                                                <span class="badge bg-<?php echo $valuation['appreciation'] >= 0 ? 'success' : 'danger'; ?>">
-                                                    <?php echo number_format($valuation['appreciation'], 2); ?>%
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <a href="<?php echo BASE_URL; ?>/modules/admin/properties.php?action=view&id=<?php echo $valuation['property_id']; ?>" 
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

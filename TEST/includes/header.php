@@ -210,6 +210,11 @@ if (!isset($page_title)) {
                                             <i class="fas fa-history"></i>Activity Logs
                                         </a>
                                     </li>
+                                    <li>
+                                        <a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/backup.php">
+                                            <i class="fas fa-database"></i>System Backup
+                                        </a>
+                                    </li>
                                 </ul>
                             </li>
                         <?php endif; ?>

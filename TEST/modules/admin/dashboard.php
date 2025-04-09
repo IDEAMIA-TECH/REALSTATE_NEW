@@ -33,15 +33,14 @@ $recentActivity = $db->query("
 $recentProperties = $db->query("
     SELECT 
         p.id,
-        p.address as title,
-        p.address as location,
-        p.initial_valuation as price,
+        p.address,
+        p.initial_valuation,
         p.status,
         p.created_at
     FROM properties p 
     WHERE p.status = 'active' 
     ORDER BY p.created_at DESC 
-    LIMIT 3
+    LIMIT 5
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 // Get home price index data for the last 6 months
@@ -433,14 +432,14 @@ foreach ($indexData as $data) {
                                 <tbody>
                                     <?php foreach ($recentProperties as $property): ?>
                                         <tr>
-                                            <td><?php echo htmlspecialchars($property['address']); ?></td>
-                                            <td>$<?php echo number_format(floatval($property['initial_valuation']), 2); ?></td>
+                                            <td><?php echo htmlspecialchars($property['address'] ?? 'No Address'); ?></td>
+                                            <td>$<?php echo number_format(floatval($property['initial_valuation'] ?? 0), 2); ?></td>
                                             <td>
                                                 <span class="badge bg-<?php echo $property['status'] === 'active' ? 'success' : 'secondary'; ?>">
-                                                    <?php echo ucfirst($property['status']); ?>
+                                                    <?php echo ucfirst($property['status'] ?? 'unknown'); ?>
                                                 </span>
                                             </td>
-                                            <td><?php echo date('M d, Y', strtotime($property['created_at'])); ?></td>
+                                            <td><?php echo date('M d, Y', strtotime($property['created_at'] ?? 'now')); ?></td>
                                             <td>
                                                 <a href="<?php echo BASE_URL; ?>/modules/admin/properties.php?action=view&id=<?php echo $property['id']; ?>" 
                                                    class="btn btn-sm btn-outline-primary">

@@ -1611,7 +1611,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             const appreciationShare = latestAppreciation * (agreedPercentage / 100);
                             
                             // Calculate Early Termination Cost in the correct order
-                            const earlyTerminationCost = optionPrice + cancellationFee + appreciationShare + totalFees;
+                            const earlyTerminationCost = Number(optionPrice) + Number(cancellationFee) + Number(appreciationShare) + Number(totalFees);
 
                             // Display Early Termination details
                             document.getElementById('et_initial_valuation').textContent = '$' + initialValuation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -1639,7 +1639,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             const defaultCancellationFee = initialValuation * 0.05;
                             const appreciationShare = latestAppreciation * (agreedPercentage / 100);
                             // Calculate in the correct order
-                            const earlyTerminationCost = optionPrice + defaultCancellationFee + appreciationShare + totalFees;
+                            const earlyTerminationCost = Number(optionPrice) + Number(defaultCancellationFee) + Number(appreciationShare) + Number(totalFees);
 
                             document.getElementById('et_initial_valuation').textContent = '$' + initialValuation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                             document.getElementById('et_cancellation_fee').textContent = '$' + defaultCancellationFee.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' (Default 5%)';

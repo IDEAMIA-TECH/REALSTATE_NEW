@@ -1587,7 +1587,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 'Accept': 'application/json'
                             }
                         })
-                        .then(response => response.json())
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
                         .then(feeData => {
                             let cancellationFee = 0;
                             if (feeData.success && feeData.fee) {
@@ -1596,6 +1601,9 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 } else {
                                     cancellationFee = feeData.fee.fixed_fee;
                                 }
+                            } else {
+                                // Default to 5% if no fee is found
+                                cancellationFee = initialValuation * 0.05;
                             }
 
                             // Calculate Early Termination components
@@ -1612,7 +1620,17 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         })
                         .catch(error => {
                             console.error('Error fetching cancellation fee:', error);
-                            document.getElementById('et_total_cost').textContent = 'Error calculating early termination cost';
+                            // Default to 5% if there's an error
+                            const defaultCancellationFee = initialValuation * 0.05;
+                            const appreciationShare = latestAppreciation * (agreedPercentage / 100);
+                            const earlyTerminationCost = defaultCancellationFee + optionPrice + appreciationShare + totalFees;
+
+                            document.getElementById('et_initial_valuation').textContent = '$' + initialValuation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            document.getElementById('et_cancellation_fee').textContent = '$' + defaultCancellationFee.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' (Default 5%)';
+                            document.getElementById('et_option_price').textContent = '$' + optionPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            document.getElementById('et_appreciation_share').textContent = '$' + appreciationShare.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            document.getElementById('et_total_fees').textContent = '$' + totalFees.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            document.getElementById('et_total_cost').textContent = '$' + earlyTerminationCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                         });
                     } else {
                         document.getElementById('view_current_value').textContent = 'N/A';

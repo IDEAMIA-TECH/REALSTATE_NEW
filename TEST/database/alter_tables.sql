@@ -64,5 +64,11 @@ ADD CONSTRAINT chk_fee_type CHECK (
 -- Update existing records to use the new structure
 UPDATE cancellation_fees 
 SET fee_type = 'percentage',
-    fee_percentage = minimum_fee
-WHERE minimum_fee IS NOT NULL; 
+    fee_percentage = minimum_fee,
+    fixed_fee = NULL
+WHERE minimum_fee IS NOT NULL;
+
+-- Remove NOT NULL constraint from fee_percentage and fixed_fee
+ALTER TABLE cancellation_fees
+MODIFY COLUMN fee_percentage DECIMAL(5,2) NULL,
+MODIFY COLUMN fixed_fee DECIMAL(10,2) NULL; 

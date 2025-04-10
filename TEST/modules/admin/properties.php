@@ -1379,6 +1379,37 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-12">
+                            <h6 class="text-danger">Early Termination</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Initial Valuation:</th>
+                                    <td id="et_initial_valuation"></td>
+                                </tr>
+                                <tr>
+                                    <th>Cancellation Fee:</th>
+                                    <td id="et_cancellation_fee"></td>
+                                </tr>
+                                <tr>
+                                    <th>Option Price:</th>
+                                    <td id="et_option_price"></td>
+                                </tr>
+                                <tr>
+                                    <th>Appreciation Share:</th>
+                                    <td id="et_appreciation_share"></td>
+                                </tr>
+                                <tr>
+                                    <th>Total Fees:</th>
+                                    <td id="et_total_fees"></td>
+                                </tr>
+                                <tr class="table-danger">
+                                    <th>Early Termination Cost:</th>
+                                    <td id="et_total_cost"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
                             <h6>Valuation History</h6>
                             <div id="valuation_history" class="table-responsive">
                                 <table class="table table-striped">
@@ -1499,12 +1530,17 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 document.getElementById('view_status').textContent = property.status.charAt(0).toUpperCase() + property.status.slice(1);
                 
                 // Financial Information
-                document.getElementById('view_initial_valuation').textContent = '$' + parseFloat(property.initial_valuation).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                const initialValuation = parseFloat(property.initial_valuation);
+                const agreedPercentage = parseFloat(property.agreed_pct);
+                const optionPrice = parseFloat(property.option_price);
+                const totalFees = parseFloat(property.total_fees);
+                
+                document.getElementById('view_initial_valuation').textContent = '$' + initialValuation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 document.getElementById('view_initial_index').textContent = property.initial_index ? parseFloat(property.initial_index).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'N/A';
                 document.getElementById('view_initial_index_date').textContent = property.initial_index_date || 'N/A';
-                document.getElementById('view_agreed_pct').textContent = property.agreed_pct + '%';
-                document.getElementById('view_total_fees').textContent = '$' + parseFloat(property.total_fees).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                document.getElementById('view_option_price').textContent = '$' + parseFloat(property.option_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('view_agreed_pct').textContent = agreedPercentage + '%';
+                document.getElementById('view_total_fees').textContent = '$' + totalFees.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('view_option_price').textContent = '$' + optionPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 
                 // Contract Details
                 document.getElementById('view_effective_date').textContent = property.effective_date;
@@ -1532,33 +1568,63 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 .then(data => {
                     if (data.success && data.data && data.data.valuations && data.data.valuations.length > 0) {
                         const latestValuation = data.data.valuations[0];
-                        const initialValue = parseFloat(property.initial_valuation);
                         const latestAppreciation = parseFloat(latestValuation.appreciation || 0);
                         
-                        console.log('Contract Details - Current Value Calculation:', {
-                            initialValue,
-                            latestAppreciation,
-                            calculation: `Current Value = ${initialValue} + ${latestAppreciation}`,
-                            result: initialValue + latestAppreciation
-                        });
-
                         // Calculate current value: initial value + latest appreciation
-                        const currentValue = initialValue + latestAppreciation;
-                        const agreedPercentage = parseFloat(property.agreed_pct);
+                        const currentValue = initialValuation + latestAppreciation;
                         // Calculate user profit: if appreciation > 0, multiply by agreed percentage, otherwise 0
                         const userProfit = latestAppreciation > 0 ? latestAppreciation * (agreedPercentage / 100) : 0;
 
                         document.getElementById('view_current_value').textContent = '$' + currentValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                         document.getElementById('view_user_profit').textContent = '$' + userProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                        // Early Termination Calculation
+                        // Get cancellation fee based on state
+                        fetch(`get_cancellation_fee.php?state=${property.state}`, {
+                            credentials: 'same-origin',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(feeData => {
+                            let cancellationFee = 0;
+                            if (feeData.success && feeData.fee) {
+                                if (feeData.fee.fee_type === 'percentage') {
+                                    cancellationFee = initialValuation * (feeData.fee.fee_percentage / 100);
+                                } else {
+                                    cancellationFee = feeData.fee.fixed_fee;
+                                }
+                            }
+
+                            // Calculate Early Termination components
+                            const appreciationShare = latestAppreciation * (agreedPercentage / 100);
+                            const earlyTerminationCost = cancellationFee + optionPrice + appreciationShare + totalFees;
+
+                            // Display Early Termination details
+                            document.getElementById('et_initial_valuation').textContent = '$' + initialValuation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            document.getElementById('et_cancellation_fee').textContent = '$' + cancellationFee.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            document.getElementById('et_option_price').textContent = '$' + optionPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            document.getElementById('et_appreciation_share').textContent = '$' + appreciationShare.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            document.getElementById('et_total_fees').textContent = '$' + totalFees.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            document.getElementById('et_total_cost').textContent = '$' + earlyTerminationCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        })
+                        .catch(error => {
+                            console.error('Error fetching cancellation fee:', error);
+                            document.getElementById('et_total_cost').textContent = 'Error calculating early termination cost';
+                        });
                     } else {
                         document.getElementById('view_current_value').textContent = 'N/A';
                         document.getElementById('view_user_profit').textContent = 'N/A';
+                        document.getElementById('et_total_cost').textContent = 'N/A';
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching current value:', error);
                     document.getElementById('view_current_value').textContent = 'Error';
                     document.getElementById('view_user_profit').textContent = 'Error';
+                    document.getElementById('et_total_cost').textContent = 'Error';
                 });
 
                 // Closing Information

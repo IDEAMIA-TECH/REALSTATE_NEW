@@ -47,4 +47,22 @@ CREATE TABLE cancellation_fees (
 -- Add cancellation fee reference to properties table
 ALTER TABLE properties
 ADD COLUMN cancellation_fee_id INT AFTER status,
-ADD FOREIGN KEY (cancellation_fee_id) REFERENCES cancellation_fees(id); 
+ADD FOREIGN KEY (cancellation_fee_id) REFERENCES cancellation_fees(id);
+
+-- Modify cancellation_fees table
+ALTER TABLE cancellation_fees
+DROP COLUMN minimum_fee,
+DROP COLUMN maximum_fee,
+ADD COLUMN fee_type ENUM('percentage', 'fixed') NOT NULL DEFAULT 'percentage',
+ADD COLUMN fee_percentage DECIMAL(5,2) NULL,
+ADD COLUMN fixed_fee DECIMAL(10,2) NULL,
+ADD CONSTRAINT chk_fee_type CHECK (
+    (fee_type = 'percentage' AND fee_percentage IS NOT NULL AND fixed_fee IS NULL) OR
+    (fee_type = 'fixed' AND fixed_fee IS NOT NULL AND fee_percentage IS NULL)
+);
+
+-- Update existing records to use the new structure
+UPDATE cancellation_fees 
+SET fee_type = 'percentage',
+    fee_percentage = minimum_fee
+WHERE minimum_fee IS NOT NULL; 

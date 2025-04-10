@@ -344,29 +344,30 @@ $fees = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                         
                         <div class="mb-3">
+                            <label class="form-label">Fee Type</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="fee_type" id="fee_type_percentage" value="percentage" checked>
+                                <label class="btn btn-outline-primary" for="fee_type_percentage">Percentage</label>
+                                <input type="radio" class="btn-check" name="fee_type" id="fee_type_fixed" value="fixed">
+                                <label class="btn btn-outline-primary" for="fee_type_fixed">Fixed Amount</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="percentage_fee_container">
                             <label for="fee_percentage" class="form-label">Fee Percentage</label>
                             <div class="input-group">
                                 <input type="number" class="form-control" id="fee_percentage" 
-                                       name="fee_percentage" step="0.01" required>
+                                       name="fee_percentage" step="0.01" min="0" max="100">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="minimum_fee" class="form-label">Minimum Fee</label>
+
+                        <div class="mb-3" id="fixed_fee_container" style="display: none;">
+                            <label for="fixed_fee" class="form-label">Fixed Fee</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="minimum_fee" 
-                                       name="minimum_fee" step="0.01" required>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="maximum_fee" class="form-label">Maximum Fee (Optional)</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="maximum_fee" 
-                                       name="maximum_fee" step="0.01">
+                                <input type="number" class="form-control" id="fixed_fee" 
+                                       name="fixed_fee" step="0.01" min="0">
                             </div>
                         </div>
                         
@@ -461,29 +462,30 @@ $fees = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                         
                         <div class="mb-3">
+                            <label class="form-label">Fee Type</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="fee_type" id="edit_fee_type_percentage" value="percentage">
+                                <label class="btn btn-outline-primary" for="edit_fee_type_percentage">Percentage</label>
+                                <input type="radio" class="btn-check" name="fee_type" id="edit_fee_type_fixed" value="fixed">
+                                <label class="btn btn-outline-primary" for="edit_fee_type_fixed">Fixed Amount</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="edit_percentage_fee_container">
                             <label for="edit_fee_percentage" class="form-label">Fee Percentage</label>
                             <div class="input-group">
                                 <input type="number" class="form-control" id="edit_fee_percentage" 
-                                       name="fee_percentage" step="0.01" required>
+                                       name="fee_percentage" step="0.01" min="0" max="100">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="edit_minimum_fee" class="form-label">Minimum Fee</label>
+
+                        <div class="mb-3" id="edit_fixed_fee_container" style="display: none;">
+                            <label for="edit_fixed_fee" class="form-label">Fixed Fee</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="edit_minimum_fee" 
-                                       name="minimum_fee" step="0.01" required>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="edit_maximum_fee" class="form-label">Maximum Fee (Optional)</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="edit_maximum_fee" 
-                                       name="maximum_fee" step="0.01">
+                                <input type="number" class="form-control" id="edit_fixed_fee" 
+                                       name="fixed_fee" step="0.01" min="0">
                             </div>
                         </div>
                         
@@ -527,6 +529,22 @@ $fees = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Handle fee type toggle
+        document.querySelectorAll('input[name="fee_type"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const isPercentage = this.value === 'percentage';
+                const container = this.closest('.modal').querySelector(isPercentage ? '#percentage_fee_container' : '#fixed_fee_container');
+                const otherContainer = this.closest('.modal').querySelector(isPercentage ? '#fixed_fee_container' : '#percentage_fee_container');
+                
+                container.style.display = 'block';
+                otherContainer.style.display = 'none';
+                
+                // Make the visible input required and the hidden one not required
+                container.querySelector('input').required = true;
+                otherContainer.querySelector('input').required = false;
+            });
+        });
+
         // Handle edit modal
         document.getElementById('editFeeModal').addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
@@ -535,9 +553,20 @@ $fees = $stmt->fetchAll(PDO::FETCH_ASSOC);
             document.getElementById('edit_fee_id').value = fee.id;
             document.getElementById('edit_state').value = fee.state;
             document.getElementById('edit_region').value = fee.region || '';
-            document.getElementById('edit_fee_percentage').value = fee.fee_percentage;
-            document.getElementById('edit_minimum_fee').value = fee.minimum_fee;
-            document.getElementById('edit_maximum_fee').value = fee.maximum_fee || '';
+            
+            // Set fee type based on which field has a value
+            if (fee.fee_percentage) {
+                document.getElementById('edit_fee_type_percentage').checked = true;
+                document.getElementById('edit_fee_percentage').value = fee.fee_percentage;
+                document.getElementById('edit_percentage_fee_container').style.display = 'block';
+                document.getElementById('edit_fixed_fee_container').style.display = 'none';
+            } else if (fee.fixed_fee) {
+                document.getElementById('edit_fee_type_fixed').checked = true;
+                document.getElementById('edit_fixed_fee').value = fee.fixed_fee;
+                document.getElementById('edit_fixed_fee_container').style.display = 'block';
+                document.getElementById('edit_percentage_fee_container').style.display = 'none';
+            }
+            
             document.getElementById('edit_effective_date').value = fee.effective_date;
         });
         

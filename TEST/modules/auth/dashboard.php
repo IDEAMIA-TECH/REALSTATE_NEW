@@ -298,7 +298,7 @@ $dashboardItems = [];
                             <div class="activity-item">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <strong><?php echo htmlspecialchars($property['address']); ?></strong>
+                                        <strong><?php echo htmlspecialchars($property['street_address'] . ', ' . $property['city'] . ', ' . $property['state'] . ' ' . $property['zip_code']); ?></strong>
                                         <div class="text-muted">
                                             Effective Date: <?php echo date('M d, Y', strtotime($property['effective_date'])); ?>
                                         </div>
@@ -333,7 +333,7 @@ $dashboardItems = [];
                                     <i class="fas fa-home"></i>
                                 </div>
                                 <div class="property-details">
-                                    <div class="property-title"><?php echo htmlspecialchars($property['address']); ?></div>
+                                    <div class="property-title"><?php echo htmlspecialchars($property['street_address'] . ', ' . $property['city'] . ', ' . $property['state'] . ' ' . $property['zip_code']); ?></div>
                                     <div class="property-meta">
                                         <div class="property-meta-item">
                                             <i class="fas fa-calendar-alt"></i>

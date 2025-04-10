@@ -572,7 +572,17 @@ $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <div class="d-flex flex-wrap">
                                 <?php
                                 // Get client's properties
-                                $stmt = $db->prepare("SELECT * FROM properties WHERE client_id = ? AND status = 'active'");
+                                $stmt = $db->prepare("
+                                    SELECT 
+                                        p.id,
+                                        p.street_address,
+                                        p.city,
+                                        p.state,
+                                        p.zip_code,
+                                        p.status
+                                    FROM properties p 
+                                    WHERE p.client_id = ? AND p.status = 'active'
+                                ");
                                 $stmt->execute([$client['id']]);
                                 $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 
@@ -580,7 +590,7 @@ $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 ?>
                                     <span class="property-badge">
                                         <i class="fas fa-home me-1"></i>
-                                        <?php echo htmlspecialchars($property['address']); ?>
+                                        <?php echo htmlspecialchars($property['street_address'] . ', ' . $property['city'] . ', ' . $property['state'] . ' ' . $property['zip_code']); ?>
                                     </span>
                                 <?php endforeach; ?>
                             </div>
@@ -625,7 +635,17 @@ $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <td>
                             <div class="property-badges">
                                 <?php
-                                $stmt = $db->prepare("SELECT * FROM properties WHERE client_id = ? AND status = 'active'");
+                                $stmt = $db->prepare("
+                                    SELECT 
+                                        p.id,
+                                        p.street_address,
+                                        p.city,
+                                        p.state,
+                                        p.zip_code,
+                                        p.status
+                                    FROM properties p 
+                                    WHERE p.client_id = ? AND p.status = 'active'
+                                ");
                                 $stmt->execute([$client['id']]);
                                 $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 
@@ -633,7 +653,7 @@ $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 ?>
                                     <span class="property-badge">
                                         <i class="fas fa-home me-1"></i>
-                                        <?php echo htmlspecialchars($property['address']); ?>
+                                        <?php echo htmlspecialchars($property['street_address'] . ', ' . $property['city'] . ', ' . $property['state'] . ' ' . $property['zip_code']); ?>
                                     </span>
                                 <?php endforeach; ?>
                             </div>

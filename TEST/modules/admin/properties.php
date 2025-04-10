@@ -1609,7 +1609,9 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                             // Calculate Early Termination components
                             const appreciationShare = latestAppreciation * (agreedPercentage / 100);
-                            const earlyTerminationCost = cancellationFee + optionPrice + appreciationShare + totalFees;
+                            
+                            // Calculate Early Termination Cost in the correct order
+                            const earlyTerminationCost = optionPrice + cancellationFee + appreciationShare + totalFees;
 
                             // Display Early Termination details
                             document.getElementById('et_initial_valuation').textContent = '$' + initialValuation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -1618,11 +1620,11 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             document.getElementById('et_appreciation_share').textContent = '$' + appreciationShare.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                             document.getElementById('et_total_fees').textContent = '$' + totalFees.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                             
-                            // Show the calculation breakdown
+                            // Show the calculation breakdown in the correct order
                             const calculationBreakdown = `
                                 Early Termination Cost = 
-                                Cancellation Fee (${cancellationFee.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}) + 
                                 Option Price (${optionPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}) + 
+                                Cancellation Fee (${cancellationFee.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}) + 
                                 Appreciation Share (${appreciationShare.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}) + 
                                 Total Fees (${totalFees.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}) = 
                                 ${earlyTerminationCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
@@ -1636,14 +1638,27 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             // Default to 5% if there's an error
                             const defaultCancellationFee = initialValuation * 0.05;
                             const appreciationShare = latestAppreciation * (agreedPercentage / 100);
-                            const earlyTerminationCost = defaultCancellationFee + optionPrice + appreciationShare + totalFees;
+                            // Calculate in the correct order
+                            const earlyTerminationCost = optionPrice + defaultCancellationFee + appreciationShare + totalFees;
 
                             document.getElementById('et_initial_valuation').textContent = '$' + initialValuation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                             document.getElementById('et_cancellation_fee').textContent = '$' + defaultCancellationFee.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' (Default 5%)';
                             document.getElementById('et_option_price').textContent = '$' + optionPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                             document.getElementById('et_appreciation_share').textContent = '$' + appreciationShare.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                             document.getElementById('et_total_fees').textContent = '$' + totalFees.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            
+                            // Show the calculation breakdown in the correct order
+                            const calculationBreakdown = `
+                                Early Termination Cost = 
+                                Option Price (${optionPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}) + 
+                                Cancellation Fee (${defaultCancellationFee.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}) + 
+                                Appreciation Share (${appreciationShare.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}) + 
+                                Total Fees (${totalFees.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}) = 
+                                ${earlyTerminationCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            `;
+                            
                             document.getElementById('et_total_cost').textContent = '$' + earlyTerminationCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            document.getElementById('et_total_cost').title = calculationBreakdown;
                         });
                     } else {
                         document.getElementById('view_current_value').textContent = 'N/A';

@@ -21,17 +21,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     $stmt = $db->prepare("
                         INSERT INTO cancellation_fees (
-                            state, region, fee_percentage, minimum_fee,
-                            maximum_fee, effective_date, created_by
+                            state, region, fee_type, fee_percentage, fixed_fee,
+                            effective_date, created_by
                         ) VALUES (?, ?, ?, ?, ?, ?, ?)
                     ");
+                    
+                    $fee_type = $_POST['fee_type'];
+                    $fee_percentage = $fee_type === 'percentage' ? $_POST['fee_percentage'] : null;
+                    $fixed_fee = $fee_type === 'fixed' ? $_POST['fixed_fee'] : null;
                     
                     $stmt->execute([
                         $_POST['state'],
                         $_POST['region'],
-                        $_POST['fee_percentage'],
-                        $_POST['minimum_fee'],
-                        $_POST['maximum_fee'],
+                        $fee_type,
+                        $fee_percentage,
+                        $fixed_fee,
                         $_POST['effective_date'],
                         $_SESSION['user_id']
                     ]);
@@ -48,19 +52,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         UPDATE cancellation_fees SET
                             state = ?,
                             region = ?,
+                            fee_type = ?,
                             fee_percentage = ?,
-                            minimum_fee = ?,
-                            maximum_fee = ?,
+                            fixed_fee = ?,
                             effective_date = ?
                         WHERE id = ?
                     ");
                     
+                    $fee_type = $_POST['fee_type'];
+                    $fee_percentage = $fee_type === 'percentage' ? $_POST['fee_percentage'] : null;
+                    $fixed_fee = $fee_type === 'fixed' ? $_POST['fixed_fee'] : null;
+                    
                     $stmt->execute([
                         $_POST['state'],
                         $_POST['region'],
-                        $_POST['fee_percentage'],
-                        $_POST['minimum_fee'],
-                        $_POST['maximum_fee'],
+                        $fee_type,
+                        $fee_percentage,
+                        $fixed_fee,
                         $_POST['effective_date'],
                         $_POST['fee_id']
                     ]);
@@ -237,18 +245,15 @@ $fees = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                         <div class="fee-details">
                             <div class="fee-meta">
-                                <div class="meta-item">
-                                    <i class="fas fa-percentage"></i>
-                                    <?php echo number_format($fee['fee_percentage'], 2); ?>%
-                                </div>
-                                <div class="meta-item">
-                                    <i class="fas fa-dollar-sign"></i>
-                                    Min: $<?php echo number_format($fee['minimum_fee'], 2); ?>
-                                </div>
-                                <?php if ($fee['maximum_fee']): ?>
+                                <?php if ($fee['fee_type'] === 'percentage'): ?>
+                                    <div class="meta-item">
+                                        <i class="fas fa-percentage"></i>
+                                        <?php echo number_format($fee['fee_percentage'], 2); ?>%
+                                    </div>
+                                <?php else: ?>
                                     <div class="meta-item">
                                         <i class="fas fa-dollar-sign"></i>
-                                        Max: $<?php echo number_format($fee['maximum_fee'], 2); ?>
+                                        $<?php echo number_format($fee['fixed_fee'], 2); ?>
                                     </div>
                                 <?php endif; ?>
                             </div>

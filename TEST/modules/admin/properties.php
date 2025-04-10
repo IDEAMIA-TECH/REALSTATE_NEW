@@ -1403,9 +1403,10 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </tr>
                                 <tr class="table-danger">
                                     <th>Early Termination Cost:</th>
-                                    <td id="et_total_cost"></td>
+                                    <td id="et_total_cost" style="cursor: help;"></td>
                                 </tr>
                             </table>
+                            <small class="text-muted">Hover over the Early Termination Cost to see the calculation breakdown</small>
                         </div>
                     </div>
                     <div class="row mt-3">
@@ -1616,7 +1617,19 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             document.getElementById('et_option_price').textContent = '$' + optionPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                             document.getElementById('et_appreciation_share').textContent = '$' + appreciationShare.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                             document.getElementById('et_total_fees').textContent = '$' + totalFees.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            
+                            // Show the calculation breakdown
+                            const calculationBreakdown = `
+                                Early Termination Cost = 
+                                Cancellation Fee (${cancellationFee.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}) + 
+                                Option Price (${optionPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}) + 
+                                Appreciation Share (${appreciationShare.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}) + 
+                                Total Fees (${totalFees.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}) = 
+                                ${earlyTerminationCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            `;
+                            
                             document.getElementById('et_total_cost').textContent = '$' + earlyTerminationCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            document.getElementById('et_total_cost').title = calculationBreakdown;
                         })
                         .catch(error => {
                             console.error('Error fetching cancellation fee:', error);

@@ -206,13 +206,18 @@ if (!isset($page_title)) {
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/logs.php">
-                                            <i class="fas fa-history"></i>Activity Logs
+                                        <a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/activity_logs.php">
+                                            <i class="fas fa-history me-2"></i>Activity Logs
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/cancellation_fees.php">
+                                            <i class="fas fa-dollar-sign me-2"></i>Cancellation Fees
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/backup.php">
-                                            <i class="fas fa-database"></i>System Backup
+                                            <i class="fas fa-database me-2"></i>System Backup
                                         </a>
                                     </li>
                                 </ul>

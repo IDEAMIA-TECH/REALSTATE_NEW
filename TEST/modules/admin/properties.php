@@ -57,15 +57,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     $stmt = $db->prepare("
                         INSERT INTO properties (
-                            client_id, address, initial_valuation, agreed_pct,
-                            total_fees, effective_date, term, option_price,
-                            status, created_by, initial_index, initial_index_date
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)
+                            client_id, street_address, city, state, zip_code, country,
+                            initial_valuation, agreed_pct, total_fees, effective_date,
+                            term, option_price, status, created_by, initial_index, initial_index_date
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)
                     ");
                     
                     $stmt->execute([
                         $_POST['client_id'],
-                        $_POST['address'],
+                        $_POST['street_address'],
+                        $_POST['city'],
+                        $_POST['state'],
+                        $_POST['zip_code'],
+                        $_POST['country'],
                         $_POST['initial_valuation'],
                         $_POST['agreed_pct'],
                         $_POST['total_fees'],
@@ -159,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             
                             <div class='property-details'>
                                 <ul style='list-style: none; padding: 0; margin: 0;'>
-                                    <li><strong>Address:</strong> {$_POST['address']}</li>
+                                    <li><strong>Address:</strong> {$_POST['street_address']}, {$_POST['city']}, {$_POST['state']} {$_POST['zip_code']}, {$_POST['country']}</li>
                                     <li><strong>Initial Valuation:</strong> $" . number_format($_POST['initial_valuation'], 2) . "</li>
                                     <li><strong>Agreed Percentage:</strong> {$_POST['agreed_pct']}%</li>
                                     <li><strong>Total Fees:</strong> $" . number_format($_POST['total_fees'], 2) . "</li>
@@ -215,7 +219,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $db->prepare("
                         UPDATE properties SET
                             client_id = ?,
-                            address = ?,
+                            street_address = ?,
+                            city = ?,
+                            state = ?,
+                            zip_code = ?,
+                            country = ?,
                             initial_valuation = ?,
                             agreed_pct = ?,
                             total_fees = ?,
@@ -228,7 +236,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     $stmt->execute([
                         $_POST['client_id'],
-                        $_POST['address'],
+                        $_POST['street_address'],
+                        $_POST['city'],
+                        $_POST['state'],
+                        $_POST['zip_code'],
+                        $_POST['country'],
                         $_POST['initial_valuation'],
                         $_POST['agreed_pct'],
                         $_POST['total_fees'],
@@ -704,7 +716,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="col-md-6 col-lg-4">
                     <div class="property-card">
                         <div class="property-header">
-                            <h5 class="property-title"><?php echo htmlspecialchars($property['address']); ?></h5>
+                            <h5 class="property-title"><?php echo htmlspecialchars($property['street_address']); ?></h5>
                             <?php
                             $effectiveDate = new DateTime($property['effective_date']);
                             $expirationDate = clone $effectiveDate;
@@ -835,7 +847,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     ?>
                     <tr>
                         <td>
-                            <strong><?php echo htmlspecialchars($property['address']); ?></strong>
+                            <strong><?php echo htmlspecialchars($property['street_address']); ?></strong>
                         </td>
                         <td><?php echo htmlspecialchars($property['client_name']); ?></td>
                         <td>
@@ -930,8 +942,34 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                         
                         <div class="mb-3">
-                            <label for="address" class="form-label">Address</label>
-                            <input type="text" class="form-control" id="address" name="address" required>
+                            <label for="street_address" class="form-label">Street Address</label>
+                            <input type="text" class="form-control" id="street_address" name="street_address" required>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="city" class="form-label">City</label>
+                                    <input type="text" class="form-control" id="city" name="city" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="state" class="form-label">State</label>
+                                    <input type="text" class="form-control" id="state" name="state" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="zip_code" class="form-label">ZIP Code</label>
+                                    <input type="text" class="form-control" id="zip_code" name="zip_code" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="country" class="form-label">Country</label>
+                            <input type="text" class="form-control" id="country" name="country" value="United States" required>
                         </div>
                         
                         <div class="mb-3">
@@ -1017,8 +1055,34 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                         
                         <div class="mb-3">
-                            <label for="edit_address" class="form-label">Address</label>
-                            <input type="text" class="form-control" id="edit_address" name="address" required>
+                            <label for="edit_street_address" class="form-label">Street Address</label>
+                            <input type="text" class="form-control" id="edit_street_address" name="street_address" required>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="edit_city" class="form-label">City</label>
+                                    <input type="text" class="form-control" id="edit_city" name="city" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="edit_state" class="form-label">State</label>
+                                    <input type="text" class="form-control" id="edit_state" name="state" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="edit_zip_code" class="form-label">ZIP Code</label>
+                                    <input type="text" class="form-control" id="edit_zip_code" name="zip_code" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="edit_country" class="form-label">Country</label>
+                            <input type="text" class="form-control" id="edit_country" name="country" value="United States" required>
                         </div>
                         
                         <div class="mb-3">
@@ -1132,7 +1196,11 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </tr>
                                 <tr>
                                     <th>Address:</th>
-                                    <td id="view_address"></td>
+                                    <td id="view_address">
+                                        <div id="view_street_address"></div>
+                                        <div id="view_city_state_zip"></div>
+                                        <div id="view_country"></div>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th>Status:</th>
@@ -1285,7 +1353,11 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             document.getElementById('edit_property_id').value = property.id;
             document.getElementById('edit_client_id').value = property.client_id;
-            document.getElementById('edit_address').value = property.address;
+            document.getElementById('edit_street_address').value = property.street_address;
+            document.getElementById('edit_city').value = property.city;
+            document.getElementById('edit_state').value = property.state;
+            document.getElementById('edit_zip_code').value = property.zip_code;
+            document.getElementById('edit_country').value = property.country;
             document.getElementById('edit_initial_valuation').value = property.initial_valuation;
             document.getElementById('edit_agreed_pct').value = property.agreed_pct;
             document.getElementById('edit_total_fees').value = property.total_fees;
@@ -1317,7 +1389,9 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 // Basic Information
                 document.getElementById('view_id').textContent = property.id;
                 document.getElementById('view_client_name').textContent = property.client_name;
-                document.getElementById('view_address').textContent = property.address;
+                document.getElementById('view_street_address').textContent = property.street_address;
+                document.getElementById('view_city_state_zip').textContent = `${property.city}, ${property.state} ${property.zip_code}`;
+                document.getElementById('view_country').textContent = property.country;
                 document.getElementById('view_status').textContent = property.status.charAt(0).toUpperCase() + property.status.slice(1);
                 
                 // Financial Information

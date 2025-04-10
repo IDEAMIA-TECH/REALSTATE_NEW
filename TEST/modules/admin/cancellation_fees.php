@@ -19,6 +19,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         switch ($_POST['action']) {
             case 'create':
                 try {
+                    // Validate required fields
+                    if (empty($_POST['state']) || empty($_POST['effective_date'])) {
+                        throw new Exception('State and Effective Date are required');
+                    }
+
+                    // Validate fee type and amount
+                    $fee_type = $_POST['fee_type'] ?? '';
+                    $fee_percentage = null;
+                    $fixed_fee = null;
+
+                    if ($fee_type === 'percentage') {
+                        if (empty($_POST['fee_percentage']) || !is_numeric($_POST['fee_percentage'])) {
+                            throw new Exception('Percentage fee is required and must be a number');
+                        }
+                        $fee_percentage = floatval($_POST['fee_percentage']);
+                        if ($fee_percentage < 0 || $fee_percentage > 100) {
+                            throw new Exception('Percentage must be between 0 and 100');
+                        }
+                    } elseif ($fee_type === 'fixed') {
+                        if (empty($_POST['fixed_fee']) || !is_numeric($_POST['fixed_fee'])) {
+                            throw new Exception('Fixed fee is required and must be a number');
+                        }
+                        $fixed_fee = floatval($_POST['fixed_fee']);
+                        if ($fixed_fee < 0) {
+                            throw new Exception('Fixed fee cannot be negative');
+                        }
+                    } else {
+                        throw new Exception('Invalid fee type selected');
+                    }
+
                     $stmt = $db->prepare("
                         INSERT INTO cancellation_fees (
                             state, region, fee_type, fee_percentage, fixed_fee,
@@ -26,13 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ) VALUES (?, ?, ?, ?, ?, ?, ?)
                     ");
                     
-                    $fee_type = $_POST['fee_type'];
-                    $fee_percentage = $fee_type === 'percentage' ? $_POST['fee_percentage'] : null;
-                    $fixed_fee = $fee_type === 'fixed' ? $_POST['fixed_fee'] : null;
-                    
                     $stmt->execute([
                         $_POST['state'],
-                        $_POST['region'],
+                        $_POST['region'] ?? null,
                         $fee_type,
                         $fee_percentage,
                         $fixed_fee,
@@ -41,13 +67,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ]);
                     
                     $message = 'Cancellation fee created successfully';
-                } catch (PDOException $e) {
+                } catch (Exception $e) {
                     $error = 'Error creating cancellation fee: ' . $e->getMessage();
                 }
                 break;
                 
             case 'update':
                 try {
+                    // Validate required fields
+                    if (empty($_POST['state']) || empty($_POST['effective_date'])) {
+                        throw new Exception('State and Effective Date are required');
+                    }
+
+                    // Validate fee type and amount
+                    $fee_type = $_POST['fee_type'] ?? '';
+                    $fee_percentage = null;
+                    $fixed_fee = null;
+
+                    if ($fee_type === 'percentage') {
+                        if (empty($_POST['fee_percentage']) || !is_numeric($_POST['fee_percentage'])) {
+                            throw new Exception('Percentage fee is required and must be a number');
+                        }
+                        $fee_percentage = floatval($_POST['fee_percentage']);
+                        if ($fee_percentage < 0 || $fee_percentage > 100) {
+                            throw new Exception('Percentage must be between 0 and 100');
+                        }
+                    } elseif ($fee_type === 'fixed') {
+                        if (empty($_POST['fixed_fee']) || !is_numeric($_POST['fixed_fee'])) {
+                            throw new Exception('Fixed fee is required and must be a number');
+                        }
+                        $fixed_fee = floatval($_POST['fixed_fee']);
+                        if ($fixed_fee < 0) {
+                            throw new Exception('Fixed fee cannot be negative');
+                        }
+                    } else {
+                        throw new Exception('Invalid fee type selected');
+                    }
+
                     $stmt = $db->prepare("
                         UPDATE cancellation_fees SET
                             state = ?,
@@ -59,13 +115,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         WHERE id = ?
                     ");
                     
-                    $fee_type = $_POST['fee_type'];
-                    $fee_percentage = $fee_type === 'percentage' ? $_POST['fee_percentage'] : null;
-                    $fixed_fee = $fee_type === 'fixed' ? $_POST['fixed_fee'] : null;
-                    
                     $stmt->execute([
                         $_POST['state'],
-                        $_POST['region'],
+                        $_POST['region'] ?? null,
                         $fee_type,
                         $fee_percentage,
                         $fixed_fee,
@@ -74,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ]);
                     
                     $message = 'Cancellation fee updated successfully';
-                } catch (PDOException $e) {
+                } catch (Exception $e) {
                     $error = 'Error updating cancellation fee: ' . $e->getMessage();
                 }
                 break;

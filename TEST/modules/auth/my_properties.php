@@ -247,7 +247,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <div class="col-md-6">
                             <div class="property-card">
                                 <div class="property-header">
-                                    <h2 class="property-title"><?php echo htmlspecialchars($property['address']); ?></h2>
+                                    <h2 class="property-title"><?php echo htmlspecialchars($property['street_address'] . ', ' . $property['city'] . ', ' . $property['state'] . ' ' . $property['zip_code']); ?></h2>
                                     <span class="property-status">Active</span>
                                 </div>
                                 <div class="property-body">
@@ -310,7 +310,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <tbody>
                         <?php foreach ($properties as $property): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($property['address']); ?></td>
+                                <td><?php echo htmlspecialchars($property['street_address'] . ', ' . $property['city'] . ', ' . $property['state'] . ' ' . $property['zip_code']); ?></td>
                                 <td>$<?php echo number_format($property['initial_valuation'], 2); ?></td>
                                 <td><?php echo $property['agreed_pct']; ?>%</td>
                                 <td><?php echo date('M d, Y', strtotime($property['effective_date'])); ?></td>
@@ -385,7 +385,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             // Basic Information
             document.getElementById('view_id').textContent = property.id;
-            document.getElementById('view_address').textContent = property.address;
+            document.getElementById('view_address').textContent = property.street_address + ', ' + property.city + ', ' + property.state + ' ' + property.zip_code;
             document.getElementById('view_status').textContent = property.status.charAt(0).toUpperCase() + property.status.slice(1);
             
             // Financial Information

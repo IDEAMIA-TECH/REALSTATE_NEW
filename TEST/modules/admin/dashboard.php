@@ -33,7 +33,7 @@ $recentActivity = $db->query("
 $recentProperties = $db->query("
     SELECT 
         p.id,
-        p.address,
+        CONCAT(p.street_address, ', ', p.city, ', ', p.state, ' ', p.zip_code) as address,
         p.initial_valuation,
         p.status,
         p.created_at

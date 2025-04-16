@@ -15,14 +15,40 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit;
 }
 
-// Get the address from the request
+// Get the address and property ID from the request
 $data = json_decode(file_get_contents('php://input'), true);
 $address = $data['address'] ?? '';
+$propertyId = $data['property_id'] ?? 0;
 
-if (empty($address)) {
+if (empty($address) || empty($propertyId)) {
     header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'error' => 'Address is required']);
+    echo json_encode(['success' => false, 'error' => 'Address and property ID are required']);
     exit;
+}
+
+// Get database connection
+$db = Database::getInstance()->getConnection();
+
+// Check if we need to update the price (only once per month)
+$stmt = $db->prepare("SELECT zillow_price, zillow_price_updated_at FROM properties WHERE id = ?");
+$stmt->execute([$propertyId]);
+$property = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// If we have a price and it was updated less than a month ago, return it
+if ($property && $property['zillow_price'] && $property['zillow_price_updated_at']) {
+    $lastUpdate = new DateTime($property['zillow_price_updated_at']);
+    $now = new DateTime();
+    $diff = $now->diff($lastUpdate);
+    
+    if ($diff->m < 1) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'price' => '$' . number_format($property['zillow_price'], 2),
+            'cached' => true
+        ]);
+        exit;
+    }
 }
 
 // Function to get Zillow price from address
@@ -84,14 +110,6 @@ function getZillowPriceFromAddress($address) {
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     error_log("HTTP Code: " . $httpCode);
     
-    // Guardar cookies para la siguiente solicitud
-    $cookies = [];
-    preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $verboseLog, $matches);
-    foreach($matches[1] as $item) {
-        parse_str($item, $cookie);
-        $cookies = array_merge($cookies, $cookie);
-    }
-    
     curl_close($ch);
     fclose($verbose);
 
@@ -102,7 +120,7 @@ function getZillowPriceFromAddress($address) {
     
     if (!isset($matches[1])) {
         error_log("No se encontró zpid en el HTML");
-        return "No se encontró propiedad";
+        return null;
     }
 
     $zpid = $matches[1];
@@ -119,15 +137,6 @@ function getZillowPriceFromAddress($address) {
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     curl_setopt($ch, CURLOPT_VERBOSE, true);
     curl_setopt($ch, CURLOPT_ENCODING, '');
-    
-    // Agregar cookies de la primera solicitud
-    if (!empty($cookies)) {
-        $cookieString = '';
-        foreach ($cookies as $name => $value) {
-            $cookieString .= $name . '=' . $value . '; ';
-        }
-        curl_setopt($ch, CURLOPT_COOKIE, $cookieString);
-    }
     
     $verbose = fopen('php://temp', 'w+');
     curl_setopt($ch, CURLOPT_STDERR, $verbose);
@@ -158,7 +167,7 @@ function getZillowPriceFromAddress($address) {
     error_log("Resultado de búsqueda de precio en JSON: " . print_r($priceMatches, true));
     
     if (isset($priceMatches[1])) {
-        $price = '$' . number_format($priceMatches[1]);
+        $price = $priceMatches[1];
         error_log("Precio encontrado en JSON: " . $price);
     }
     
@@ -183,7 +192,9 @@ function getZillowPriceFromAddress($address) {
             error_log("Intentando selector: " . $selector);
             $priceNode = $xpath->query($selector);
             if ($priceNode->length > 0) {
-                $price = trim($priceNode->item(0)->nodeValue);
+                $priceText = trim($priceNode->item(0)->nodeValue);
+                // Extraer solo los números del precio
+                $price = preg_replace('/[^0-9]/', '', $priceText);
                 error_log("Precio encontrado con selector " . $selector . ": " . $price);
                 break;
             }
@@ -196,17 +207,38 @@ function getZillowPriceFromAddress($address) {
     }
 
     error_log("No se pudo encontrar el precio");
-    return "Precio no encontrado";
+    return null;
 }
 
 // Get the price
 error_log("Iniciando proceso de obtención de precio para: " . $address);
 $price = getZillowPriceFromAddress($address);
-error_log("Resultado final: " . $price);
 
-// Return the response
-header('Content-Type: application/json');
-echo json_encode([
-    'success' => true,
-    'price' => $price
-]); 
+if ($price) {
+    // Update the price in the database
+    $stmt = $db->prepare("UPDATE properties SET zillow_price = ?, zillow_price_updated_at = NOW() WHERE id = ?");
+    $stmt->execute([$price, $propertyId]);
+    
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => true,
+        'price' => '$' . number_format($price, 2),
+        'cached' => false
+    ]);
+} else {
+    // If we couldn't get a new price, return the cached one if available
+    if ($property && $property['zillow_price']) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'price' => '$' . number_format($property['zillow_price'], 2),
+            'cached' => true
+        ]);
+    } else {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'error' => 'No se pudo obtener el precio de Zillow'
+        ]);
+    }
+} 

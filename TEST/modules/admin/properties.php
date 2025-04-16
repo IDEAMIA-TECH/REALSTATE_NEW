@@ -2219,25 +2219,35 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         });
 
         // En el JavaScript, agregar la función para obtener el precio de Zillow
-        function fetchZillowPrice(address) {
+        function fetchZillowPrice(address, propertyId) {
             fetch('get_zillow_price.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ address: address })
+                body: JSON.stringify({
+                    address: address,
+                    property_id: propertyId
+                })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     document.getElementById('view_zillow_price').textContent = data.price;
+                    if (data.cached) {
+                        document.getElementById('view_zillow_price').classList.add('text-muted');
+                    } else {
+                        document.getElementById('view_zillow_price').classList.remove('text-muted');
+                    }
                 } else {
-                    document.getElementById('view_zillow_price').textContent = 'Error: ' + data.error;
+                    document.getElementById('view_zillow_price').textContent = 'Error al obtener precio';
+                    document.getElementById('view_zillow_price').classList.add('text-danger');
                 }
             })
             .catch(error => {
-                console.error('Error fetching Zillow price:', error);
-                document.getElementById('view_zillow_price').textContent = 'Error fetching price';
+                console.error('Error:', error);
+                document.getElementById('view_zillow_price').textContent = 'Error al obtener precio';
+                document.getElementById('view_zillow_price').classList.add('text-danger');
             });
         }
 
@@ -2246,7 +2256,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             button.addEventListener('click', function(event) {
                 const property = JSON.parse(this.getAttribute('data-property'));
                 const fullAddress = `${property.street_address}, ${property.city}, ${property.state} ${property.zip_code}`;
-                fetchZillowPrice(fullAddress);
+                fetchZillowPrice(fullAddress, property.id);
             });
         });
     </script>

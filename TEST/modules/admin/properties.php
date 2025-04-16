@@ -1995,7 +1995,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                             <div>
                                 <div class="fw-bold">${doc.document_name}</div>
-                                <div class="small text-muted">${doc.document_type} • ${doc.upload_date}</div>
+                                <div class="small text-muted">${doc.document_type} • ${new Date(doc.created_at).toLocaleDateString()}</div>
                             </div>
                         </div>
                         <div class="document-actions">

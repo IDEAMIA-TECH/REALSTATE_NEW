@@ -1904,46 +1904,126 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         function fetchDocuments(propertyId) {
-            fetch(`get_documents.php?property_id=${propertyId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const tbody = document.querySelector('#documents_list tbody');
-                    tbody.innerHTML = '';
-                    
-                    data.documents.forEach(doc => {
-                        const row = document.createElement('tr');
-                        const uploadDate = new Date(doc.created_at);
-                        const formattedDate = uploadDate.toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                        });
-                        
-                        // Construir la URL correcta usando la ruta base del sitio
-                        const downloadUrl = `${BASE_URL}/${doc.file_path}`;
-                        
-                        row.innerHTML = `
-                            <td>${doc.document_name}</td>
-                            <td>${doc.document_type}</td>
-                            <td>${formattedDate}</td>
-                            <td>
-                                <a href="${downloadUrl}" class="btn btn-sm btn-primary" target="_blank">
-                                    <i class="fas fa-download"></i>
-                                </a>
-                                <button class="btn btn-sm btn-danger" onclick="deleteDocument(${doc.id})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                } else {
-                    console.error('Error fetching documents:', data.error);
+            console.log('Starting fetchDocuments for property:', propertyId);
+            
+            if (!checkSession()) {
+                console.error('Session check failed in fetchDocuments');
+                handleSessionExpired();
+                return;
+            }
+            
+            console.log('Fetching documents from get_documents.php');
+            fetch(`get_documents.php?property_id=${propertyId}`, {
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
                 }
             })
+            .then(response => {
+                console.log('Documents response received:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
+                
+                if (response.status === 401 || response.status === 403) {
+                    console.error('Session expired in fetchDocuments - HTTP status:', response.status);
+                    handleSessionExpired();
+                    return;
+                }
+                
+                if (!response.ok) {
+                    console.error('HTTP error in fetchDocuments:', response.status);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return response.text().then(text => {
+                    console.log('Raw documents response:', text);
+                    try {
+                        const jsonData = JSON.parse(text);
+                        console.log('Parsed documents JSON:', jsonData);
+                        return jsonData;
+                    } catch (e) {
+                        console.error('JSON parse error in fetchDocuments:', e);
+                        if (text.includes('dashboard.php') || text.includes('login.php')) {
+                            console.error('Redirect detected in documents response');
+                            handleSessionExpired();
+                            return;
+                        }
+                        throw new Error('Invalid JSON response');
+                    }
+                });
+            })
+            .then(data => {
+                if (!data) return; // Si data es undefined (por la redirección)
+                
+                console.log('Processing documents data:', data);
+                const container = document.getElementById('documents_list');
+                container.innerHTML = '';
+                
+                if (!data.success) {
+                    console.error('Error in documents data:', data.error);
+                    container.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>Error loading documents</h6>
+                            <p class="mb-0">${data.error || 'Error loading documents'}</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                if (!data.documents || !Array.isArray(data.documents)) {
+                    console.log('No documents available');
+                    container.innerHTML = '<div class="alert alert-info">No documents available</div>';
+                    return;
+                }
+                
+                console.log('Rendering documents:', data.documents);
+                data.documents.forEach(doc => {
+                    const docElement = document.createElement('div');
+                    docElement.className = 'document-item';
+                    docElement.innerHTML = `
+                        <div class="document-info">
+                            <div class="document-icon">
+                                <i class="fas fa-file-${getFileIcon(doc.document_type)}"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">${doc.document_name}</div>
+                                <div class="small text-muted">${doc.document_type} • ${doc.upload_date}</div>
+                            </div>
+                        </div>
+                        <div class="document-actions">
+                            <a href="${BASE_URL}/${doc.file_path}" class="action-button btn-view" target="_blank">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            <button type="button" class="action-button btn-delete" onclick="deleteDocument(${doc.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(docElement);
+                });
+            })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Error in fetchDocuments:', error);
+                const container = document.getElementById('documents_list');
+                
+                if (error.message.includes('Session expired') || error.message.includes('Redirected to dashboard')) {
+                    console.error('Session expired error in fetchDocuments');
+                    handleSessionExpired();
+                } else {
+                    console.error('Other error in fetchDocuments:', error.message);
+                    container.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>Error loading documents</h6>
+                            <p class="mb-0">${error.message}</p>
+                            <small>Please try again or contact support if the problem persists.</small>
+                        </div>
+                    `;
+                }
             });
         }
         

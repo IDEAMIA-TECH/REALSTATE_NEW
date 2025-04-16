@@ -33,8 +33,20 @@ function getZillowPriceFromAddress($address) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+        'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language: en-US,en;q=0.9',
+        'Accept-Encoding: gzip, deflate, br',
+        'Connection: keep-alive',
+        'Upgrade-Insecure-Requests: 1',
+        'Sec-Fetch-Dest: document',
+        'Sec-Fetch-Mode: navigate',
+        'Sec-Fetch-Site: none',
+        'Sec-Fetch-User: ?1',
+        'Cache-Control: max-age=0'
     ]);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     $html = curl_exec($ch);
     curl_close($ch);
 
@@ -53,22 +65,59 @@ function getZillowPriceFromAddress($address) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+        'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language: en-US,en;q=0.9',
+        'Accept-Encoding: gzip, deflate, br',
+        'Connection: keep-alive',
+        'Upgrade-Insecure-Requests: 1',
+        'Sec-Fetch-Dest: document',
+        'Sec-Fetch-Mode: navigate',
+        'Sec-Fetch-Site: none',
+        'Sec-Fetch-User: ?1',
+        'Cache-Control: max-age=0'
     ]);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     $propertyHtml = curl_exec($ch);
     curl_close($ch);
 
-    // 5. Extraer precio desde etiqueta con data-testid="price"
-    $dom = new DOMDocument();
-    libxml_use_internal_errors(true);
-    $dom->loadHTML($propertyHtml);
-    libxml_clear_errors();
-    $xpath = new DOMXPath($dom);
+    // 5. Extraer precio usando múltiples patrones
+    $price = null;
+    
+    // Patrón 1: Buscar en el JSON embebido
+    preg_match('/"price":(\d+)/', $propertyHtml, $priceMatches);
+    if (isset($priceMatches[1])) {
+        $price = '$' . number_format($priceMatches[1]);
+    }
+    
+    // Patrón 2: Buscar en el HTML
+    if (!$price) {
+        $dom = new DOMDocument();
+        libxml_use_internal_errors(true);
+        $dom->loadHTML($propertyHtml);
+        libxml_clear_errors();
+        $xpath = new DOMXPath($dom);
+        
+        // Intentar diferentes selectores
+        $selectors = [
+            '//span[@data-testid="price"]',
+            '//span[contains(@class, "ds-price")]',
+            '//span[contains(@class, "price")]',
+            '//div[contains(@class, "price")]'
+        ];
+        
+        foreach ($selectors as $selector) {
+            $priceNode = $xpath->query($selector);
+            if ($priceNode->length > 0) {
+                $price = trim($priceNode->item(0)->nodeValue);
+                break;
+            }
+        }
+    }
 
-    $priceNode = $xpath->query('//span[@data-testid="price"]');
-
-    if ($priceNode->length > 0) {
-        return trim($priceNode->item(0)->nodeValue);
+    if ($price) {
+        return $price;
     }
 
     return "Precio no encontrado";

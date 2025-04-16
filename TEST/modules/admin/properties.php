@@ -837,12 +837,6 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <?php echo $expirationDate->format('Y-m-d'); ?>
                                 </div>
                             </div>
-                            <div class="property-meta">
-                                <div class="meta-item">
-                                    <i class="fas fa-dollar-sign"></i>
-                                    Zillow Price: <span id="zillow_price">Loading...</span>
-                                </div>
-                            </div>
                         </div>
 
                         <div class="action-buttons">
@@ -921,10 +915,6 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="meta-item">
                                     <i class="fas fa-dollar-sign"></i>
                                     $<?php echo number_format($property['total_fees'], 2); ?>
-                                </div>
-                                <div class="meta-item">
-                                    <i class="fas fa-home"></i>
-                                    Zillow: <span id="zillow_price_<?php echo $property['id']; ?>">Loading...</span>
                                 </div>
                             </div>
                         </td>

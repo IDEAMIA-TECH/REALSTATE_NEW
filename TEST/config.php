@@ -49,3 +49,8 @@ date_default_timezone_set(APP_TIMEZONE);
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+// Site configuration
+define('SITE_URL', 'https://ideamia-dev.com/realestate/TEST');
+define('UPLOADS_PATH', BASE_PATH . '/uploads/documents/');
+define('UPLOADS_URL', SITE_URL . '/uploads/documents/');

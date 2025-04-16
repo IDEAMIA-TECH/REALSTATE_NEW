@@ -2355,10 +2355,17 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     
                     data.documents.forEach(doc => {
                         const row = document.createElement('tr');
+                        const uploadDate = new Date(doc.created_at);
+                        const formattedDate = uploadDate.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+                        
                         row.innerHTML = `
                             <td>${doc.document_name}</td>
                             <td>${doc.document_type}</td>
-                            <td>${new Date(doc.upload_date).toLocaleDateString()}</td>
+                            <td>${formattedDate}</td>
                             <td>
                                 <a href="${doc.file_path}" class="btn btn-sm btn-primary" target="_blank">
                                     <i class="fas fa-download"></i>
@@ -2419,6 +2426,38 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             // ... rest of your existing modal code ...
         });
+
+        function loadDocuments(propertyId) {
+            fetch(`get_documents.php?property_id=${propertyId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const documentsList = document.getElementById('documents_list');
+                        documentsList.innerHTML = '';
+                        
+                        data.documents.forEach(doc => {
+                            const docItem = document.createElement('div');
+                            docItem.className = 'document-item';
+                            docItem.innerHTML = `
+                                <div class="document-info">
+                                    <span class="document-name">${doc.document_name}</span>
+                                    <span class="document-type">${doc.document_type}</span>
+                                </div>
+                                <div class="document-actions">
+                                    <a href="${doc.file_path}" target="_blank" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-download"></i> Download
+                                    </a>
+                                    <button class="btn btn-sm btn-danger delete-document" data-id="${doc.id}">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                            `;
+                            documentsList.appendChild(docItem);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error loading documents:', error));
+        }
     </script>
 </body>
 </html> 

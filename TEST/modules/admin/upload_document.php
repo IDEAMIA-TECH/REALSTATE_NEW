@@ -62,7 +62,7 @@ try {
         ) VALUES (?, ?, ?, ?, ?)
     ");
     
-    $relativePath = 'uploads/documents/' . $fileName;
+    $relativePath = UPLOADS_URL . $fileName;
     $stmt->execute([
         $propertyId,
         $documentName,

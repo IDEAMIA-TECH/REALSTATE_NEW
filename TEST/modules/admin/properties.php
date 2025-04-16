@@ -1596,6 +1596,9 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?php echo BASE_URL; ?>/modules/csushpinsa/CSUSHPINSA.js"></script>
     <script>
+        // Definir BASE_URL desde PHP
+        const BASE_URL = '<?php echo BASE_URL; ?>';
+        
         // Handle edit modal
         document.getElementById('editPropertyModal').addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;

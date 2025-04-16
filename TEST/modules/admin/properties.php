@@ -1494,6 +1494,63 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         </div>
                     </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <h6>Documents</h6>
+                            <div class="card">
+                                <div class="card-body">
+                                    <!-- Document Upload Form -->
+                                    <form id="documentUploadForm" class="mb-4">
+                                        <input type="hidden" name="property_id" id="document_property_id">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="mb-3">
+                                                    <label for="document_name" class="form-label">Document Name</label>
+                                                    <input type="text" class="form-control" id="document_name" name="document_name" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="mb-3">
+                                                    <label for="document_type" class="form-label">Document Type</label>
+                                                    <select class="form-select" id="document_type" name="document_type" required>
+                                                        <option value="">Select Type</option>
+                                                        <option value="contract">Contract</option>
+                                                        <option value="valuation">Valuation</option>
+                                                        <option value="inspection">Inspection</option>
+                                                        <option value="other">Other</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="mb-3">
+                                                    <label for="document" class="form-label">File</label>
+                                                    <input type="file" class="form-control" id="document" name="document" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Upload Document</button>
+                                    </form>
+
+                                    <!-- Documents List -->
+                                    <div id="documents_list" class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Type</th>
+                                                    <th>Upload Date</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- Documents will be loaded here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -2258,6 +2315,109 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 const fullAddress = `${property.street_address}, ${property.city}, ${property.state} ${property.zip_code}`;
                 fetchZillowPrice(fullAddress, property.id);
             });
+        });
+
+        // Document Upload Form Handler
+        document.getElementById('documentUploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('upload_document.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Document uploaded successfully');
+                    this.reset();
+                    // Refresh documents list
+                    fetchDocuments(document.getElementById('document_property_id').value);
+                } else {
+                    alert('Error uploading document: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error uploading document');
+            });
+        });
+
+        // Function to fetch and display documents
+        function fetchDocuments(propertyId) {
+            fetch(`get_documents.php?property_id=${propertyId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const tbody = document.querySelector('#documents_list tbody');
+                    tbody.innerHTML = '';
+                    
+                    data.documents.forEach(doc => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${doc.document_name}</td>
+                            <td>${doc.document_type}</td>
+                            <td>${new Date(doc.upload_date).toLocaleDateString()}</td>
+                            <td>
+                                <a href="${doc.file_path}" class="btn btn-sm btn-primary" target="_blank">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <button class="btn btn-sm btn-danger" onclick="deleteDocument(${doc.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                } else {
+                    console.error('Error fetching documents:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Function to delete a document
+        function deleteDocument(docId) {
+            if (confirm('Are you sure you want to delete this document?')) {
+                fetch('delete_document.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ doc_id: docId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Refresh documents list
+                        fetchDocuments(document.getElementById('document_property_id').value);
+                        alert('Document deleted successfully');
+                    } else {
+                        alert('Error deleting document: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting document');
+                });
+            }
+        }
+
+        // Update the view modal event listener to include document handling
+        document.getElementById('viewPropertyModal').addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const property = JSON.parse(button.getAttribute('data-property'));
+            
+            // Set property ID for document upload
+            document.getElementById('document_property_id').value = property.id;
+            
+            // Fetch documents for this property
+            fetchDocuments(property.id);
+            
+            // ... rest of your existing modal code ...
         });
     </script>
 </body>

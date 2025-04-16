@@ -44,6 +44,59 @@ function getClosestHomePriceIndex($db, $targetDate) {
     return $closestMatch;
 }
 
+// Function to get Zillow price from address
+function getZillowPriceFromAddress($address) {
+    // 1. Preparar búsqueda
+    $query = urlencode($address);
+    $searchUrl = "https://www.zillow.com/homes/{$query}_rb/";
+
+    // 2. Realizar solicitud HTTP con cURL
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $searchUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+    ]);
+    $html = curl_exec($ch);
+    curl_close($ch);
+
+    // 3. Buscar el primer enlace a una propiedad
+    preg_match('/"zpid":"(\d+)"/', $html, $matches);
+    if (!isset($matches[1])) {
+        return "No se encontró propiedad";
+    }
+
+    $zpid = $matches[1];
+    $propertyUrl = "https://www.zillow.com/homedetails/{$zpid}_zpid/";
+
+    // 4. Obtener HTML del detalle de propiedad
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $propertyUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+    ]);
+    $propertyHtml = curl_exec($ch);
+    curl_close($ch);
+
+    // 5. Extraer precio desde etiqueta con data-testid="price"
+    $dom = new DOMDocument();
+    libxml_use_internal_errors(true);
+    $dom->loadHTML($propertyHtml);
+    libxml_clear_errors();
+    $xpath = new DOMXPath($dom);
+
+    $priceNode = $xpath->query('//span[@data-testid="price"]');
+
+    if ($priceNode->length > 0) {
+        return trim($priceNode->item(0)->nodeValue);
+    }
+
+    return "Precio no encontrado";
+}
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
@@ -782,6 +835,12 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="meta-item <?php echo $isExpired ? 'text-danger' : ''; ?>">
                                     <i class="fas fa-calendar-times"></i>
                                     <?php echo $expirationDate->format('Y-m-d'); ?>
+                                </div>
+                            </div>
+                            <div class="property-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-dollar-sign"></i>
+                                    Zillow Price: <span id="zillow_price">Loading...</span>
                                 </div>
                             </div>
                         </div>
@@ -2159,6 +2218,38 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             if (savedView === 'table') {
                 tableView.click();
             }
+        });
+
+        // En el JavaScript, agregar la función para obtener el precio de Zillow
+        function fetchZillowPrice(address) {
+            fetch('get_zillow_price.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ address: address })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('zillow_price').textContent = data.price;
+                } else {
+                    document.getElementById('zillow_price').textContent = 'Error: ' + data.error;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching Zillow price:', error);
+                document.getElementById('zillow_price').textContent = 'Error fetching price';
+            });
+        }
+
+        // Llamar a la función cuando se muestre la propiedad
+        document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target="#viewPropertyModal"]').forEach(button => {
+            button.addEventListener('click', function(event) {
+                const property = JSON.parse(this.getAttribute('data-property'));
+                const fullAddress = `${property.street_address}, ${property.city}, ${property.state} ${property.zip_code}`;
+                fetchZillowPrice(fullAddress);
+            });
         });
     </script>
 </body>

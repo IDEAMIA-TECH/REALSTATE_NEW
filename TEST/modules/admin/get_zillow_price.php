@@ -34,12 +34,8 @@ function getZillowPriceFromAddress($address) {
     $searchUrl = "https://www.zillow.com/homes/{$query}_rb/";
     error_log("URL de búsqueda: " . $searchUrl);
 
-    // 2. Realizar solicitud HTTP con cURL
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $searchUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    // Headers más realistas
+    $headers = [
         'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
         'Accept-Language: en-US,en;q=0.9',
@@ -50,11 +46,26 @@ function getZillowPriceFromAddress($address) {
         'Sec-Fetch-Mode: navigate',
         'Sec-Fetch-Site: none',
         'Sec-Fetch-User: ?1',
-        'Cache-Control: max-age=0'
-    ]);
+        'Cache-Control: max-age=0',
+        'DNT: 1',
+        'sec-ch-ua: "Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+        'sec-ch-ua-mobile: ?0',
+        'sec-ch-ua-platform: "macOS"',
+        'Pragma: no-cache',
+        'Referer: https://www.zillow.com/',
+        'Cookie: zguid=23|%24b9b9b9b9-b9b9-b9b9-b9b9-b9b9b9b9b9b9; zgsession=1|b9b9b9b9-b9b9-b9b9-b9b9-b9b9b9b9b9b9'
+    ];
+
+    // 2. Realizar solicitud HTTP con cURL
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $searchUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     curl_setopt($ch, CURLOPT_VERBOSE, true);
+    curl_setopt($ch, CURLOPT_ENCODING, '');
     
     $verbose = fopen('php://temp', 'w+');
     curl_setopt($ch, CURLOPT_STDERR, $verbose);
@@ -72,6 +83,14 @@ function getZillowPriceFromAddress($address) {
     
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     error_log("HTTP Code: " . $httpCode);
+    
+    // Guardar cookies para la siguiente solicitud
+    $cookies = [];
+    preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $verboseLog, $matches);
+    foreach($matches[1] as $item) {
+        parse_str($item, $cookie);
+        $cookies = array_merge($cookies, $cookie);
+    }
     
     curl_close($ch);
     fclose($verbose);
@@ -95,22 +114,20 @@ function getZillowPriceFromAddress($address) {
     curl_setopt($ch, CURLOPT_URL, $propertyUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language: en-US,en;q=0.9',
-        'Accept-Encoding: gzip, deflate, br',
-        'Connection: keep-alive',
-        'Upgrade-Insecure-Requests: 1',
-        'Sec-Fetch-Dest: document',
-        'Sec-Fetch-Mode: navigate',
-        'Sec-Fetch-Site: none',
-        'Sec-Fetch-User: ?1',
-        'Cache-Control: max-age=0'
-    ]);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     curl_setopt($ch, CURLOPT_VERBOSE, true);
+    curl_setopt($ch, CURLOPT_ENCODING, '');
+    
+    // Agregar cookies de la primera solicitud
+    if (!empty($cookies)) {
+        $cookieString = '';
+        foreach ($cookies as $name => $value) {
+            $cookieString .= $name . '=' . $value . '; ';
+        }
+        curl_setopt($ch, CURLOPT_COOKIE, $cookieString);
+    }
     
     $verbose = fopen('php://temp', 'w+');
     curl_setopt($ch, CURLOPT_STDERR, $verbose);

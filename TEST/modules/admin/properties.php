@@ -922,6 +922,10 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <i class="fas fa-dollar-sign"></i>
                                     $<?php echo number_format($property['total_fees'], 2); ?>
                                 </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-home"></i>
+                                    Zillow: <span id="zillow_price_<?php echo $property['id']; ?>">Loading...</span>
+                                </div>
                             </div>
                         </td>
                         <td>
@@ -2221,7 +2225,7 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         });
 
         // En el JavaScript, agregar la función para obtener el precio de Zillow
-        function fetchZillowPrice(address) {
+        function fetchZillowPrice(address, propertyId) {
             fetch('get_zillow_price.php', {
                 method: 'POST',
                 headers: {
@@ -2232,23 +2236,36 @@ $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Actualizar en la vista de tarjetas
                     document.getElementById('zillow_price').textContent = data.price;
+                    // Actualizar en la vista de tabla
+                    if (propertyId) {
+                        document.getElementById(`zillow_price_${propertyId}`).textContent = data.price;
+                    }
                 } else {
-                    document.getElementById('zillow_price').textContent = 'Error: ' + data.error;
+                    const errorMessage = 'Error: ' + data.error;
+                    document.getElementById('zillow_price').textContent = errorMessage;
+                    if (propertyId) {
+                        document.getElementById(`zillow_price_${propertyId}`).textContent = errorMessage;
+                    }
                 }
             })
             .catch(error => {
                 console.error('Error fetching Zillow price:', error);
-                document.getElementById('zillow_price').textContent = 'Error fetching price';
+                const errorMessage = 'Error fetching price';
+                document.getElementById('zillow_price').textContent = errorMessage;
+                if (propertyId) {
+                    document.getElementById(`zillow_price_${propertyId}`).textContent = errorMessage;
+                }
             });
         }
 
-        // Llamar a la función cuando se muestre la propiedad
+        // Actualizar la llamada a fetchZillowPrice en el evento click del modal
         document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target="#viewPropertyModal"]').forEach(button => {
             button.addEventListener('click', function(event) {
                 const property = JSON.parse(this.getAttribute('data-property'));
                 const fullAddress = `${property.street_address}, ${property.city}, ${property.state} ${property.zip_code}`;
-                fetchZillowPrice(fullAddress);
+                fetchZillowPrice(fullAddress, property.id);
             });
         });
     </script>

@@ -62,7 +62,8 @@ try {
         ) VALUES (?, ?, ?, ?, ?)
     ");
     
-    $relativePath = UPLOADS_URL . $fileName;
+    // La ruta debe ser relativa a la raíz del sitio, sin incluir modules/admin
+    $relativePath = 'uploads/documents/' . $fileName;
     $stmt->execute([
         $propertyId,
         $documentName,

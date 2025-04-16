@@ -58,9 +58,8 @@ try {
             document_name, 
             document_type, 
             file_path, 
-            uploaded_by, 
-            upload_date
-        ) VALUES (?, ?, ?, ?, ?, NOW())
+            uploaded_by
+        ) VALUES (?, ?, ?, ?, ?)
     ");
     
     $relativePath = 'uploads/documents/' . $fileName;
@@ -81,7 +80,7 @@ try {
             'name' => $documentName,
             'type' => $documentType,
             'path' => $relativePath,
-            'upload_date' => date('Y-m-d H:i:s')
+            'created_at' => date('Y-m-d H:i:s')
         ]
     ]);
 } catch (PDOException $e) {

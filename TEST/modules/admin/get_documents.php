@@ -31,10 +31,10 @@ try {
             document_name,
             document_type,
             file_path,
-            upload_date
+            created_at
         FROM property_documents
         WHERE property_id = ?
-        ORDER BY upload_date DESC
+        ORDER BY created_at DESC
     ");
     
     $stmt->execute([$propertyId]);

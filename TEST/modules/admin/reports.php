@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $db->prepare("
                         SELECT 
                             p.id,
-                            p.address,
+                            p.street_address as address,
                             p.initial_valuation,
                             p.initial_index,
                             p.agreed_pct,

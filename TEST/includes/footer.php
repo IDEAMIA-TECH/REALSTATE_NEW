@@ -1,10 +1,10 @@
 <footer class="footer mt-auto py-4">
     <div class="container">
-        <div class="row align-items-center">
-            <div class="col-md-6">
-                <h5 class="text-white mb-0"><?php echo APP_NAME; ?></h5>
-                <small class="text-muted">Version <?php echo APP_VERSION; ?></small>
-                <p class="mb-0 text-white">&copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?>. All rights reserved.</p>
+        <div class="row justify-content-center text-center">
+            <div class="col-12">
+                <h5 class="text-white mb-2">Real Estate Management System</h5>
+                <p class="text-muted mb-1">Version 1.0.0</p>
+                <p class="text-white mb-0">&copy; 2025 Real Estate Management System. All rights reserved.</p>
             </div>
         </div>
     </div>
@@ -19,16 +19,13 @@
     padding: 2rem 0;
     position: relative;
     bottom: 0;
+    margin-top: auto;
 }
 
 .footer .container {
     max-width: auto;
     margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     padding: 0 1rem;
-    flex-wrap: wrap;
 }
 
 .footer a {
@@ -50,40 +47,22 @@
     margin-bottom: 0.5rem;
 }
 
-.footer p, .footer small {
-    margin-bottom: 0;
+.footer p {
+    margin-bottom: 0.5rem;
     font-size: 0.9rem;
-}
-
-.footer .col-md-6:last-child {
-    text-align: right;
-    flex: 1;
-}
-
-@media (max-width: 768px) {
-    .footer .container {
-        flex-direction: column;
-        text-align: center;
-    }
-
-    .footer .col-md-6:last-child {
-        text-align: center;
-        flex: none;
-    }
-
-    .footer h5, .footer p {
-        margin-bottom: 1rem;
-    }
 }
 
 /* Asegurar que el footer siempre esté al final */
 html, body {
     height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 body {
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
 }
 
 main {

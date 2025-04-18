@@ -206,7 +206,7 @@ if (!isset($page_title)) {
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/activity_logs.php">
+                                        <a class="dropdown-item" href="<?php echo BASE_URL; ?>/modules/admin/activity_log.php">
                                             <i class="fas fa-history me-2"></i>Activity Logs
                                         </a>
                                     </li>

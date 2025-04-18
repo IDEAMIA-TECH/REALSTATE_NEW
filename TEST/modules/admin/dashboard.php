@@ -136,6 +136,7 @@ foreach ($indexData as $data) {
             margin-bottom: 1.5rem;
             transition: all 0.3s ease;
             border: 1px solid var(--border-color);
+            text-align: center;
         }
 
         .stat-card:hover {
@@ -153,7 +154,7 @@ foreach ($indexData as $data) {
             justify-content: center;
             font-size: 1.5rem;
             color: var(--primary-color);
-            margin-bottom: 1rem;
+            margin: 0 auto 1rem;
         }
 
         .stat-number {
@@ -169,6 +170,7 @@ foreach ($indexData as $data) {
             font-size: 0.9rem;
             font-weight: 500;
             opacity: 0.7;
+            margin-bottom: 0;
         }
 
         .activity-card {
@@ -362,28 +364,36 @@ foreach ($indexData as $data) {
         <div class="row mb-4">
             <div class="col-md-3">
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
                     <div class="stat-number"><?php echo number_format($stats['clients']); ?></div>
                     <div class="stat-label">Active Clients</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-home"></i></div>
+                    <div class="stat-icon">
+                        <i class="fas fa-home"></i>
+                    </div>
                     <div class="stat-number"><?php echo number_format($stats['properties']); ?></div>
                     <div class="stat-label">Active Properties</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-user-cog"></i></div>
+                    <div class="stat-icon">
+                        <i class="fas fa-user-cog"></i>
+                    </div>
                     <div class="stat-number"><?php echo number_format($stats['users']); ?></div>
                     <div class="stat-label">Active Users</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
                     <div class="stat-number"><?php echo number_format($stats['valuations']); ?></div>
                     <div class="stat-label">Total Valuations</div>
                 </div>
